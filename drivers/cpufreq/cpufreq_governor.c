@@ -131,11 +131,6 @@ void dbs_check_cpu(struct dbs_data *dbs_data, int cpu)
 		 * timer would not have fired during CPU-idle periods. Hence
 		 * an unusually large 'wall_time' (as compared to the sampling
 		 * rate) indicates this scenario.
-		 *
-		 * prev_load can be zero in two cases and we must recalculate it
-		 * for both cases:
-		 * - during long idle intervals
-		 * - explicitly set to zero
 		 */
 		if (unlikely(wall_time > (2 * sampling_rate) &&
 			     j_cdbs->prev_load)) {
@@ -150,6 +145,7 @@ void dbs_check_cpu(struct dbs_data *dbs_data, int cpu)
 		} else {
 			load = 100 * (wall_time - idle_time) / wall_time;
 			j_cdbs->prev_load = load;
+			j_cdbs->copy_prev_load = true;
 		}
 
 		if (load > max_load)
@@ -383,6 +379,7 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				(j_cdbs->prev_cpu_wall - j_cdbs->prev_cpu_idle);
 			j_cdbs->prev_load = 100 * prev_load /
 					(unsigned int) j_cdbs->prev_cpu_wall;
+			j_cdbs->copy_prev_load = true;
 
 			if (ignore_nice)
 				j_cdbs->prev_cpu_nice =
