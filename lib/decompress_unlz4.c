@@ -136,7 +136,7 @@ STATIC inline int INIT unlz4(u8 *input, long in_len,
 			inp += 4;
 			size -= 4;
 		} else {
-			if (chunksize > LZ4_compressBound(uncomp_chunksize)) {
+			if (chunksize > lz4_compressbound(uncomp_chunksize)) {
 				error("chunk length is longer than allocated");
 				goto exit_2;
 			}
