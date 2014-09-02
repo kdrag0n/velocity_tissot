@@ -31,6 +31,7 @@
 #include "../time/tick-internal.h"
 
 #ifdef CONFIG_RCU_BOOST
+
 #include "../locking/rtmutex_common.h"
 
 /* rcuc/rcub kthread realtime priority */
