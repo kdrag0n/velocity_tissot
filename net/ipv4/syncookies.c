@@ -222,10 +222,10 @@ static inline struct sock *get_cookie_sock(struct sock *sk, struct sk_buff *skb,
  * The lowest 4 bits store snd_wscale.
  * next 2 bits indicate SACK and ECN support.
  *
- * return false if we decode an option that should not be.
+ * return false if we decode a tcp option that is disabled
+ * on the host.
  */
-bool cookie_check_timestamp(struct tcp_options_received *tcp_opt,
-			struct net *net, bool *ecn_ok)
+bool cookie_timestamp_decode(struct tcp_options_received *tcp_opt)
 {
 	/* echoed timestamp, lowest bits contain options */
 	u32 options = tcp_opt->rcv_tsecr & TSMASK;
@@ -239,9 +239,6 @@ bool cookie_check_timestamp(struct tcp_options_received *tcp_opt,
 		return false;
 
 	tcp_opt->sack_ok = (options & (1 << 4)) ? TCP_SACK_SEEN : 0;
-	*ecn_ok = (options >> 5) & 1;
-	if (*ecn_ok && !net->ipv4.sysctl_tcp_ecn)
-		return false;
 
 	if (tcp_opt->sack_ok && !sysctl_tcp_sack)
 		return false;
@@ -253,7 +250,22 @@ bool cookie_check_timestamp(struct tcp_options_received *tcp_opt,
 	tcp_opt->snd_wscale = options & 0xf;
 	return sysctl_tcp_window_scaling != 0;
 }
-EXPORT_SYMBOL(cookie_check_timestamp);
+EXPORT_SYMBOL(cookie_timestamp_decode);
+
+bool cookie_ecn_ok(const struct tcp_options_received *tcp_opt,
+		   const struct net *net)
+{
+	bool ecn_ok = tcp_opt->rcv_tsecr & TS_OPT_ECN;
+
+	if (!ecn_ok)
+		return false;
+
+	if (net->ipv4.sysctl_tcp_ecn)
+		return true;
+
+	return false;
+}
+EXPORT_SYMBOL(cookie_ecn_ok);
 
 struct sock *cookie_v4_check(struct sock *sk, struct sk_buff *skb)
 {
@@ -269,7 +281,6 @@ struct sock *cookie_v4_check(struct sock *sk, struct sk_buff *skb)
 	int mss;
 	struct rtable *rt;
 	__u8 rcv_wscale;
-	bool ecn_ok = false;
 	struct flowi4 fl4;
 
 	if (!sysctl_tcp_syncookies || !th->ack || th->rst)
@@ -287,7 +298,7 @@ struct sock *cookie_v4_check(struct sock *sk, struct sk_buff *skb)
 	memset(&tcp_opt, 0, sizeof(tcp_opt));
 	tcp_parse_options(skb, &tcp_opt, 0, NULL);
 
-	if (!cookie_check_timestamp(&tcp_opt, sock_net(sk), &ecn_ok))
+	if (!cookie_timestamp_decode(&tcp_opt))
 		goto out;
 
 	ret = NULL;
@@ -305,7 +316,6 @@ struct sock *cookie_v4_check(struct sock *sk, struct sk_buff *skb)
 	ireq->ir_loc_addr	= ip_hdr(skb)->daddr;
 	ireq->ir_rmt_addr	= ip_hdr(skb)->saddr;
 	ireq->ir_mark		= inet_request_mark(sk, skb);
-	ireq->ecn_ok		= ecn_ok;
 	ireq->snd_wscale	= tcp_opt.snd_wscale;
 	ireq->sack_ok		= tcp_opt.sack_ok;
 	ireq->wscale_ok		= tcp_opt.wscale_ok;
@@ -354,6 +364,7 @@ struct sock *cookie_v4_check(struct sock *sk, struct sk_buff *skb)
 				  dst_metric(&rt->dst, RTAX_INITRWND));
 
 	ireq->rcv_wscale  = rcv_wscale;
+	ireq->ecn_ok = cookie_ecn_ok(&tcp_opt, sock_net(sk));
 
 	ret = get_cookie_sock(sk, skb, req, &rt->dst);
 	/* ip_queue_xmit() depends on our flow being setup
