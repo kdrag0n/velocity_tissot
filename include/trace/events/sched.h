@@ -58,6 +58,7 @@ TRACE_EVENT(sched_kthread_stop_ret,
 	TP_printk("ret=%d", __entry->ret)
 );
 
+#ifndef CONFIG_SCHED_BFS
 /*
  * Tracepoint for task enqueue/dequeue:
  */
@@ -123,6 +124,7 @@ TRACE_EVENT(sched_enq_deq_task,
 #endif
 			)
 );
+#endif
 
 #ifdef CONFIG_SCHED_HMP
 
@@ -748,16 +750,25 @@ TRACE_EVENT(sched_switch,
  */
 TRACE_EVENT(sched_migrate_task,
 
-	TP_PROTO(struct task_struct *p, int dest_cpu,
-		 unsigned int load),
+	TP_PROTO(struct task_struct *p, int dest_cpu
+#ifndef CONFIG_SCHED_BFS
+		 , unsigned int load
+#endif
+		 ),
 
-	TP_ARGS(p, dest_cpu, load),
+	TP_ARGS(p, dest_cpu
+#ifndef CONFIG_SCHED_BFS
+		 , load
+#endif
+		 ),
 
 	TP_STRUCT__entry(
 		__array(	char,	comm,	TASK_COMM_LEN	)
 		__field(	pid_t,	pid			)
 		__field(	int,	prio			)
+#ifndef CONFIG_SCHED_BFS
 		__field(unsigned int,	load			)
+#endif
 		__field(	int,	orig_cpu		)
 		__field(	int,	dest_cpu		)
 	),
@@ -766,13 +777,20 @@ TRACE_EVENT(sched_migrate_task,
 		memcpy(__entry->comm, p->comm, TASK_COMM_LEN);
 		__entry->pid		= p->pid;
 		__entry->prio		= p->prio;
+#ifndef CONFIG_SCHED_BFS
 		__entry->load		= load;
+#endif
 		__entry->orig_cpu	= task_cpu(p);
 		__entry->dest_cpu	= dest_cpu;
 	),
 
 	TP_printk("comm=%s pid=%d prio=%d load=%d orig_cpu=%d dest_cpu=%d",
-		  __entry->comm, __entry->pid, __entry->prio,  __entry->load,
+		  __entry->comm, __entry->pid, __entry->prio,
+#ifndef CONFIG_SCHED_BFS
+		  __entry->load,
+#else
+		  0,
+#endif
 		  __entry->orig_cpu, __entry->dest_cpu)
 );
 

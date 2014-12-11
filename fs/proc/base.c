@@ -326,7 +326,7 @@ static int proc_pid_schedstat(struct seq_file *m, struct pid_namespace *ns,
 			      struct pid *pid, struct task_struct *task)
 {
 	return seq_printf(m, "%llu %llu %lu\n",
-			(unsigned long long)task->se.sum_exec_runtime,
+			(unsigned long long)tsk_seruntime(task),
 			(unsigned long long)task->sched_info.run_delay,
 			task->sched_info.pcount);
 }
@@ -1245,6 +1245,9 @@ static const struct file_operations proc_pid_sched_operations = {
 
 static int sched_wake_up_idle_show(struct seq_file *m, void *v)
 {
+#ifdef CONFIG_SCHED_BFS
+	seq_printf(m, "%d\n", 0);
+#else
 	struct inode *inode = m->private;
 	struct task_struct *p;
 
@@ -1255,6 +1258,7 @@ static int sched_wake_up_idle_show(struct seq_file *m, void *v)
 	seq_printf(m, "%d\n", sched_get_wake_up_idle(p));
 
 	put_task_struct(p);
+#endif
 
 	return 0;
 }
@@ -1263,6 +1267,9 @@ static ssize_t
 sched_wake_up_idle_write(struct file *file, const char __user *buf,
 	    size_t count, loff_t *offset)
 {
+#ifdef CONFIG_SCHED_BFS
+	return count;
+#else
 	struct inode *inode = file_inode(file);
 	struct task_struct *p;
 	char buffer[PROC_NUMBUF];
@@ -1290,6 +1297,7 @@ sched_wake_up_idle_write(struct file *file, const char __user *buf,
 
 out:
 	return err < 0 ? err : count;
+#endif
 }
 
 static int sched_wake_up_idle_open(struct inode *inode, struct file *filp)
