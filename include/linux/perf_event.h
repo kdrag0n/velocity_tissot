@@ -692,7 +692,6 @@ perf_sw_event(u32 event_id, u64 nr, struct pt_regs *regs, u64 addr)
 	if (static_key_false(&perf_swevent_enabled[event_id]))
 		__perf_sw_event(event_id, nr, regs, addr);
 }
-
 DECLARE_PER_CPU(struct pt_regs, __perf_regs[4]);
 
 /*
