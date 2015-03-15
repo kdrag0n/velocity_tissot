@@ -491,6 +491,7 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		} else if (dbs_data->cdata->governor == GOV_NIGHTMARE) {
 			nm_ops->get_cpu_frequency_table(cpu);
 		} else if (dbs_data->cdata->governor == GOV_ELEMENTALX) {
+			ex_dbs_info->down_floor = 0;
 			ex_dbs_info->enable = 1;
 		} else {
 			od_dbs_info->rate_mult = 1;
