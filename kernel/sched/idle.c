@@ -77,12 +77,13 @@ void __weak arch_cpu_idle(void)
 	local_irq_enable();
 }
 
-static void default_idle_call(void)
+/**
+ * default_idle_call - Default CPU idle routine.
+ *
+ * To use when the cpuidle framework cannot be used.
+ */
+void default_idle_call(void)
 {
-	/*
-	 * We can't use the cpuidle framework, let's use the default idle
-	 * routine.
-	 */
 	if (current_clr_polling_and_test())
 		local_irq_enable();
 	else
@@ -92,8 +93,6 @@ static void default_idle_call(void)
 static int call_cpuidle(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 		      int next_state)
 {
-	int entered_state;
-
 	/* Fall back to the default arch idle method on errors. */
 	if (next_state < 0) {
 		default_idle_call();
@@ -110,23 +109,12 @@ static int call_cpuidle(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 		return -EBUSY;
 	}
 
-	/* Take note of the planned idle state. */
-	idle_set_state(this_rq(), &drv->states[next_state]);
-
 	/*
 	 * Enter the idle state previously returned by the governor decision.
 	 * This function will block until an interrupt occurs and will take
 	 * care of re-enabling the local interrupts
 	 */
-	entered_state = cpuidle_enter(drv, dev, next_state);
-
-	/* The cpu is no longer idle or about to enter idle. */
-	idle_set_state(this_rq(), NULL);
-
-	if (entered_state == -EBUSY)
-		default_idle_call();
-
-	return entered_state;
+	return cpuidle_enter(drv, dev, next_state);
 }
 
 /**
