@@ -1654,13 +1654,6 @@ static void set_cpus_allowed_dl(struct task_struct *p,
 
 	BUG_ON(!dl_task(p));
 
-	/*
-	 * Update only if the task is actually running (i.e.,
-	 * it is on the rq AND it is not throttled).
-	 */
-	if (!on_dl_rq(&p->dl))
-		return;
-
 	weight = cpumask_weight(new_mask);
 
 	/*
@@ -1668,7 +1661,14 @@ static void set_cpus_allowed_dl(struct task_struct *p,
 	 * can migrate or not.
 	 */
 	if ((p->nr_cpus_allowed > 1) == (weight > 1))
-		return;
+		goto done;
+
+	/*
+	 * Update only if the task is actually running (i.e.,
+	 * it is on the rq AND it is not throttled).
+	 */
+	if (!on_dl_rq(&p->dl))
+		goto done;
 
 	rq = task_rq(p);
 
@@ -1687,6 +1687,10 @@ static void set_cpus_allowed_dl(struct task_struct *p,
 	}
 
 	update_dl_migration(&rq->dl);
+
+done:
+	cpumask_copy(&p->cpus_allowed, new_mask);
+	p->nr_cpus_allowed = weight;
 }
 
 /* Assumes rq->lock is held */
