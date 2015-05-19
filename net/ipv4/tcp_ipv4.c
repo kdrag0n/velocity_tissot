@@ -2482,9 +2482,11 @@ static int __net_init tcp_sk_init(struct net *net)
 			goto fail;
 		*per_cpu_ptr(net->ipv4.tcp_sk, cpu) = sk;
 	}
-	net->ipv4.sysctl_tcp_ecn = 2;
-	return 0;
 
+	net->ipv4.sysctl_tcp_ecn = 2;
+	net->ipv4.sysctl_tcp_ecn_fallback = 1;
+
+	return 0;
 fail:
 	tcp_sk_exit(net);
 
