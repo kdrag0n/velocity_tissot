@@ -392,15 +392,6 @@ config IRQ_TIME_ACCOUNTING
 
 endchoice
 
-config SCHED_WALT
-        bool "Support window based load tracking"
-        depends on SMP
-        help
-        This feature will allow the scheduler to maintain a tunable window
-	based set of metrics for tasks and runqueues. These metrics can be
-	used to guide task placement as well as task frequency requirements
-	for cpufreq governors.
-
 config BSD_PROCESS_ACCT
 	bool "BSD Process Accounting"
 	help
@@ -1001,23 +992,6 @@ config RESOURCE_COUNTERS
 	  This option enables controller independent resource accounting
 	  infrastructure that works with cgroups.
 
-config CGROUP_SCHEDTUNE
-	bool "CFS tasks boosting cgroup subsystem (EXPERIMENTAL)"
-	depends on SCHED_TUNE
-	help
-	  This option provides the "schedtune" controller which improves the
-	  flexibility of the task boosting mechanism by introducing the support
-	  to define "per task" boost values.
-
-	  This new controller:
-	  1. allows only a two layers hierarchy, where the root defines the
-	     system-wide boost value and its direct childrens define each one a
-	     different "class of tasks" to be boosted with a different value
-	  2. supports up to 16 different task classes, each one which could be
-	     configured with a different boost value
-
-	  Say N if unsure.
-
 config MEMCG
 	bool "Memory Resource Controller for Control Groups"
 	depends on RESOURCE_COUNTERS
@@ -1265,7 +1239,6 @@ config SCHED_AUTOGROUP
 
 config SCHED_TUNE
 	bool "Boosting for CFS tasks (EXPERIMENTAL)"
-	depends on SMP
 	help
 	  This option enables the system-wide support for task boosting.
 	  When this support is enabled a new sysctl interface is exposed to
@@ -1737,7 +1710,6 @@ choice
 
 config SLAB
 	bool "SLAB"
-	select HAVE_HARDENED_USERCOPY_ALLOCATOR
 	help
 	  The regular slab allocator that is established and known to work
 	  well in all environments. It organizes cache hot objects in
@@ -1745,7 +1717,6 @@ config SLAB
 
 config SLUB
 	bool "SLUB (Unqueued Allocator)"
-	select HAVE_HARDENED_USERCOPY_ALLOCATOR
 	help
 	   SLUB is a slab allocator that minimizes cache line usage
 	   instead of managing queues of cached objects (SLAB approach).
@@ -2038,6 +2009,16 @@ config MODULE_COMPRESS_XZ
 
 endchoice
 
+config MODULE_EXTRA_COPY
+	bool "Keep an extra copy of a module while it is loading"
+	help
+	  Keep an extra copy of the module code while the module is loading.
+	  This extra copy contains the raw, unlinked code.  It is freed after
+	  the module's initialization function has finished loading.  This
+	  option is useful if you want to make a self-contained
+	  FIPS-140-compliant module which must check its own integrity.
+
+	  If unsure, say N.
 endif # MODULES
 
 config INIT_ALL_POSSIBLE
