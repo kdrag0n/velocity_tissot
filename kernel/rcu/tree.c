@@ -4006,7 +4006,7 @@ static int rcu_pending(void)
  * non-NULL, store an indication of whether all callbacks are lazy.
  * (If there are no callbacks, all of them are deemed to be lazy.)
  */
-static bool __maybe_unused rcu_cpu_has_callbacks(bool *all_lazy)
+static int __maybe_unused rcu_cpu_has_callbacks(int cpu, bool *all_lazy)
 {
 	bool al = true;
 	bool hc = false;
@@ -4014,7 +4014,7 @@ static bool __maybe_unused rcu_cpu_has_callbacks(bool *all_lazy)
 	struct rcu_state *rsp;
 
 	for_each_rcu_flavor(rsp) {
-		rdp = this_cpu_ptr(rsp->rda);
+		rdp = per_cpu_ptr(rsp->rda, cpu);
 		if (!rdp->nxtlist)
 			continue;
 		hc = true;
@@ -4307,17 +4307,6 @@ int rcu_cpu_notify(struct notifier_block *self,
 	case CPU_DYING_FROZEN:
 		for_each_rcu_flavor(rsp)
 			rcu_cleanup_dying_cpu(rsp);
-		break;
-	case CPU_DYING_IDLE:
-		/* QS for any half-done expedited RCU-sched GP. */
-		preempt_disable();
-		rcu_report_exp_rdp(&rcu_sched_state,
-				   this_cpu_ptr(rcu_sched_state.rda), true);
-		preempt_enable();
-
-		for_each_rcu_flavor(rsp) {
-			rcu_cleanup_dying_idle_cpu(cpu, rsp);
-		}
 		break;
 	case CPU_DEAD:
 	case CPU_DEAD_FROZEN:
