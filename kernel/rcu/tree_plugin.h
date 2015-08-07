@@ -1354,9 +1354,9 @@ static void rcu_prepare_kthreads(int cpu)
 int rcu_needs_cpu(unsigned long *delta_jiffies)
 {
 	*delta_jiffies = ULONG_MAX;
-	return IS_ENABLED(CONFIG_RCU_NOCB_CPU_ALL)
-	       ? 0 : rcu_cpu_has_callbacks(NULL);
+	return rcu_cpu_has_callbacks(cpu, NULL);
 }
+#endif /* #ifndef CONFIG_RCU_NOCB_CPU_ALL */
 
 /*
  * Because we do not have RCU_FAST_NO_HZ, don't bother cleaning up
@@ -1444,8 +1444,7 @@ static bool __maybe_unused rcu_try_advance_all_cbs(void)
 		 * completed since we last checked and there are
 		 * callbacks not yet ready to invoke.
 		 */
-		if ((rdp->completed != rnp->completed ||
-		     unlikely(READ_ONCE(rdp->gpwrap))) &&
+		if (rdp->completed != rnp->completed &&
 		    rdp->nxttail[RCU_DONE_TAIL] != rdp->nxttail[RCU_NEXT_TAIL])
 			note_gp_changes(rsp, rdp);
 
@@ -1454,7 +1453,7 @@ static bool __maybe_unused rcu_try_advance_all_cbs(void)
 	}
 	return cbs_ready;
 }
-
+#endif
 /*
  * Allow the CPU to enter dyntick-idle mode unless it has callbacks ready
  * to invoke.  If the CPU has callbacks, try to advance them.  Tell the
@@ -1463,7 +1462,8 @@ static bool __maybe_unused rcu_try_advance_all_cbs(void)
  *
  * The caller must have disabled interrupts.
  */
-int rcu_needs_cpu(unsigned long *dj)
+#ifndef CONFIG_RCU_NOCB_CPU_ALL
+int rcu_needs_cpu(int cpu, unsigned long *dj)
 {
 	struct rcu_dynticks *rdtp = this_cpu_ptr(&rcu_dynticks);
 
@@ -1475,8 +1475,11 @@ int rcu_needs_cpu(unsigned long *dj)
 	/* Snapshot to detect later posting of non-lazy callback. */
 	rdtp->nonlazy_posted_snap = rdtp->nonlazy_posted;
 
+	/* Snapshot to detect later posting of non-lazy callback. */
+	rdtp->nonlazy_posted_snap = rdtp->nonlazy_posted;
+
 	/* If no callbacks, RCU doesn't need the CPU. */
-	if (!rcu_cpu_has_callbacks(&rdtp->all_lazy)) {
+	if (!rcu_cpu_has_callbacks(cpu, &rdtp->all_lazy)) {
 		*dj = ULONG_MAX;
 		return 0;
 	}
@@ -1498,6 +1501,7 @@ int rcu_needs_cpu(unsigned long *dj)
 	}
 	return 0;
 }
+#endif /* #ifndef CONFIG_RCU_NOCB_CPU_ALL */
 
 /*
  * Prepare a CPU for idle from an RCU perspective.  The first major task
@@ -1511,9 +1515,10 @@ int rcu_needs_cpu(unsigned long *dj)
  */
 static void rcu_prepare_for_idle(void)
 {
+#ifndef CONFIG_RCU_NOCB_CPU_ALL
 	bool needwake;
 	struct rcu_data *rdp;
-	struct rcu_dynticks *rdtp = this_cpu_ptr(&rcu_dynticks);
+	struct rcu_dynticks *rdtp = &per_cpu(rcu_dynticks, cpu);
 	struct rcu_node *rnp;
 	struct rcu_state *rsp;
 	int tne;
@@ -1524,7 +1529,7 @@ static void rcu_prepare_for_idle(void)
 	/* Handle nohz enablement switches conservatively. */
 	tne = READ_ONCE(tick_nohz_active);
 	if (tne != rdtp->tick_nohz_enabled_snap) {
-		if (rcu_cpu_has_callbacks(NULL))
+		if (rcu_cpu_has_callbacks(cpu, NULL))
 			invoke_rcu_core(); /* force nohz to see update. */
 		rdtp->tick_nohz_enabled_snap = tne;
 		return;
@@ -1533,7 +1538,7 @@ static void rcu_prepare_for_idle(void)
 		return;
 
 	/* If this is a no-CBs CPU, no callbacks, just return. */
-	if (rcu_is_nocb_cpu(smp_processor_id()))
+	if (rcu_is_nocb_cpu(cpu))
 		return;
 
 	/*
@@ -1557,7 +1562,7 @@ static void rcu_prepare_for_idle(void)
 		return;
 	rdtp->last_accelerate = jiffies;
 	for_each_rcu_flavor(rsp) {
-		rdp = this_cpu_ptr(rsp->rda);
+		rdp = per_cpu_ptr(rsp->rda, cpu);
 		if (!*rdp->nxttail[RCU_DONE_TAIL])
 			continue;
 		rnp = rdp->mynode;
@@ -1568,6 +1573,7 @@ static void rcu_prepare_for_idle(void)
 		if (needwake)
 			rcu_gp_kthread_wake(rsp);
 	}
+#endif /* #ifndef CONFIG_RCU_NOCB_CPU_ALL */
 }
 
 /*
@@ -1575,13 +1581,14 @@ static void rcu_prepare_for_idle(void)
  * any grace periods that elapsed while the CPU was idle, and if any
  * callbacks are now ready to invoke, initiate invocation.
  */
-static void rcu_cleanup_after_idle(void)
+static void rcu_cleanup_after_idle(int cpu)
 {
-	if (IS_ENABLED(CONFIG_RCU_NOCB_CPU_ALL) ||
-	    rcu_is_nocb_cpu(smp_processor_id()))
+#ifndef CONFIG_RCU_NOCB_CPU_ALL
+	if (rcu_is_nocb_cpu(cpu))
 		return;
 	if (rcu_try_advance_all_cbs())
 		invoke_rcu_core();
+#endif /* #ifndef CONFIG_RCU_NOCB_CPU_ALL */
 }
 
 /*
