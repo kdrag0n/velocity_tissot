@@ -395,11 +395,6 @@ AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage -fno-tree-loop-im
 CFLAGS_KCOV	= -fsanitize-coverage=trace-pc
 
-cc-name := gcc
-ifneq ($(REAL_COMPILER),)
-cc-name = $(REAL_COMPILER)
-endif
-
 ifeq ($(cc-name),clang)
 ifneq ($(CROSS_COMPILE),)
 CLANG_TARGET	:= --target=$(notdir $(CLANG_TRIPLE:%-=%))
@@ -748,6 +743,7 @@ endif
 endif
 KBUILD_CFLAGS += $(stackp-flag)
 
+<<<<<<< HEAD
 ifdef CONFIG_KCOV
   ifeq ($(call cc-option, $(CFLAGS_KCOV)),)
     $(warning Cannot use CONFIG_KCOV: \
@@ -756,6 +752,8 @@ ifdef CONFIG_KCOV
   endif
 endif
 
+=======
+>>>>>>> a211c50ce9ac... BACKPORT: kbuild: Fix clang detection
 ifeq ($(cc-name),clang)
 KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-variable)
