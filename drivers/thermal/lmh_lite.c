@@ -443,7 +443,11 @@ static irqreturn_t lmh_isr_thread(int irq, void *data)
 decide_next_action:
 	if (lmh_dat->intr_state == LMH_ISR_POLLING)
 		queue_delayed_work(lmh_dat->poll_wq, &lmh_dat->poll_work,
+<<<<<<< HEAD
 			msecs_to_jiffies(lmh_get_poll_interval()));
+=======
+			msecs_to_jiffies(lmh_poll_interval));
+>>>>>>> 1fc40d83d074... msm: lmh_lite: Make LMH intensity polling a high priority
 	else
 		enable_irq(lmh_dat->irq_num);
 
