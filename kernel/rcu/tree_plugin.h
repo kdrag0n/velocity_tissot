@@ -147,8 +147,8 @@ static void __init rcu_bootup_announce(void)
  * the corresponding expedited grace period will also be the end of the
  * normal grace period.
  */
-static void rcu_preempt_ctxt_queue(struct rcu_node *rnp, struct rcu_data *rdp,
-				   unsigned long flags) __releases(rnp->lock)
+static void rcu_preempt_ctxt_queue(struct rcu_node *rnp, struct rcu_data *rdp)
+	__releases(rnp->lock) /* But leaves rrupts disabled. */
 {
 	int blkd_state = (rnp->gp_tasks ? RCU_GP_TASKS : 0) +
 			 (rnp->exp_tasks ? RCU_EXP_TASKS : 0) +
@@ -236,7 +236,7 @@ static void rcu_preempt_ctxt_queue(struct rcu_node *rnp, struct rcu_data *rdp,
 		rnp->gp_tasks = &t->rcu_node_entry;
 	if (!rnp->exp_tasks && (blkd_state & RCU_EXP_BLKD))
 		rnp->exp_tasks = &t->rcu_node_entry;
-	raw_spin_unlock(&rnp->lock);
+	raw_spin_unlock(&rnp->lock); /* rrupts remain disabled. */
 
 	/*
 	 * Report the quiescent state for the expedited GP.  This expedited
@@ -251,7 +251,6 @@ static void rcu_preempt_ctxt_queue(struct rcu_node *rnp, struct rcu_data *rdp,
 	} else {
 		WARN_ON_ONCE(t->rcu_read_unlock_special.b.exp_need_qs);
 	}
-	local_irq_restore(flags);
 }
 
 /*
@@ -317,7 +316,7 @@ static void rcu_preempt_note_context_switch(void)
 				       (rnp->qsmask & rdp->grpmask)
 				       ? rnp->gpnum
 				       : rnp->gpnum + 1);
-		rcu_preempt_ctxt_queue(rnp, rdp, flags);
+		rcu_preempt_ctxt_queue(rnp, rdp);
 	} else if (t->rcu_read_lock_nesting < 0 &&
 		   t->rcu_read_unlock_special.s) {
 
