@@ -547,12 +547,12 @@ struct devfreq *devfreq_add_device(struct device *dev,
 	if (devfreq->governor)
 		err = devfreq->governor->event_handler(devfreq,
 					DEVFREQ_GOV_START, NULL);
-	mutex_unlock(&devfreq_list_lock);
 	if (err) {
 		dev_err(dev, "%s: Unable to start governor for the device\n",
 			__func__);
 		goto err_init;
 	}
+	mutex_unlock(&devfreq_list_lock);
 
 	for (i = 0; i < ARRAY_SIZE(boost_devices); i++) {
 		if (!strcmp(dev_name(dev), boost_devices[i])) {
@@ -565,6 +565,8 @@ struct devfreq *devfreq_add_device(struct device *dev,
 
 err_init:
 	list_del(&devfreq->node);
+	mutex_unlock(&devfreq_list_lock);
+
 	device_unregister(&devfreq->dev);
 err_dev:
 	kfree(devfreq);
