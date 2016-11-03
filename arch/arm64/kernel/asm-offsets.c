@@ -46,7 +46,9 @@ int main(void)
 #endif
 #ifndef CONFIG_THREAD_INFO_IN_TASK
   DEFINE(TI_TASK,		offsetof(struct thread_info, task));
+#endif
   DEFINE(TI_EXEC_DOMAIN,	offsetof(struct thread_info, exec_domain));
+#ifndef CONFIG_THREAD_INFO_IN_TASK
   DEFINE(TI_CPU,		offsetof(struct thread_info, cpu));
 #endif
 #ifdef CONFIG_ARM64_SW_TTBR0_PAN
