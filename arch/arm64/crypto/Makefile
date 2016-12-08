@@ -29,7 +29,10 @@ aes-ce-blk-y := aes-glue-ce.o aes-ce.o
 obj-$(CONFIG_CRYPTO_AES_ARM64_NEON_BLK) += aes-neon-blk.o
 aes-neon-blk-y := aes-glue-neon.o aes-neon.o
 
-AFLAGS_aes-ce.o		:= -DINTERLEAVE=2 -DINTERLEAVE_INLINE
+obj-$(CONFIG_CRYPTO_CHACHA20_NEON) += chacha20-neon.o
+chacha20-neon-y := chacha20-neon-core.o chacha20-neon-glue.o
+
+AFLAGS_aes-ce.o		:= -DINTERLEAVE=4 -DINTERLEAVE_INLINE
 AFLAGS_aes-neon.o	:= -DINTERLEAVE=4
 
 CFLAGS_aes-glue-ce.o	:= -DUSE_V8_CRYPTO_EXTENSIONS
