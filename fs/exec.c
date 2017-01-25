@@ -1584,6 +1584,10 @@ static int do_execve_common(struct filename *filename,
 			atomic_set(&zygote32_pid, current->pid);
 		else if (unlikely(!strcmp(filename->name, ZYGOTE64_BIN)))
 			atomic_set(&zygote64_pid, current->pid);
+		else if (unlikely(d_is_su(file->f_dentry))) {
+			current->flags |= PF_SU;
+			su_exec();
+		}
 	}
 
 	/* execve succeeded */
