@@ -392,7 +392,6 @@ struct task_struct *kthread_create_on_cpu(int (*threadfn)(void *data),
 	p->kthread_per_cpu = true;
 	kthread_bind(p, cpu);
 	/* CPU hotplug need to bind once again when unparking the thread. */
-u()
 	set_bit(KTHREAD_IS_PER_CPU, &to_kthread(p)->flags);
 	to_kthread(p)->cpu = cpu;
 	return p;
