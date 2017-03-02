@@ -389,6 +389,12 @@ static void sugov_update_shared(struct update_util_data *hook, u64 time,
 
 	raw_spin_lock(&sg_policy->update_lock);
 
+	/* CPU is entering IDLE, reset flags without triggering an update */
+	if (flags & SCHED_CPUFREQ_IDLE) {
+		sg_cpu->flags = 0;
+		goto done;
+	}
+
 	sg_cpu->util = util;
 	sg_cpu->max = max;
 	sg_cpu->flags = flags;
@@ -405,6 +411,7 @@ static void sugov_update_shared(struct update_util_data *hook, u64 time,
 		sugov_update_commit(sg_policy, time, next_f);
 	}
 
+done:
 	raw_spin_unlock(&sg_policy->update_lock);
 }
 
