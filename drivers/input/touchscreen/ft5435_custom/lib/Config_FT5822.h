@@ -2,26 +2,21 @@
 * Copyright (C) 2012-2015, Focaltech Systems (R)，All Rights Reserved.
 * Copyright (C) 2017 XiaoMi, Inc.
 *
-* File Name: Config_FT5X46.h
+* File Name: Config_FT5822.h
 *
 * Author: Software Development Team, AE
 *
-* Created: 2015-07-14
+* Created: 2015-07-23
 *
 * Abstract: Set Config for FT5X46\FT5X46i\FT5526\FT3X17\FT5436\FT3X27\FT5526i\FT5416\FT5426\FT5435
 *
 ************************************************************************/
-#ifndef _CONFIG_FT5X46_H
-#define _CONFIG_FT5X46_H
+#ifndef _CONFIG_FT5822_H
+#define _CONFIG_FT5822_H
 
 #include "test_lib.h"
 
-/*-----------------------------------------------
-FT5X46和FT5X22是同一系列芯片
-FT5422\FT5X22是内部研发使用芯片代号
-FT5X46是市场使用芯片代号
-------------------------------------------------*/
-struct stCfg_FT5X22_TestItem {
+struct stCfg_FT5822_TestItem {
 	bool FW_VERSION_TEST;
 	bool FACTORY_ID_TEST;
 	bool PROJECT_CODE_TEST;
@@ -48,7 +43,7 @@ struct stCfg_FT5X22_TestItem {
 	bool SITO_RAWDATA_UNIFORMITY_TEST;
 	bool PATTERN_TEST;
 };
-struct stCfg_FT5X22_BasicThreshold {
+struct stCfg_FT5822_BasicThreshold {
 	BYTE FW_VER_VALUE;
 	BYTE Factory_ID_Number;
 	char Project_Code[32];
@@ -62,6 +57,9 @@ struct stCfg_FT5X22_BasicThreshold {
 	BYTE RawDataTest_SetHighFreq;
 	int AdcDetect_Max;
 
+
+
+
 	int SCapCbTest_OFF_Min;
 	int SCapCbTest_OFF_Max;
 	int SCapCbTest_ON_Min;
@@ -69,6 +67,8 @@ struct stCfg_FT5X22_BasicThreshold {
 	bool SCapCbTest_LetTx_Disable;
 	BYTE SCapCbTest_SetWaterproof_OFF;
 	BYTE SCapCbTest_SetWaterproof_ON;
+
+
 
 	int SCapRawDataTest_OFF_Min;
 	int SCapRawDataTest_OFF_Max;
@@ -138,41 +138,41 @@ struct stCfg_FT5X22_BasicThreshold {
 	bool bPatternAA;
 	bool bPatternBin;
 };
-enum enumTestItem_FT5X22 {
-	Code_FT5X22_ENTER_FACTORY_MODE,
-	Code_FT5X22_DOWNLOAD,
-	Code_FT5X22_UPGRADE,
-	Code_FT5X22_FACTORY_ID_TEST,
-	Code_FT5X22_PROJECT_CODE_TEST,
-	Code_FT5X22_FW_VERSION_TEST,
-	Code_FT5X22_IC_VERSION_TEST,
-	Code_FT5X22_RAWDATA_TEST,
-	Code_FT5X22_ADCDETECT_TEST,
-	Code_FT5X22_SCAP_CB_TEST,
-	Code_FT5X22_SCAP_RAWDATA_TEST,
-	Code_FT5X22_CHANNEL_NUM_TEST,
-	Code_FT5X22_INT_PIN_TEST,
-	Code_FT5X22_RESET_PIN_TEST,
-	Code_FT5X22_NOISE_TEST,
-	Code_FT5X22_WEAK_SHORT_CIRCUIT_TEST,
-	Code_FT5X22_UNIFORMITY_TEST,
-	Code_FT5X22_CM_TEST,
-	Code_FT5X22_RAWDATA_MARGIN_TEST,
-	Code_FT5X22_WRITE_CONFIG,
-	Code_FT5X22_PANELDIFFER_TEST,
-	Code_FT5X22_PANELDIFFER_UNIFORMITY_TEST,
-	Code_FT5X22_LCM_ID_TEST,
-	Code_FT5X22_JUDEG_NORMALIZE_TYPE,
-	Code_FT5X22_TE_TEST,
-	Code_FT5X22_SITO_RAWDATA_UNIFORMITY_TEST,
-	Code_FT5X22_PATTERN_TEST,
+enum enumTestItem_FT5822 {
+	Code_FT5822_ENTER_FACTORY_MODE,
+	Code_FT5822_DOWNLOAD,
+	Code_FT5822_UPGRADE,
+	Code_FT5822_FACTORY_ID_TEST,
+	Code_FT5822_PROJECT_CODE_TEST,
+	Code_FT5822_FW_VERSION_TEST,
+	Code_FT5822_IC_VERSION_TEST,
+	Code_FT5822_RAWDATA_TEST,
+	Code_FT5822_ADCDETECT_TEST,
+	Code_FT5822_SCAP_CB_TEST,
+	Code_FT5822_SCAP_RAWDATA_TEST,
+	Code_FT5822_CHANNEL_NUM_TEST,
+	Code_FT5822_INT_PIN_TEST,
+	Code_FT5822_RESET_PIN_TEST,
+	Code_FT5822_NOISE_TEST,
+	Code_FT5822_WEAK_SHORT_CIRCUIT_TEST,
+	Code_FT5822_UNIFORMITY_TEST,
+	Code_FT5822_CM_TEST,
+	Code_FT5822_RAWDATA_MARGIN_TEST,
+	Code_FT5822_WRITE_CONFIG,
+	Code_FT5822_PANELDIFFER_TEST,
+	Code_FT5822_PANELDIFFER_UNIFORMITY_TEST,
+	Code_FT5822_LCM_ID_TEST,
+	Code_FT5822_JUDEG_NORMALIZE_TYPE,
+	Code_FT5822_TE_TEST,
+	Code_FT5822_SITO_RAWDATA_UNIFORMITY_TEST,
+	Code_FT5822_PATTERN_TEST,
 };
 
-extern struct stCfg_FT5X22_TestItem g_stCfg_FT5X22_TestItem;
-extern struct stCfg_FT5X22_BasicThreshold g_stCfg_FT5X22_BasicThreshold;
+extern struct stCfg_FT5822_TestItem g_stCfg_FT5822_TestItem;
+extern struct stCfg_FT5822_BasicThreshold g_stCfg_FT5822_BasicThreshold;
 
-void OnInit_FT5X22_TestItem(char *strIniFile);
-void OnInit_FT5X22_BasicThreshold(char *strIniFile);
-void SetTestItem_FT5X22(void);
+void OnInit_FT5822_TestItem(char *strIniFile);
+void OnInit_FT5822_BasicThreshold(char *strIniFile);
+void SetTestItem_FT5822(void);
 
 #endif

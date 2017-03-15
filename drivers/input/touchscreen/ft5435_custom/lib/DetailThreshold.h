@@ -1,5 +1,6 @@
 /************************************************************************
 * Copyright (C) 2012-2015, Focaltech Systems (R)£¬All Rights Reserved.
+* Copyright (C) 2017 XiaoMi, Inc.
 *
 * File Name: DetailThreshold.h
 *
@@ -36,14 +37,8 @@ struct stCfg_MCap_DetailThreshold {
 	int RawDataTest_High_Min[TX_NUM_MAX][RX_NUM_MAX];
 	int RawDataTest_High_Max[TX_NUM_MAX][RX_NUM_MAX];
 
-
-
-
 	int RxLinearityTest_Max[TX_NUM_MAX][RX_NUM_MAX];
 	int TxLinearityTest_Max[TX_NUM_MAX][RX_NUM_MAX];
-
-
-
 
 	int SCapRawDataTest_ON_Max[TX_NUM_MAX][RX_NUM_MAX];
 	int SCapRawDataTest_ON_Min[TX_NUM_MAX][RX_NUM_MAX];
@@ -88,11 +83,7 @@ struct stCfg_SCap_DetailThreshold {
 	int CBDeviationTest_Base[MAX_CHANNEL_NUM];
 	int K1DifferTest_Base[MAX_CHANNEL_NUM];
 
-
 };
-
-
-
 
 void OnInit_MCap_DetailThreshold(char *strIniFile);
 void OnInit_SCap_DetailThreshold(char *strIniFile);

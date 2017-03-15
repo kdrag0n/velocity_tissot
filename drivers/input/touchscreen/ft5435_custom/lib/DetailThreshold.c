@@ -1,5 +1,6 @@
 /************************************************************************
 * Copyright (C) 2012-2015, Focaltech Systems (R)£¬All Rights Reserved.
+* Copyright (C) 2017 XiaoMi, Inc.
 *
 * File Name: DetailThreshold.c
 *
@@ -127,11 +128,6 @@ void OnGetTestItemParam(char *strItemName, char *strIniFile, int iDefautValue)
 				index++;
 			}
 		}
-
-
-
-
-
 	}
 }
 void OnInit_MCap_DetailThreshold(char *strIniFile)
@@ -193,7 +189,6 @@ void OnInit_DThreshold_RawDataTest(char *strIniFile)
 	char str_tmp[128];
 	int index = 0;
 	int  k = 0, i = 0, j = 0;
-
 	GetPrivateProfileString("Basic_Threshold", "RawDataTest_Max", "10000", str, strIniFile);
 	MaxValue = atoi(str);
 
@@ -403,12 +398,10 @@ void OnInit_DThreshold_SCapRawDataTest(char *strIniFile)
 	int index = 0;
 	int  k = 0, i = 0, j = 0;
 
-
 	GetPrivateProfileString("Basic_Threshold", "SCapRawDataTest_OFF_Min", "150", str, strIniFile);
 	MinValue = atoi(str);
 	GetPrivateProfileString("Basic_Threshold", "SCapRawDataTest_OFF_Max", "1000", str, strIniFile);
 	MaxValue = atoi(str);
-
 
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < g_ScreenSetParam.iUsedMaxRxNum; j++) {
@@ -438,7 +431,6 @@ void OnInit_DThreshold_SCapRawDataTest(char *strIniFile)
 			}
 		}
 	}
-
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < g_ScreenSetParam.iUsedMaxRxNum; j++) {
 			g_stCfg_MCap_DetailThreshold.SCapRawDataTest_OFF_Min[i][j] = MinValue;
@@ -448,7 +440,8 @@ void OnInit_DThreshold_SCapRawDataTest(char *strIniFile)
 		sprintf(str, "ScapRawData_OFF_Min_%d", (i + 1));
 		dividerPos = GetPrivateProfileString("SpecialSet", str, "NULL", strTemp, strIniFile);
 		sprintf(strValue, "%s", strTemp);
-		if (0 == dividerPos) continue;
+		if (0 == dividerPos)
+			continue;
 		index = 0;
 		k = 0;
 		memset(str_tmp, 0x00, sizeof(str_tmp));
@@ -466,7 +459,6 @@ void OnInit_DThreshold_SCapRawDataTest(char *strIniFile)
 			}
 		}
 	}
-
 	GetPrivateProfileString("Basic_Threshold", "SCapRawDataTest_ON_Min", "150", str, strIniFile);
 	MinValue = atoi(str);
 	GetPrivateProfileString("Basic_Threshold", "SCapRawDataTest_ON_Max", "1000", str, strIniFile);
@@ -500,7 +492,6 @@ void OnInit_DThreshold_SCapRawDataTest(char *strIniFile)
 			}
 		}
 	}
-
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < g_ScreenSetParam.iUsedMaxRxNum; j++) {
 			g_stCfg_MCap_DetailThreshold.SCapRawDataTest_ON_Min[i][j] = MinValue;
@@ -544,7 +535,6 @@ void OnInit_DThreshold_SCapCbTest(char *strIniFile)
 	GetPrivateProfileString("Basic_Threshold", "SCapCbTest_ON_Max", "240", str, strIniFile);
 	MaxValue = atoi(str);
 
-
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < g_ScreenSetParam.iUsedMaxRxNum; j++) {
 			g_stCfg_MCap_DetailThreshold.SCapCbTest_ON_Max[i][j] = MaxValue;
@@ -573,7 +563,6 @@ void OnInit_DThreshold_SCapCbTest(char *strIniFile)
 			}
 		}
 	}
-
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < g_ScreenSetParam.iUsedMaxRxNum; j++) {
 			g_stCfg_MCap_DetailThreshold.SCapCbTest_ON_Min[i][j] = MinValue;
@@ -606,7 +595,6 @@ void OnInit_DThreshold_SCapCbTest(char *strIniFile)
 	MinValue = atoi(str);
 	GetPrivateProfileString("Basic_Threshold", "SCapCbTest_OFF_Max", "240", str, strIniFile);
 	MaxValue = atoi(str);
-
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < g_ScreenSetParam.iUsedMaxRxNum; j++) {
 			g_stCfg_MCap_DetailThreshold.SCapCbTest_OFF_Max[i][j] = MaxValue;
@@ -635,7 +623,6 @@ void OnInit_DThreshold_SCapCbTest(char *strIniFile)
 			}
 		}
 	}
-
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < g_ScreenSetParam.iUsedMaxRxNum; j++) {
 			g_stCfg_MCap_DetailThreshold.SCapCbTest_OFF_Min[i][j] = MinValue;
@@ -664,6 +651,7 @@ void OnInit_DThreshold_SCapCbTest(char *strIniFile)
 			}
 		}
 	}
+
 }
 
 void OnInit_DThreshold_RxLinearityTest(char *strIniFile)
@@ -674,7 +662,6 @@ void OnInit_DThreshold_RxLinearityTest(char *strIniFile)
 	char str_tmp[128];
 	int index = 0;
 	int  k = 0, i = 0, j = 0;
-
 	GetPrivateProfileString("Basic_Threshold", "RxLinearityTest_Max", "50", str, strIniFile);
 	MaxValue = atoi(str);
 
@@ -722,7 +709,6 @@ void OnInit_DThreshold_TxLinearityTest(char *strIniFile)
 	char str_tmp[128];
 	int index = 0;
 	int  k = 0, i = 0, j = 0;
-
 	GetPrivateProfileString("Basic_Threshold", "TxLinearityTest_Max", "50", str, strIniFile);
 	MaxValue = atoi(str);
 
@@ -771,12 +757,10 @@ void OnInit_DThreshold_ForceTouch_SCapRawDataTest(char *strIniFile)
 	int index = 0;
 	int  k = 0, i = 0, j = 0;
 
-
 	GetPrivateProfileString("Basic_Threshold", "ForceTouch_SCapRawDataTest_OFF_Min", "150", str, strIniFile);
 	MinValue = atoi(str);
 	GetPrivateProfileString("Basic_Threshold", "ForceTouch_SCapRawDataTest_OFF_Max", "1000", str, strIniFile);
 	MaxValue = atoi(str);
-
 
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < g_ScreenSetParam.iUsedMaxRxNum; j++) {
@@ -787,7 +771,8 @@ void OnInit_DThreshold_ForceTouch_SCapRawDataTest(char *strIniFile)
 		sprintf(str, "ForceTouch_ScapRawData_OFF_Max_%d", (i + 1));
 		dividerPos = GetPrivateProfileString("SpecialSet", str, "NULL", strTemp, strIniFile);
 		sprintf(strValue, "%s", strTemp);
-		if (0 == dividerPos) continue;
+		if (0 == dividerPos)
+			continue;
 		index = 0;
 		k = 0;
 		memset(str_tmp, 0x00, sizeof(str_tmp));
@@ -797,8 +782,7 @@ void OnInit_DThreshold_ForceTouch_SCapRawDataTest(char *strIniFile)
 				index = 0;
 				memset(str_tmp, 0x00, sizeof(str_tmp));
 				k++;
-			}
-			else {
+			} else {
 				if (' ' == strValue[j])
 					continue;
 				str_tmp[index] = strValue[j];
@@ -806,7 +790,6 @@ void OnInit_DThreshold_ForceTouch_SCapRawDataTest(char *strIniFile)
 			}
 		}
 	}
-
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < g_ScreenSetParam.iUsedMaxRxNum; j++) {
 			g_stCfg_MCap_DetailThreshold.ForceTouch_SCapRawDataTest_OFF_Min[i][j] = MinValue;
@@ -836,11 +819,11 @@ void OnInit_DThreshold_ForceTouch_SCapRawDataTest(char *strIniFile)
 		}
 	}
 
-
 	GetPrivateProfileString("Basic_Threshold", "ForceTouch_SCapRawDataTest_ON_Min", "150", str, strIniFile);
 	MinValue = atoi(str);
 	GetPrivateProfileString("Basic_Threshold", "ForceTouch_SCapRawDataTest_ON_Max", "1000", str, strIniFile);
 	MaxValue = atoi(str);
+
 
 
 	for (i = 0; i < 2; i++) {
@@ -871,7 +854,6 @@ void OnInit_DThreshold_ForceTouch_SCapRawDataTest(char *strIniFile)
 			}
 		}
 	}
-
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < g_ScreenSetParam.iUsedMaxRxNum; j++) {
 			g_stCfg_MCap_DetailThreshold.ForceTouch_SCapRawDataTest_ON_Min[i][j] = MinValue;
@@ -907,15 +889,16 @@ void OnInit_DThreshold_ForceTouch_SCapCbTest(char *strIniFile)
 {
 	char str[128], strTemp[MAX_PATH], strValue[MAX_PATH];
 	int MaxValue, MinValue;
-	int   dividerPos = 0;
+	int dividerPos = 0;
 	char str_tmp[128];
 	int index = 0;
-	int  k = 0, i = 0, j = 0;
+	int k = 0, i = 0, j = 0;
 
 	GetPrivateProfileString("Basic_Threshold", "ForceTouch_SCapCbTest_ON_Min", "0", str, strIniFile);
 	MinValue = atoi(str);
 	GetPrivateProfileString("Basic_Threshold", "ForceTouch_SCapCbTest_ON_Max", "240", str, strIniFile);
 	MaxValue = atoi(str);
+
 
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < g_ScreenSetParam.iUsedMaxRxNum; j++) {
@@ -945,7 +928,6 @@ void OnInit_DThreshold_ForceTouch_SCapCbTest(char *strIniFile)
 			}
 		}
 	}
-
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < g_ScreenSetParam.iUsedMaxRxNum; j++) {
 			g_stCfg_MCap_DetailThreshold.ForceTouch_SCapCbTest_ON_Min[i][j] = MinValue;
@@ -957,7 +939,8 @@ void OnInit_DThreshold_ForceTouch_SCapCbTest(char *strIniFile)
 		sprintf(strValue, "%s", strTemp);
 		if (0 == dividerPos)
 			continue;
-		index = 0; printk("%s\r\n", strTemp);
+		index = 0;
+		printk("%s\r\n", strTemp);
 		k = 0;
 		memset(str_tmp, 0x00, sizeof(str_tmp));
 		for (j = 0; j < dividerPos; j++) {
@@ -978,7 +961,6 @@ void OnInit_DThreshold_ForceTouch_SCapCbTest(char *strIniFile)
 	MinValue = atoi(str);
 	GetPrivateProfileString("Basic_Threshold", "ForceTouch_SCapCbTest_OFF_Max", "240", str, strIniFile);
 	MaxValue = atoi(str);
-
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < g_ScreenSetParam.iUsedMaxRxNum; j++) {
 			g_stCfg_MCap_DetailThreshold.ForceTouch_SCapCbTest_OFF_Max[i][j] = MaxValue;
@@ -1007,7 +989,6 @@ void OnInit_DThreshold_ForceTouch_SCapCbTest(char *strIniFile)
 			}
 		}
 	}
-
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < g_ScreenSetParam.iUsedMaxRxNum; j++) {
 			g_stCfg_MCap_DetailThreshold.ForceTouch_SCapCbTest_OFF_Min[i][j] = MinValue;

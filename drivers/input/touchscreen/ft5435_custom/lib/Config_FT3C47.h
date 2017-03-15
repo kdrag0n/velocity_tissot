@@ -2,26 +2,26 @@
 * Copyright (C) 2012-2015, Focaltech Systems (R)，All Rights Reserved.
 * Copyright (C) 2017 XiaoMi, Inc.
 *
-* File Name: Config_FT5X46.h
+* File Name: Config_FT3C47.h
 *
 * Author: Software Development Team, AE
 *
-* Created: 2015-07-14
+* Created: 2015-12-02
 *
-* Abstract: Set Config for FT5X46\FT5X46i\FT5526\FT3X17\FT5436\FT3X27\FT5526i\FT5416\FT5426\FT5435
+* Abstract: Set Config for FT3C47
 *
 ************************************************************************/
-#ifndef _CONFIG_FT5X46_H
-#define _CONFIG_FT5X46_H
+#ifndef _CONFIG_FT3C47_H
+#define _CONFIG_FT3C47_H
 
 #include "test_lib.h"
 
 /*-----------------------------------------------
-FT5X46和FT5X22是同一系列芯片
-FT5422\FT5X22是内部研发使用芯片代号
-FT5X46是市场使用芯片代号
+FT3C47和FT3C47是同一系列芯片
+FT5422\FT3C47是内部研发使用芯片代号
+FT3C47是市场使用芯片代号
 ------------------------------------------------*/
-struct stCfg_FT5X22_TestItem {
+struct stCfg_FT3C47_TestItem {
 	bool FW_VERSION_TEST;
 	bool FACTORY_ID_TEST;
 	bool PROJECT_CODE_TEST;
@@ -47,8 +47,15 @@ struct stCfg_FT5X22_TestItem {
 	bool TE_TEST;
 	bool SITO_RAWDATA_UNIFORMITY_TEST;
 	bool PATTERN_TEST;
+
+	bool FORCETOUCH_CHANNEL_NUM_TEST;
+	bool FORCETOUCH_RAWDATA_TEST;
+	bool FORCETOUCH_CB_TEST;
+	bool FORCETOUCH_WEAK_SHORT_CIRCUIT_TEST;
+	bool FORCETOUCH_FLATNESS_TEST;
 };
-struct stCfg_FT5X22_BasicThreshold {
+
+struct stCfg_FT3C47_BasicThreshold {
 	BYTE FW_VER_VALUE;
 	BYTE Factory_ID_Number;
 	char Project_Code[32];
@@ -62,6 +69,9 @@ struct stCfg_FT5X22_BasicThreshold {
 	BYTE RawDataTest_SetHighFreq;
 	int AdcDetect_Max;
 
+
+
+
 	int SCapCbTest_OFF_Min;
 	int SCapCbTest_OFF_Max;
 	int SCapCbTest_ON_Min;
@@ -69,6 +79,8 @@ struct stCfg_FT5X22_BasicThreshold {
 	bool SCapCbTest_LetTx_Disable;
 	BYTE SCapCbTest_SetWaterproof_OFF;
 	BYTE SCapCbTest_SetWaterproof_ON;
+
+
 
 	int SCapRawDataTest_OFF_Min;
 	int SCapRawDataTest_OFF_Max;
@@ -99,6 +111,14 @@ struct stCfg_FT5X22_BasicThreshold {
 	bool bNoiseThreshold_Choose;
 	int NoiseTest_Threshold;
 	int NoiseTest_MinNgFrame;
+
+
+
+
+
+
+
+
 
 	int WeakShortTest_CG;
 	int WeakShortTest_CC;
@@ -137,42 +157,76 @@ struct stCfg_FT5X22_BasicThreshold {
 	bool bPattern55;
 	bool bPatternAA;
 	bool bPatternBin;
+
+	int ForceTouch_ChannelNumTest_ChannelNum;
+
+	int ForceTouch_SCapRawDataTest_OFF_Min;
+	int ForceTouch_SCapRawDataTest_OFF_Max;
+	int ForceTouch_SCapRawDataTest_ON_Min;
+	int ForceTouch_SCapRawDataTest_ON_Max;
+	BYTE ForceTouch_SCapRawDataTest_SetWaterproof_OFF;
+	BYTE ForceTouch_SCapRawDataTest_SetWaterproof_ON;
+
+	int ForceTouch_SCapCbTest_OFF_Min;
+	int ForceTouch_SCapCbTest_OFF_Max;
+	int ForceTouch_SCapCbTest_ON_Min;
+	int ForceTouch_SCapCbTest_ON_Max;
+	BYTE ForceTouch_SCapCBTest_SetWaterproof_OFF;
+	BYTE ForceTouch_SCapCBTest_SetWaterproof_ON;
+
+	int	 ForceTouch_WeakShortTest_CG;
+	int  ForceTouch_WeakShortTest_CC;
+	bool bForceTouch_WeakShortTest_CapShortTest;
+
+	int ForceTouch_FlatnessTest_Differ_Threshold;
+	int ForceTouch_FlatnessTest_Differ_Coefficient;
+	bool ForceTouch_FlatnessTest_Differ_Threshold_Check;
+	bool ForceTouch_FlatnessTest_Differ_Coefficient_Check;
+
 };
-enum enumTestItem_FT5X22 {
-	Code_FT5X22_ENTER_FACTORY_MODE,
-	Code_FT5X22_DOWNLOAD,
-	Code_FT5X22_UPGRADE,
-	Code_FT5X22_FACTORY_ID_TEST,
-	Code_FT5X22_PROJECT_CODE_TEST,
-	Code_FT5X22_FW_VERSION_TEST,
-	Code_FT5X22_IC_VERSION_TEST,
-	Code_FT5X22_RAWDATA_TEST,
-	Code_FT5X22_ADCDETECT_TEST,
-	Code_FT5X22_SCAP_CB_TEST,
-	Code_FT5X22_SCAP_RAWDATA_TEST,
-	Code_FT5X22_CHANNEL_NUM_TEST,
-	Code_FT5X22_INT_PIN_TEST,
-	Code_FT5X22_RESET_PIN_TEST,
-	Code_FT5X22_NOISE_TEST,
-	Code_FT5X22_WEAK_SHORT_CIRCUIT_TEST,
-	Code_FT5X22_UNIFORMITY_TEST,
-	Code_FT5X22_CM_TEST,
-	Code_FT5X22_RAWDATA_MARGIN_TEST,
-	Code_FT5X22_WRITE_CONFIG,
-	Code_FT5X22_PANELDIFFER_TEST,
-	Code_FT5X22_PANELDIFFER_UNIFORMITY_TEST,
-	Code_FT5X22_LCM_ID_TEST,
-	Code_FT5X22_JUDEG_NORMALIZE_TYPE,
-	Code_FT5X22_TE_TEST,
-	Code_FT5X22_SITO_RAWDATA_UNIFORMITY_TEST,
-	Code_FT5X22_PATTERN_TEST,
+enum enumTestItem_FT3C47 {
+	Code_FT3C47_ENTER_FACTORY_MODE,
+	Code_FT3C47_DOWNLOAD,
+	Code_FT3C47_UPGRADE,
+	Code_FT3C47_FACTORY_ID_TEST,
+	Code_FT3C47_PROJECT_CODE_TEST,
+	Code_FT3C47_FW_VERSION_TEST,
+	Code_FT3C47_IC_VERSION_TEST,
+	Code_FT3C47_RAWDATA_TEST,
+	Code_FT3C47_ADCDETECT_TEST,
+	Code_FT3C47_SCAP_CB_TEST,
+	Code_FT3C47_SCAP_RAWDATA_TEST,
+	Code_FT3C47_CHANNEL_NUM_TEST,
+	Code_FT3C47_INT_PIN_TEST,
+	Code_FT3C47_RESET_PIN_TEST,
+	Code_FT3C47_NOISE_TEST,
+	Code_FT3C47_WEAK_SHORT_CIRCUIT_TEST,
+	Code_FT3C47_UNIFORMITY_TEST,
+	Code_FT3C47_CM_TEST,
+	Code_FT3C47_RAWDATA_MARGIN_TEST,
+	Code_FT3C47_WRITE_CONFIG,
+	Code_FT3C47_PANELDIFFER_TEST,
+	Code_FT3C47_PANELDIFFER_UNIFORMITY_TEST,
+	Code_FT3C47_LCM_ID_TEST,
+	Code_FT3C47_JUDEG_NORMALIZE_TYPE,
+	Code_FT3C47_TE_TEST,
+	Code_FT3C47_SITO_RAWDATA_UNIFORMITY_TEST,
+	Code_FT3C47_PATTERN_TEST,
+
+	Code_FT3C47_GPIO_TEST,
+	Code_FT3C47_LCD_NOISE_TEST,
+	Code_FT3C47_FORCE_TOUCH_CHANNEL_NUM_TEST,
+	Code_FT3C47_FORCE_TOUCH_SCAP_RAWDATA_TEST,
+	Code_FT3C47_FORCE_TOUCH_SCAP_CB_TEST,
+	Code_FT3C47_FORCE_TOUCH_WEAK_SHORT_CIRCUIT_TEST,
+	Code_FT3C47_FORCE_TOUCH_FLATNESS_TEST,
 };
 
-extern struct stCfg_FT5X22_TestItem g_stCfg_FT5X22_TestItem;
-extern struct stCfg_FT5X22_BasicThreshold g_stCfg_FT5X22_BasicThreshold;
+extern struct stCfg_FT3C47_TestItem g_stCfg_FT3C47_TestItem;
+extern struct stCfg_FT3C47_BasicThreshold g_stCfg_FT3C47_BasicThreshold;
 
-void OnInit_FT5X22_TestItem(char *strIniFile);
-void OnInit_FT5X22_BasicThreshold(char *strIniFile);
-void SetTestItem_FT5X22(void);
+void OnInit_FT3C47_TestItem(char *strIniFile);
+void OnInit_FT3C47_BasicThreshold(char *strIniFile);
+void SetTestItem_FT3C47(void);
 
 #endif

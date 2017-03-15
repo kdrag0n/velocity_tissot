@@ -2,13 +2,13 @@
 * Copyright (C) 2012-2015, Focaltech Systems (R)£¬All Rights Reserved.
 * Copyright (C) 2017 XiaoMi, Inc.
 *
-* File Name: Test_FT5X46.c
+* File Name: Test_FT3C47.c
 *
 * Author: Software Development Team, AE
 *
-* Created: 2015-07-14
+* Created: 2015-12-02
 *
-* Abstract: test item for FT5X46\FT5X46i\FT5526\FT3X17\FT5436\FT3X27\FT5526i\FT5416\FT5426\FT5435
+* Abstract: test item for FT3C47
 *
 ************************************************************************/
 
@@ -21,20 +21,20 @@
 
 #include "Global.h"
 #include "DetailThreshold.h"
-#include "Test_FT5X46.h"
-#include "Config_FT5X46.h"
+#include "Test_FT3C47.h"
+#include "Config_FT3C47.h"
 
 
 /*******************************************************************************
 * Private constant and macro definitions using #define
 *******************************************************************************/
-#define IC_TEST_VERSION  "Test version: V1.1.0--2015-10-22, (sync version of FT_MultipleTest: V2.7.0.3--2015-07-13)"
+#define IC_TEST_VERSION  "Test version: V1.0.0--2015-12-02, (sync version of FT_MultipleTest: V2.8.0.4 ------ 2015-11-30)"
 
 #define DEVIDE_MODE_ADDR	0x00
 #define REG_LINE_NUM	0x01
 #define REG_TX_NUM	0x02
 #define REG_RX_NUM	0x03
-#define REG_PATTERN_5422        0x53
+#define REG_PATTERN_3C47        0x53
 #define REG_MAPPING_SWITCH      0x54
 #define REG_TX_NOMAPPING_NUM        0x55
 #define REG_RX_NOMAPPING_NUM      0x56
@@ -44,6 +44,9 @@
 #define REG_ScCbAddrR	0x45
 #define REG_RawBuf0 0x36
 #define REG_WATER_CHANNEL_SELECT 0x09
+
+#define REG_REAL_TX_NUM         0XEB
+#define REG_REAL_RX_NUM         0XEC
 
 /*******************************************************************************
 * Private enumerations, structures and unions using typedef
@@ -64,6 +67,11 @@ static int m_RawData[TX_NUM_MAX][RX_NUM_MAX] = {{0, 0} };
 static int m_iTempRawData[TX_NUM_MAX * RX_NUM_MAX] = {0};
 static unsigned char m_ucTempData[TX_NUM_MAX * RX_NUM_MAX*2] = {0};
 static bool m_bV3TP;
+
+static unsigned char m_iAllTx;
+static unsigned char m_iAllRx;
+static int m_iForceTouchTx;
+static int m_iForceTouchRx;
 
 
 static char g_pStoreAllData[1024*80] = {0};
@@ -93,12 +101,12 @@ static unsigned char GetPanelCols(unsigned char *pPanelCols);
 static unsigned char GetTxSC_CB(unsigned char index, unsigned char *pcbValue);
 static unsigned char GetRawData(void);
 static unsigned char GetChannelNum(void);
-static int InitTest(void);
+static void InitTest(void);
 static void FinishTest(void);
 static void Save_Test_Data(int iData[TX_NUM_MAX][RX_NUM_MAX], int iArrayIndex, unsigned char Row, unsigned char Col, unsigned char ItemCount);
 static void InitStoreParamOfTestData(void);
 static void MergeAllTestData(void);
-static int AllocateMemory(void);
+static void AllocateMemory(void);
 static void FreeMemory(void);
 static void ShowRawData(void);
 static boolean GetTestCondition(int iTestType, unsigned char ucChannelValue);
@@ -108,13 +116,13 @@ static unsigned char SwitchToNoMapping(void);
 
 
 /************************************************************************
-* Name: FT5X46_StartTest
+* Name: FT3C47_StartTest
 * Brief:  Test entry. Determine which test item to test
 * Input: none
 * Output: none
 * Return: Test Result, PASS or FAIL
 ***********************************************************************/
-boolean FT5X46_StartTest()
+boolean FT3C47_StartTest()
 {
 	bool bTestResult = true;
 	bool bTempResult = 1;
@@ -123,10 +131,7 @@ boolean FT5X46_StartTest()
 	int iItemCount = 0;
 
 
-	if (InitTest() < 0) {
-		bTestResult = false;
-		return bTestResult;
-	}
+	InitTest();
 
 
 	if (0 == g_TestItemNum)
@@ -135,9 +140,8 @@ boolean FT5X46_StartTest()
 	for (iItemCount = 0; iItemCount < g_TestItemNum; iItemCount++) {
 		m_ucTestItemCode = g_stTestItem[ucDevice][iItemCount].ItemCode;
 
-		if (Code_FT5X22_ENTER_FACTORY_MODE == g_stTestItem[ucDevice][iItemCount].ItemCode
-			) {
-			ReCode = FT5X46_TestItem_EnterFactoryMode();
+		if (Code_FT3C47_ENTER_FACTORY_MODE == g_stTestItem[ucDevice][iItemCount].ItemCode) {
+			ReCode = FT3C47_TestItem_EnterFactoryMode();
 			if (ERROR_CODE_OK != ReCode || (!bTempResult)) {
 				bTestResult = false;
 				g_stTestItem[ucDevice][iItemCount].TestResult = RESULT_NG;
@@ -146,9 +150,8 @@ boolean FT5X46_StartTest()
 				g_stTestItem[ucDevice][iItemCount].TestResult = RESULT_PASS;
 		}
 
-		if (Code_FT5X22_RAWDATA_TEST == g_stTestItem[ucDevice][iItemCount].ItemCode
-			) {
-			ReCode = FT5X46_TestItem_RawDataTest(&bTempResult);
+		if (Code_FT3C47_RAWDATA_TEST == g_stTestItem[ucDevice][iItemCount].ItemCode) {
+			ReCode = FT3C47_TestItem_RawDataTest(&bTempResult);
 			if (ERROR_CODE_OK != ReCode || (!bTempResult)) {
 				bTestResult = false;
 				g_stTestItem[ucDevice][iItemCount].TestResult = RESULT_NG;
@@ -157,9 +160,8 @@ boolean FT5X46_StartTest()
 		}
 
 
-		if (Code_FT5X22_SCAP_CB_TEST == g_stTestItem[ucDevice][iItemCount].ItemCode
-			) {
-			ReCode = FT5X46_TestItem_SCapCbTest(&bTempResult);
+		if (Code_FT3C47_SCAP_CB_TEST == g_stTestItem[ucDevice][iItemCount].ItemCode) {
+			ReCode = FT3C47_TestItem_SCapCbTest(&bTempResult);
 			if (ERROR_CODE_OK != ReCode || (!bTempResult)) {
 				bTestResult = false;
 				g_stTestItem[ucDevice][iItemCount].TestResult = RESULT_NG;
@@ -167,9 +169,26 @@ boolean FT5X46_StartTest()
 				g_stTestItem[ucDevice][iItemCount].TestResult = RESULT_PASS;
 		}
 
-		if (Code_FT5X22_SCAP_RAWDATA_TEST == g_stTestItem[ucDevice][iItemCount].ItemCode
-			) {
-			ReCode = FT5X46_TestItem_SCapRawDataTest(&bTempResult);
+		if (Code_FT3C47_SCAP_RAWDATA_TEST == g_stTestItem[ucDevice][iItemCount].ItemCode) {
+			ReCode = FT3C47_TestItem_SCapRawDataTest(&bTempResult);
+			if (ERROR_CODE_OK != ReCode || (!bTempResult)) {
+				bTestResult = false;
+				g_stTestItem[ucDevice][iItemCount].TestResult = RESULT_NG;
+			} else
+				g_stTestItem[ucDevice][iItemCount].TestResult = RESULT_PASS;
+		}
+
+		if (Code_FT3C47_FORCE_TOUCH_SCAP_CB_TEST == g_stTestItem[ucDevice][iItemCount].ItemCode) {
+			ReCode = FT3C47_TestItem_ForceTouch_SCapCbTest(&bTempResult);
+			if (ERROR_CODE_OK != ReCode || (!bTempResult)) {
+				bTestResult = false;
+				g_stTestItem[ucDevice][iItemCount].TestResult = RESULT_NG;
+			} else
+				g_stTestItem[ucDevice][iItemCount].TestResult = RESULT_PASS;
+		}
+
+		if (Code_FT3C47_FORCE_TOUCH_SCAP_RAWDATA_TEST == g_stTestItem[ucDevice][iItemCount].ItemCode) {
+			ReCode = FT3C47_TestItem_ForceTouch_SCapRawDataTest(&bTempResult);
 			if (ERROR_CODE_OK != ReCode || (!bTempResult)) {
 				bTestResult = false;
 				g_stTestItem[ucDevice][iItemCount].TestResult = RESULT_NG;
@@ -193,14 +212,11 @@ boolean FT5X46_StartTest()
 * Output: none
 * Return: none
 ***********************************************************************/
-static int InitTest(void)
+static void InitTest(void)
 {
-	if (AllocateMemory() < 0) {
-		return -EPERM;
-	}
+	AllocateMemory();
 	InitStoreParamOfTestData();
 	printk("[focal] %s \n", IC_TEST_VERSION);
-	return 1;
 }
 /************************************************************************
 * Name: FinishTest
@@ -215,13 +231,13 @@ static void FinishTest(void)
 	FreeMemory();
 }
 /************************************************************************
-* Name: FT5X46_get_test_data
+* Name: FT3C47_get_test_data
 * Brief:  get data of test result
 * Input: none
 * Output: pTestData, the returned buff
 * Return: the length of test data. if length > 0, got data;else ERR.
 ***********************************************************************/
-int FT5X46_get_test_data(char *pTestData)
+int FT3C47_get_test_data(char *pTestData)
 {
 	if (NULL == pTestData) {
 		printk("[focal] %s pTestData == NULL \n", __func__);
@@ -232,13 +248,13 @@ int FT5X46_get_test_data(char *pTestData)
 }
 
 /************************************************************************
-* Name: FT5X46_TestItem_EnterFactoryMode
+* Name: FT3C47_TestItem_EnterFactoryMode
 * Brief:  Check whether TP can enter Factory Mode, and do some thing
 * Input: none
 * Output: none
 * Return: Comm Code. Code = 0x00 is OK, else fail.
 ***********************************************************************/
-unsigned char FT5X46_TestItem_EnterFactoryMode(void)
+unsigned char FT3C47_TestItem_EnterFactoryMode(void)
 {
 	unsigned char ReCode = ERROR_CODE_INVALID_PARAM;
 	int iRedo = 5;
@@ -255,7 +271,6 @@ unsigned char FT5X46_TestItem_EnterFactoryMode(void)
 				continue;
 			}
 		} else {
-			printk("Succeed to Enter factory mode...\n");
 			break;
 		}
 
@@ -270,7 +285,8 @@ unsigned char FT5X46_TestItem_EnterFactoryMode(void)
 
 	ReCode = GetChannelNum();
 
-	ReCode = ReadReg(REG_PATTERN_5422, &chPattern);
+
+	ReCode = ReadReg(REG_PATTERN_3C47, &chPattern);
 	if (chPattern == 1) {
 		m_bV3TP = true;
 	} else {
@@ -280,13 +296,13 @@ unsigned char FT5X46_TestItem_EnterFactoryMode(void)
 	return ReCode;
 }
 /************************************************************************
-* Name: FT5X46_TestItem_RawDataTest
+* Name: FT3C47_TestItem_RawDataTest
 * Brief:  TestItem: RawDataTest. Check if MCAP RawData is within the range.
 * Input: none
 * Output: bTestResult, PASS or FAIL
 * Return: Comm Code. Code = 0x00 is OK, else fail.
 ***********************************************************************/
-unsigned char FT5X46_TestItem_RawDataTest(bool *bTestResult)
+unsigned char FT3C47_TestItem_RawDataTest(bool *bTestResult)
 {
 	unsigned char ReCode = 0;
 	bool btmpresult = true;
@@ -402,7 +418,7 @@ unsigned char FT5X46_TestItem_RawDataTest(bool *bTestResult)
 
 
 
-		if (g_stCfg_FT5X22_BasicThreshold.RawDataTest_SetLowFreq) {
+		if (g_stCfg_FT3C47_BasicThreshold.RawDataTest_SetLowFreq) {
 			printk("\n=========Set Frequecy Low\n");
 			ReCode = WriteReg(0x0A, 0x80);
 			if (ReCode != ERROR_CODE_OK) {
@@ -451,7 +467,7 @@ unsigned char FT5X46_TestItem_RawDataTest(bool *bTestResult)
 
 
 
-		if (g_stCfg_FT5X22_BasicThreshold.RawDataTest_SetHighFreq) {
+		if (g_stCfg_FT3C47_BasicThreshold.RawDataTest_SetHighFreq) {
 
 			printk("\n=========Set Frequecy High\n");
 			ReCode = WriteReg(0x0A, 0x81);
@@ -537,13 +553,13 @@ TEST_ERR:
 
 }
 /************************************************************************
-* Name: FT5X46_TestItem_SCapRawDataTest
+* Name: FT3C47_TestItem_SCapRawDataTest
 * Brief:  TestItem: SCapRawDataTest. Check if SCAP RawData is within the range.
 * Input: none
 * Output: bTestResult, PASS or FAIL
 * Return: Comm Code. Code = 0x00 is OK, else fail.
 ***********************************************************************/
-unsigned char FT5X46_TestItem_SCapRawDataTest(bool *bTestResult)
+unsigned char FT3C47_TestItem_SCapRawDataTest(bool *bTestResult)
 {
 	int i = 0;
 	int RawDataMin = 0;
@@ -594,7 +610,7 @@ unsigned char FT5X46_TestItem_SCapRawDataTest(bool *bTestResult)
 		memset(m_iTempRawData, 0, sizeof(m_iTempRawData));
 
 
-		ByteNum = (g_ScreenSetParam.iTxNum + g_ScreenSetParam.iRxNum)*2;
+		ByteNum = (m_iAllTx + m_iAllRx)*2;
 		ReCode = ReadRawData(0, 0xAC, ByteNum, m_iTempRawData);
 		if (ReCode != ERROR_CODE_OK) {
 			printk("Failed to ReadRawData water! \n");
@@ -602,17 +618,17 @@ unsigned char FT5X46_TestItem_SCapRawDataTest(bool *bTestResult)
 		}
 
 		memcpy(m_RawData[0+g_ScreenSetParam.iTxNum], m_iTempRawData, sizeof(int)*g_ScreenSetParam.iRxNum);
-		memcpy(m_RawData[1+g_ScreenSetParam.iTxNum], m_iTempRawData + g_ScreenSetParam.iRxNum, sizeof(int)*g_ScreenSetParam.iTxNum);
+		memcpy(m_RawData[1+g_ScreenSetParam.iTxNum], m_iTempRawData + m_iAllRx, sizeof(int)*g_ScreenSetParam.iTxNum);
 
 
-		ByteNum = (g_ScreenSetParam.iTxNum + g_ScreenSetParam.iRxNum)*2;
+		ByteNum = (m_iAllTx + m_iAllRx)*2;
 		ReCode = ReadRawData(0, 0xAB, ByteNum, m_iTempRawData);
 		if (ReCode != ERROR_CODE_OK) {
 			printk("Failed to ReadRawData no water! \n");
 			goto TEST_ERR;
 		}
 		memcpy(m_RawData[2+g_ScreenSetParam.iTxNum], m_iTempRawData, sizeof(int)*g_ScreenSetParam.iRxNum);
-		memcpy(m_RawData[3+g_ScreenSetParam.iTxNum], m_iTempRawData + g_ScreenSetParam.iRxNum, sizeof(int)*g_ScreenSetParam.iTxNum);
+		memcpy(m_RawData[3+g_ScreenSetParam.iTxNum], m_iTempRawData + m_iAllRx, sizeof(int)*g_ScreenSetParam.iTxNum);
 	}
 
 
@@ -620,10 +636,10 @@ unsigned char FT5X46_TestItem_SCapRawDataTest(bool *bTestResult)
 
 
 	bFlag = GetTestCondition(WT_NeedProofOnTest, wc_value);
-	if (g_stCfg_FT5X22_BasicThreshold.SCapRawDataTest_SetWaterproof_ON && bFlag) {
+	if (g_stCfg_FT3C47_BasicThreshold.SCapRawDataTest_SetWaterproof_ON && bFlag) {
 		iCount = 0;
-		RawDataMin = g_stCfg_FT5X22_BasicThreshold.SCapRawDataTest_ON_Min;
-		RawDataMax = g_stCfg_FT5X22_BasicThreshold.SCapRawDataTest_ON_Max;
+		RawDataMin = g_stCfg_FT3C47_BasicThreshold.SCapRawDataTest_ON_Min;
+		RawDataMax = g_stCfg_FT3C47_BasicThreshold.SCapRawDataTest_ON_Max;
 		iMax = -m_RawData[0+g_ScreenSetParam.iTxNum][0];
 		iMin = 2 * m_RawData[0+g_ScreenSetParam.iTxNum][0];
 		iAvg = 0;
@@ -686,10 +702,10 @@ unsigned char FT5X46_TestItem_SCapRawDataTest(bool *bTestResult)
 
 
 	bFlag = GetTestCondition(WT_NeedProofOffTest, wc_value);
-	if (g_stCfg_FT5X22_BasicThreshold.SCapRawDataTest_SetWaterproof_OFF && bFlag) {
+	if (g_stCfg_FT3C47_BasicThreshold.SCapRawDataTest_SetWaterproof_OFF && bFlag) {
 		iCount = 0;
-		RawDataMin = g_stCfg_FT5X22_BasicThreshold.SCapRawDataTest_OFF_Min;
-		RawDataMax = g_stCfg_FT5X22_BasicThreshold.SCapRawDataTest_OFF_Max;
+		RawDataMin = g_stCfg_FT3C47_BasicThreshold.SCapRawDataTest_OFF_Min;
+		RawDataMax = g_stCfg_FT3C47_BasicThreshold.SCapRawDataTest_OFF_Max;
 		iMax = -m_RawData[2+g_ScreenSetParam.iTxNum][0];
 		iMin = 2 * m_RawData[2+g_ScreenSetParam.iTxNum][0];
 		iAvg = 0;
@@ -705,6 +721,8 @@ unsigned char FT5X46_TestItem_SCapRawDataTest(bool *bTestResult)
 			RawDataMax = g_stCfg_MCap_DetailThreshold.SCapRawDataTest_OFF_Max[0][i];
 			Value = m_RawData[2+g_ScreenSetParam.iTxNum][i];
 			iAvg += Value;
+
+
 
 			if (iMax < Value)
 				iMax = Value;
@@ -792,13 +810,13 @@ TEST_ERR:
 }
 
 /************************************************************************
-* Name: FT5X46_TestItem_SCapCbTest
+* Name: FT3C47_TestItem_SCapCbTest
 * Brief:  TestItem: SCapCbTest. Check if SCAP Cb is within the range.
 * Input: none
 * Output: bTestResult, PASS or FAIL
 * Return: Comm Code. Code = 0x00 is OK, else fail.
 ***********************************************************************/
-unsigned char FT5X46_TestItem_SCapCbTest(bool *bTestResult)
+unsigned char FT3C47_TestItem_SCapCbTest(bool *bTestResult)
 {
 	int i, /* j, iOutNum, */index, Value, CBMin, CBMax;
 	boolean bFlag = true;
@@ -864,7 +882,7 @@ unsigned char FT5X46_TestItem_SCapCbTest(bool *bTestResult)
 			goto TEST_ERR;
 		}
 
-		ReCode = GetTxSC_CB(g_ScreenSetParam.iTxNum + g_ScreenSetParam.iRxNum + 128, m_ucTempData);
+		ReCode = GetTxSC_CB(m_iAllTx + m_iAllRx + 128, m_ucTempData);
 		if (ReCode != ERROR_CODE_OK) {
 			printk("GetTxSC_CB Failed!\n");
 			goto TEST_ERR;
@@ -874,7 +892,7 @@ unsigned char FT5X46_TestItem_SCapCbTest(bool *bTestResult)
 			m_RawData[0 + g_ScreenSetParam.iTxNum][index] = m_ucTempData[index];
 		}
 		for (index = 0; index < g_ScreenSetParam.iTxNum; ++index) {
-			m_RawData[1 + g_ScreenSetParam.iTxNum][index] = m_ucTempData[index + g_ScreenSetParam.iRxNum];
+			m_RawData[1 + g_ScreenSetParam.iTxNum][index] = m_ucTempData[index + m_iAllRx];
 		}
 
 
@@ -896,7 +914,7 @@ unsigned char FT5X46_TestItem_SCapCbTest(bool *bTestResult)
 			goto TEST_ERR;
 		}
 
-		ReCode = GetTxSC_CB(g_ScreenSetParam.iTxNum + g_ScreenSetParam.iRxNum + 128, m_ucTempData);
+		ReCode = GetTxSC_CB(m_iAllTx + m_iAllRx + 128, m_ucTempData);
 		if (ReCode != ERROR_CODE_OK) {
 			printk("GetTxSC_CB Failed!\n");
 			goto TEST_ERR;
@@ -905,7 +923,7 @@ unsigned char FT5X46_TestItem_SCapCbTest(bool *bTestResult)
 			m_RawData[2 + g_ScreenSetParam.iTxNum][index] = m_ucTempData[index];
 		}
 		for (index = 0; index < g_ScreenSetParam.iTxNum; ++index) {
-			m_RawData[3 + g_ScreenSetParam.iTxNum][index] = m_ucTempData[index + g_ScreenSetParam.iRxNum];
+			m_RawData[3 + g_ScreenSetParam.iTxNum][index] = m_ucTempData[index + m_iAllRx];
 		}
 
 		if (ReCode != ERROR_CODE_OK) {
@@ -917,7 +935,7 @@ unsigned char FT5X46_TestItem_SCapCbTest(bool *bTestResult)
 		goto TEST_ERR;
 
 	bFlag = GetTestCondition(WT_NeedProofOnTest, wc_value);
-	if (g_stCfg_FT5X22_BasicThreshold.SCapCbTest_SetWaterproof_ON && bFlag) {
+	if (g_stCfg_FT3C47_BasicThreshold.SCapCbTest_SetWaterproof_ON && bFlag) {
 		printk("SCapCbTest in WaterProof On Mode:  \n");
 
 		iMax = -m_RawData[0+g_ScreenSetParam.iTxNum][0];
@@ -984,7 +1002,7 @@ unsigned char FT5X46_TestItem_SCapCbTest(bool *bTestResult)
 	}
 
 	bFlag = GetTestCondition(WT_NeedProofOffTest, wc_value);
-	if (g_stCfg_FT5X22_BasicThreshold.SCapCbTest_SetWaterproof_OFF && bFlag) {
+	if (g_stCfg_FT3C47_BasicThreshold.SCapCbTest_SetWaterproof_OFF && bFlag) {
 		printk("SCapCbTest in WaterProof OFF Mode:  \n");
 		iMax = -m_RawData[2+g_ScreenSetParam.iTxNum][0];
 		iMin = 2 * m_RawData[2+g_ScreenSetParam.iTxNum][0];
@@ -996,7 +1014,7 @@ unsigned char FT5X46_TestItem_SCapCbTest(bool *bTestResult)
 		bFlag = GetTestCondition(WT_NeedRxOffVal, wc_value);
 		if (bFlag)
 			printk("SCap CB_Rx:  \n");
-		for (i = 0; bFlag && i < g_ScreenSetParam.iRxNum; i++) {
+		for (i = 0; bFlag &&  i < g_ScreenSetParam.iRxNum; i++) {
 			if (g_stCfg_MCap_DetailThreshold.InvalidNode_SC[0][i] == 0)
 				continue;
 			CBMin = g_stCfg_MCap_DetailThreshold.SCapCbTest_OFF_Min[0][i];
@@ -1274,57 +1292,20 @@ unsigned char GetTxSC_CB(unsigned char index, unsigned char *pcbValue)
 * Output: none
 * Return: none
 ***********************************************************************/
-static int AllocateMemory(void)
+static void AllocateMemory(void)
 {
 
 	g_pStoreMsgArea = NULL;
-	if (NULL == g_pStoreMsgArea) {
+	if (NULL == g_pStoreMsgArea)
 		g_pStoreMsgArea = kmalloc(1024*80, GFP_ATOMIC);
-		if (g_pStoreMsgArea == NULL) {
-			printk("lancelot g_pStoreMsgArea malloc error.\n");
-			goto ERR_0;
-		}
-	}
 	g_pMsgAreaLine2 = NULL;
-	if (NULL == g_pMsgAreaLine2) {
+	if (NULL == g_pMsgAreaLine2)
 		g_pMsgAreaLine2 = kmalloc(1024*80, GFP_ATOMIC);
-		if (g_pMsgAreaLine2 == NULL) {
-			printk("lancelot g_pMsgAreaLine2 malloc error.\n");
-			goto ERR_1;
-		}
-	}
 	g_pStoreDataArea = NULL;
-	if (NULL == g_pStoreDataArea) {
+	if (NULL == g_pStoreDataArea)
 		g_pStoreDataArea = kmalloc(1024*80, GFP_ATOMIC);
-		if (g_pStoreDataArea == NULL) {
-			printk("lancelot g_pStoreDataArea malloc error.\n");
-			goto ERR_2;
-		}
-	}
-	g_pTmpBuff = NULL;
-	if (NULL == g_pTmpBuff) {
+	if (NULL == g_pTmpBuff)
 		g_pTmpBuff = kmalloc(1024*16, GFP_ATOMIC);
-		if (g_pTmpBuff == NULL) {
-			printk("lancelot g_pTmpBuff malloc error.\n");
-			goto ERR_3;
-		}
-	}
-
-	return 1;
-
-ERR_3:
-	kfree(g_pStoreDataArea);
-	g_pStoreDataArea = NULL;
-ERR_2:
-	kfree(g_pMsgAreaLine2);
-	g_pMsgAreaLine2 = NULL;
-ERR_1:
-	kfree(g_pStoreMsgArea);
-	g_pStoreMsgArea = NULL;
-
-ERR_0:
-
-	return -EPERM;
 
 }
 /************************************************************************
@@ -1345,6 +1326,9 @@ static void FreeMemory(void)
 
 	if (NULL != g_pStoreDataArea)
 		kfree(g_pStoreDataArea);
+
+	/*if(NULL == g_pStoreAllData)
+	kfree(g_pStoreAllData);*/
 
 	if (NULL != g_pTmpBuff)
 		kfree(g_pTmpBuff);
@@ -1400,7 +1384,9 @@ static void MergeAllTestData(void)
 	memcpy(g_pStoreMsgArea+g_lenStoreMsgArea, g_pTmpBuff, iLen);
 	g_lenStoreMsgArea += iLen;
 
+
 	memcpy(g_pStoreAllData, g_pStoreMsgArea, g_lenStoreMsgArea);
+
 
 	if (0 != g_lenStoreDataArea) {
 		memcpy(g_pStoreAllData+g_lenStoreMsgArea, g_pStoreDataArea, g_lenStoreDataArea);
@@ -1455,8 +1441,11 @@ static void Save_Test_Data(int iData[TX_NUM_MAX][RX_NUM_MAX], int iArrayIndex, u
 ***********************************************************************/
 static unsigned char GetChannelNum(void)
 {
-	unsigned char ReCode;
-	unsigned char rBuffer[1];
+	unsigned char ReCode = 0;
+	unsigned char rBuffer[1] = {0};
+
+	unsigned char TxNum = 0;
+	unsigned char RxNum = 0;
 
 
 	ReCode = GetPanelRows(rBuffer);
@@ -1471,6 +1460,7 @@ static unsigned char GetChannelNum(void)
 		printk("Failed to get Tx number\n");
 	}
 
+
 	ReCode = GetPanelCols(rBuffer);
 	if (ReCode == ERROR_CODE_OK) {
 		g_ScreenSetParam.iRxNum = rBuffer[0];
@@ -1482,6 +1472,27 @@ static unsigned char GetChannelNum(void)
 	} else {
 		printk("Failed to get Rx number\n");
 	}
+
+
+
+
+	ReCode = ReadReg(REG_REAL_RX_NUM, &RxNum);
+	if (ReCode == ERROR_CODE_OK) {
+		m_iForceTouchRx = RxNum - g_ScreenSetParam.iRxNum;
+	} else {
+		printk("Failed to get real Rx number\r\n");
+	}
+
+
+	ReCode = ReadReg(REG_REAL_TX_NUM, &TxNum);
+	if (ReCode == ERROR_CODE_OK) {
+		m_iForceTouchTx = TxNum - g_ScreenSetParam.iTxNum;
+	} else {
+		printk("Failed to get real Tx number\r\n");
+	}
+
+	m_iAllTx = TxNum;
+	m_iAllRx = RxNum;
 
 	return ReCode;
 
@@ -1597,7 +1608,7 @@ static unsigned char SwitchToNoMapping(void)
 	unsigned char chPattern = -1;
 	unsigned char ReCode = ERROR_CODE_OK;
 	unsigned char RegData = -1;
-	ReCode = ReadReg(REG_PATTERN_5422, &chPattern);
+	ReCode = ReadReg(REG_PATTERN_3C47, &chPattern);
 	if (ReCode != ERROR_CODE_OK) {
 		printk("Switch To NoMapping Failed!\n");
 		goto READ_ERR;
@@ -1663,6 +1674,494 @@ static boolean GetTestCondition(int iTestType, unsigned char ucChannelValue)
 		break;
 	}
 	return bIsNeeded;
+}
+
+
+/************************************************************************
+* Name: FT3C47_TestItem_ForceTouch_SCapRawDataTest
+* Brief:  TestItem: ForceTouch_SCapRawDataTest. Check if ForceTouch_SCAP RawData is within the range.
+* Input: none
+* Output: bTestResult, PASS or FAIL
+* Return: Comm Code. Code = 0x00 is OK, else fail.
+***********************************************************************/
+unsigned char FT3C47_TestItem_ForceTouch_SCapRawDataTest(bool *bTestResult)
+{
+	int i = 0;
+	int RawDataMin = 0;
+	int RawDataMax = 0;
+	int Value = 0;
+	boolean bFlag = true;
+	unsigned char ReCode = 0;
+	boolean btmpresult = true;
+	int iMax = 0;
+	int iMin = 0;
+	int iAvg = 0;
+	int ByteNum = 0;
+	unsigned char wc_value = 0;
+
+	int iCount = 0;
+	int ibiggerValue = 0;
+
+	printk("\n\n==============================Test Item: -------- Force Touch Scap RawData Test \n\n");
+
+
+	ReCode = EnterFactory();
+	if (ReCode != ERROR_CODE_OK) {
+		printk("\n\n// Failed to Enter factory Mode. Error Code: %d", ReCode);
+		goto TEST_ERR;
+	}
+
+
+	ReCode = ReadReg(REG_WATER_CHANNEL_SELECT, &wc_value);
+	if (ReCode != ERROR_CODE_OK) {
+		printk("\n\n// Failed to read REG_WATER_CHANNEL_SELECT. Error Code: %d", ReCode);
+		goto TEST_ERR;
+	}
+
+	ReCode = StartScan();
+	if (ReCode != ERROR_CODE_OK) {
+		printk("Failed to Scan SCap RawData! \n");
+		goto TEST_ERR;
+	}
+	for (i = 0; i < 3; i++) {
+		memset(m_iTempRawData, 0, sizeof(m_iTempRawData));
+
+		ByteNum = (m_iAllTx + m_iAllRx)*2;
+		ReCode = ReadRawData(0, 0xAC, ByteNum, m_iTempRawData);
+		if (ReCode != ERROR_CODE_OK) {
+			printk("Failed to ReadRawData water! \n");
+			goto TEST_ERR;
+		}
+
+		memcpy(m_RawData[0+g_ScreenSetParam.iTxNum], m_iTempRawData + g_ScreenSetParam.iRxNum, sizeof(int)*m_iForceTouchRx);
+		memcpy(m_RawData[1+g_ScreenSetParam.iTxNum], m_iTempRawData + m_iAllRx+g_ScreenSetParam.iTxNum, sizeof(int)*m_iForceTouchTx);
+
+
+
+		ByteNum = (m_iAllTx + m_iAllRx)*2;
+		ReCode = ReadRawData(0, 0xAB, ByteNum, m_iTempRawData);
+		if (ReCode != ERROR_CODE_OK) {
+			printk("Failed to ReadRawData no water! \n");
+			goto TEST_ERR;
+		}
+		memcpy(m_RawData[2+g_ScreenSetParam.iTxNum], m_iTempRawData+g_ScreenSetParam.iRxNum, sizeof(int)*m_iForceTouchRx);
+		memcpy(m_RawData[3+g_ScreenSetParam.iTxNum], m_iTempRawData + m_iAllRx+g_ScreenSetParam.iTxNum, sizeof(int)*m_iForceTouchTx);
+	}
+
+
+	bFlag = GetTestCondition(WT_NeedProofOnTest, wc_value);
+	if (g_stCfg_FT3C47_BasicThreshold.ForceTouch_SCapRawDataTest_SetWaterproof_ON && bFlag) {
+		iCount = 0;
+		RawDataMin = g_stCfg_FT3C47_BasicThreshold.ForceTouch_SCapRawDataTest_ON_Min;
+		RawDataMax = g_stCfg_FT3C47_BasicThreshold.ForceTouch_SCapRawDataTest_ON_Max;
+		iMax = -m_RawData[0+g_ScreenSetParam.iTxNum][0];
+		iMin = 2 * m_RawData[0+g_ScreenSetParam.iTxNum][0];
+		iAvg = 0;
+		Value = 0;
+
+
+		bFlag = GetTestCondition(WT_NeedRxOnVal, wc_value);
+		if (bFlag)
+			printk("Judge Rx in Waterproof-ON:\n");
+		for (i = 0; bFlag && i < m_iForceTouchRx; i++) {
+
+			RawDataMin = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapRawDataTest_ON_Min[0][i];
+			RawDataMax = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapRawDataTest_ON_Max[0][i];
+			Value = m_RawData[0+g_ScreenSetParam.iTxNum][i];
+			iAvg += Value;
+			if (iMax < Value)
+				iMax = Value;
+			if (iMin > Value)
+				iMin = Value;
+			if (Value > RawDataMax || Value < RawDataMin) {
+				btmpresult = false;
+				printk("Failed. Num = %d, Value = %d, range = (%d, %d):\n", i+1, Value, RawDataMin, RawDataMax);
+			}
+			iCount++;
+		}
+
+
+		bFlag = GetTestCondition(WT_NeedTxOnVal, wc_value);
+		if (bFlag)
+			printk("Judge Tx in Waterproof-ON:\n");
+		for (i = 0; bFlag && i < m_iForceTouchTx; i++) {
+
+			RawDataMin = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapRawDataTest_ON_Min[0][i+m_iForceTouchRx];
+			RawDataMax = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapRawDataTest_ON_Max[0][i+m_iForceTouchRx];
+			Value = m_RawData[1+g_ScreenSetParam.iTxNum][i];
+			iAvg += Value;
+			if (iMax < Value)
+				iMax = Value;
+			if (iMin > Value)
+				iMin = Value;
+			if (Value > RawDataMax || Value < RawDataMin) {
+				btmpresult = false;
+				printk("Failed. Num = %d, Value = %d, range = (%d, %d):\n", i+1, Value, RawDataMin, RawDataMax);
+			}
+			iCount++;
+		}
+		if (0 == iCount) {
+			iAvg = 0;
+			iMax = 0;
+			iMin = 0;
+		} else
+			iAvg = iAvg/iCount;
+
+		printk("Force Touch SCap RawData in Waterproof-ON, Max : %d, Min: %d, Deviation: %d, Average: %d\n", iMax, iMin, iMax - iMin, iAvg);
+		ibiggerValue = m_iForceTouchTx > m_iForceTouchRx?m_iForceTouchTx:m_iForceTouchRx;
+		Save_Test_Data(m_RawData, g_ScreenSetParam.iTxNum+0, 2, ibiggerValue, 1);
+	}
+
+
+	bFlag = GetTestCondition(WT_NeedProofOffTest, wc_value);
+	if (g_stCfg_FT3C47_BasicThreshold.ForceTouch_SCapRawDataTest_SetWaterproof_OFF && bFlag) {
+		iCount = 0;
+		RawDataMin = g_stCfg_FT3C47_BasicThreshold.ForceTouch_SCapRawDataTest_OFF_Min;
+		RawDataMax = g_stCfg_FT3C47_BasicThreshold.ForceTouch_SCapRawDataTest_OFF_Max;
+		iMax = -m_RawData[2+g_ScreenSetParam.iTxNum][0];
+		iMin = 2 * m_RawData[2+g_ScreenSetParam.iTxNum][0];
+		iAvg = 0;
+		Value = 0;
+
+		bFlag = GetTestCondition(WT_NeedRxOffVal, wc_value);
+		if (bFlag)
+			printk("Judge Rx in Waterproof-OFF:\n");
+		for (i = 0; bFlag && i < m_iForceTouchRx; i++) {
+
+			RawDataMin = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapRawDataTest_OFF_Min[0][i];
+			RawDataMax = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapRawDataTest_OFF_Max[0][i];
+			Value = m_RawData[2+g_ScreenSetParam.iTxNum][i];
+			iAvg += Value;
+
+
+
+			if (iMax < Value)
+				iMax = Value;
+			if (iMin > Value)
+				iMin = Value;
+			if (Value > RawDataMax || Value < RawDataMin) {
+				btmpresult = false;
+				printk("Failed. Num = %d, Value = %d, range = (%d, %d):\n", i+1, Value, RawDataMin, RawDataMax);
+			}
+			iCount++;
+		}
+
+		bFlag = GetTestCondition(WT_NeedTxOffVal, wc_value);
+		if (bFlag)
+			printk("Judge Tx in Waterproof-OFF:\n");
+		for (i = 0; bFlag && i < m_iForceTouchTx; i++) {
+
+
+			Value = m_RawData[3+g_ScreenSetParam.iTxNum][i];
+			RawDataMin = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapRawDataTest_OFF_Min[0][i+m_iForceTouchRx];
+			RawDataMax = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapRawDataTest_OFF_Max[0][i+m_iForceTouchRx];
+
+			iAvg += Value;
+			if (iMax < Value)
+				iMax = Value;
+			if (iMin > Value)
+				iMin = Value;
+			if (Value > RawDataMax || Value < RawDataMin) {
+				btmpresult = false;
+				printk("Failed. Num = %d, Value = %d, range = (%d, %d):\n", i+1, Value, RawDataMin, RawDataMax);
+			}
+			iCount++;
+		}
+		if (0 == iCount) {
+			iAvg = 0;
+			iMax = 0;
+			iMin = 0;
+		} else
+			iAvg = iAvg/iCount;
+
+		printk("Force Touch SCap RawData in Waterproof-OFF, Max : %d, Min: %d, Deviation: %d, Average: %d\n", iMax, iMin, iMax - iMin, iAvg);
+		ibiggerValue = m_iForceTouchTx > m_iForceTouchRx?m_iForceTouchTx:m_iForceTouchRx;
+		Save_Test_Data(m_RawData, g_ScreenSetParam.iTxNum+2, 2, ibiggerValue, 2);
+	}
+
+	if (btmpresult) {
+		*bTestResult = true;
+		printk("\n\n//Force Touch SCap RawData Test is OK!\n");
+	} else {
+		*bTestResult = false;
+		printk("\n\n//Force Touch SCap RawData Test is NG!\n");
+	}
+	return ReCode;
+
+TEST_ERR:
+	*bTestResult = false;
+	printk("\n\n//Force Touch SCap RawData Test is NG!\n");
+	return ReCode;
+}
+
+
+/************************************************************************
+* Name: FT3C47_TestItem_ForceTouch_SCapCbTest
+* Brief:  TestItem: ForceTouch_SCapCbTest. Check if ForceTouch_SCAP Cb is within the range.
+* Input: none
+* Output: bTestResult, PASS or FAIL
+* Return: Comm Code. Code = 0x00 is OK, else fail.
+***********************************************************************/
+unsigned char FT3C47_TestItem_ForceTouch_SCapCbTest(bool *bTestResult)
+{
+	int i, /* j, iOutNum, */index, Value, CBMin, CBMax;
+	boolean bFlag = true;
+	unsigned char ReCode;
+	boolean btmpresult = true;
+	int iMax, iMin, iAvg;
+	unsigned char wc_value = 0;
+
+	int iCount = 0;
+	int ibiggerValue = 0;
+
+	printk("\n\n==============================Test Item: -----  Force Touch Scap CB Test \n\n");
+
+
+	ReCode = EnterFactory();
+	if (ReCode != ERROR_CODE_OK) {
+		printk("\n\n// Failed to Enter factory Mode. Error Code: %d", ReCode);
+		goto TEST_ERR;
+	}
+
+
+	ReCode = ReadReg(REG_WATER_CHANNEL_SELECT, &wc_value);
+	if (ReCode != ERROR_CODE_OK) {
+		printk("\n Read REG_WATER_CHANNEL_SELECT error. Error Code: %d\n", ReCode);
+		goto TEST_ERR;
+	}
+
+
+	ReCode = StartScan();
+	if (ReCode != ERROR_CODE_OK) {
+		printk("Failed to Scan SCap RawData!ReCode = %d. \n", ReCode);
+		goto TEST_ERR;
+	}
+
+
+	for (i = 0; i < 3; i++) {
+		memset(m_RawData, 0, sizeof(m_RawData));
+		memset(m_ucTempData, 0, sizeof(m_ucTempData));
+
+
+		ReCode = WriteReg(REG_ScWorkMode, 1);
+		if (ReCode != ERROR_CODE_OK) {
+			printk("Get REG_ScWorkMode Failed!\n");
+			goto TEST_ERR;
+		}
+
+		ReCode = StartScan();
+		if (ReCode != ERROR_CODE_OK) {
+			printk("StartScan Failed!\n");
+			goto TEST_ERR;
+		}
+
+		ReCode = WriteReg(REG_ScCbAddrR, 0);
+		if (ReCode != ERROR_CODE_OK) {
+			printk("Write REG_ScCbAddrR Failed!\n");
+			goto TEST_ERR;
+		}
+
+		ReCode = GetTxSC_CB(m_iAllTx + m_iAllRx + 128, m_ucTempData);
+		if (ReCode != ERROR_CODE_OK) {
+			printk("GetTxSC_CB Failed!\n");
+			goto TEST_ERR;
+		}
+
+		for (index = g_ScreenSetParam.iRxNum; index < m_iAllRx; ++index) {
+			m_RawData[0 + g_ScreenSetParam.iTxNum][index-g_ScreenSetParam.iRxNum] = m_ucTempData[index];
+		}
+		for (index = m_iAllRx + g_ScreenSetParam.iTxNum; index < m_iAllTx + m_iAllRx; ++index) {
+			m_RawData[1 + g_ScreenSetParam.iTxNum][index-m_iAllRx-g_ScreenSetParam.iTxNum] = m_ucTempData[index];
+		}
+
+
+		ReCode = WriteReg(REG_ScWorkMode, 0);
+		if (ReCode != ERROR_CODE_OK) {
+			printk("Get REG_ScWorkMode Failed!\n");
+			goto TEST_ERR;
+		}
+
+		ReCode = StartScan();
+		if (ReCode != ERROR_CODE_OK) {
+			printk("StartScan Failed!\n");
+			goto TEST_ERR;
+		}
+
+		ReCode = WriteReg(REG_ScCbAddrR, 0);
+		if (ReCode != ERROR_CODE_OK) {
+			printk("Write REG_ScCbAddrR Failed!\n");
+			goto TEST_ERR;
+		}
+
+		ReCode = GetTxSC_CB(m_iAllTx + m_iAllRx + 128, m_ucTempData);
+		if (ReCode != ERROR_CODE_OK) {
+			printk("GetTxSC_CB Failed!\n");
+			goto TEST_ERR;
+		}
+
+		for (index = g_ScreenSetParam.iRxNum; index < m_iAllRx; ++index) {
+			m_RawData[0 + g_ScreenSetParam.iTxNum][index-g_ScreenSetParam.iRxNum] = m_ucTempData[index];
+		}
+		for (index = m_iAllRx + g_ScreenSetParam.iTxNum; index < m_iAllTx + m_iAllRx; ++index) {
+			m_RawData[1 + g_ScreenSetParam.iTxNum][index-m_iAllRx-g_ScreenSetParam.iTxNum] = m_ucTempData[index];
+		}
+
+		if (ReCode != ERROR_CODE_OK) {
+			printk("Failed to Get SCap CB!\n");
+		}
+	}
+
+	if (ReCode != ERROR_CODE_OK)
+		goto TEST_ERR;
+
+
+
+
+	bFlag = GetTestCondition(WT_NeedProofOnTest, wc_value);
+	if (g_stCfg_FT3C47_BasicThreshold.ForceTouch_SCapCBTest_SetWaterproof_ON && bFlag) {
+		printk("Force Touch SCapCbTest in WaterProof On Mode:  \n");
+
+		iMax = -m_RawData[0+g_ScreenSetParam.iTxNum][0];
+		iMin = 2 * m_RawData[0+g_ScreenSetParam.iTxNum][0];
+		iAvg = 0;
+		Value = 0;
+		iCount = 0;
+
+
+		bFlag = GetTestCondition(WT_NeedRxOnVal, wc_value);
+		if (bFlag)
+			printk("Force Touch SCap CB_Rx:  \n");
+		for (i = 0; bFlag && i < m_iForceTouchRx; i++) {
+
+			CBMin = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapCbTest_ON_Min[0][i];
+			CBMax = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapCbTest_ON_Max[0][i];
+			Value = m_RawData[0+g_ScreenSetParam.iTxNum][i];
+			iAvg += Value;
+
+			if (iMax < Value)
+				iMax = Value;
+			if (iMin > Value)
+				iMin = Value;
+			if (Value > CBMax || Value < CBMin) {
+				btmpresult = false;
+				printk("Failed. Num = %d, Value = %d, range = (%d, %d):\n", i+1, Value, CBMin, CBMax);
+			}
+			iCount++;
+		}
+
+
+		bFlag = GetTestCondition(WT_NeedTxOnVal, wc_value);
+		if (bFlag)
+			printk("Force Touch SCap CB_Tx:  \n");
+		for (i = 0; bFlag &&  i < m_iForceTouchTx; i++) {
+
+			CBMin = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapCbTest_ON_Min[0][i+m_iForceTouchRx];
+			CBMax = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapCbTest_ON_Max[0][i+m_iForceTouchRx];
+			Value = m_RawData[1+g_ScreenSetParam.iTxNum][i];
+			iAvg += Value;
+			if (iMax < Value)
+				iMax = Value;
+			if (iMin > Value)
+				iMin = Value;
+			if (Value > CBMax || Value < CBMin) {
+				btmpresult = false;
+				printk("Failed. Num = %d, Value = %d, range = (%d, %d):\n", i+1, Value, CBMin, CBMax);
+			}
+			iCount++;
+		}
+
+		if (0 == iCount) {
+			iAvg = 0;
+			iMax = 0;
+			iMin = 0;
+		} else
+			iAvg = iAvg/iCount;
+
+		printk("Force Touch SCap CB in Waterproof-ON, Max : %d, Min: %d, Deviation: %d, Average: %d\n", iMax, iMin, iMax - iMin, iAvg);
+		ibiggerValue = m_iForceTouchTx > m_iForceTouchRx?m_iForceTouchTx:m_iForceTouchRx;
+		Save_Test_Data(m_RawData, g_ScreenSetParam.iTxNum+0, 2, ibiggerValue, 1);
+	}
+
+	bFlag = GetTestCondition(WT_NeedProofOffTest, wc_value);
+	if (g_stCfg_FT3C47_BasicThreshold.ForceTouch_SCapCBTest_SetWaterproof_OFF && bFlag) {
+		printk("Force Touch SCapCbTest in WaterProof OFF Mode:  \n");
+		iMax = -m_RawData[2+g_ScreenSetParam.iTxNum][0];
+		iMin = 2 * m_RawData[2+g_ScreenSetParam.iTxNum][0];
+		iAvg = 0;
+		Value = 0;
+		iCount = 0;
+
+		bFlag = GetTestCondition(WT_NeedRxOffVal, wc_value);
+		if (bFlag)
+			printk("Force Touch SCap CB_Rx:  \n");
+		for (i = 0; bFlag &&  i < m_iForceTouchRx; i++) {
+
+			CBMin = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapCbTest_OFF_Min[0][i];
+			CBMax = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapCbTest_OFF_Max[0][i];
+			Value = m_RawData[2+g_ScreenSetParam.iTxNum][i];
+			iAvg += Value;
+
+			if (iMax < Value)
+				iMax = Value;
+			if (iMin > Value)
+				iMin = Value;
+			if (Value > CBMax || Value < CBMin) {
+				btmpresult = false;
+				printk("Failed. Num = %d, Value = %d, range = (%d, %d):\n", i+1, Value, CBMin, CBMax);
+			}
+			iCount++;
+		}
+
+
+		bFlag = GetTestCondition(WT_NeedTxOffVal, wc_value);
+		if (bFlag)
+			printk("Force Touch SCap CB_Tx:  \n");
+		for (i = 0; bFlag && i < m_iForceTouchTx; i++) {
+
+
+			CBMin = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapCbTest_OFF_Min[0][i+m_iForceTouchRx];
+			CBMax = g_stCfg_MCap_DetailThreshold.ForceTouch_SCapCbTest_OFF_Max[0][i+m_iForceTouchRx];
+			Value = m_RawData[3+g_ScreenSetParam.iTxNum][i];
+
+			iAvg += Value;
+			if (iMax < Value)
+				iMax = Value;
+			if (iMin > Value)
+				iMin = Value;
+			if (Value > CBMax || Value < CBMin) {
+				btmpresult = false;
+				printk("Failed. Num = %d, Value = %d, range = (%d, %d):\n", i+1, Value, CBMin, CBMax);
+			}
+			iCount++;
+		}
+
+		if (0 == iCount) {
+			iAvg = 0;
+			iMax = 0;
+			iMin = 0;
+		} else
+			iAvg = iAvg/iCount;
+
+		printk("Force Touch SCap CB in Waterproof-OFF, Max : %d, Min: %d, Deviation: %d, Average: %d\n", iMax, iMin, iMax - iMin, iAvg);
+		ibiggerValue = m_iForceTouchTx > m_iForceTouchRx?m_iForceTouchTx:m_iForceTouchRx;
+		Save_Test_Data(m_RawData, g_ScreenSetParam.iTxNum+2, 2, ibiggerValue, 2);
+	}
+
+
+	if (btmpresult) {
+		*bTestResult = true;
+		printk("\n\n//Force Touch SCap CB Test is OK!\n");
+	} else {
+		*bTestResult = false;
+		printk("\n\n//Force Touch SCap CB Test is NG!\n");
+	}
+	return ReCode;
+
+TEST_ERR:
+
+	*bTestResult = false;
+	printk("\n\n//Force Touch SCap CB Test is NG!\n");
+	return ReCode;
 }
 
 
