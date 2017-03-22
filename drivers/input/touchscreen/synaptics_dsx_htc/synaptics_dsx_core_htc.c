@@ -6254,6 +6254,7 @@ static int synaptics_rmi4_suspend(struct device *dev)
 
 	if (!rmi4_data->suspend) {
 		synaptics_rmi4_irq_enable(rmi4_data, false, false);
+		synaptics_rmi4_sleep_enable(rmi4_data, true);
 	}
 
 exit:
