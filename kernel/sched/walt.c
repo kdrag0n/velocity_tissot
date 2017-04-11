@@ -78,7 +78,7 @@ __read_mostly unsigned int walt_ravg_window = 20000000 / TICK_NSEC * TICK_NSEC;
 
 static unsigned int sync_cpu;
 static ktime_t ktime_last;
-static bool walt_ktime_suspended;
+static __read_mostly bool walt_ktime_suspended;
 
 static unsigned int task_load(struct task_struct *p)
 {
