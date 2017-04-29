@@ -746,6 +746,12 @@ void synchronize_rcu_expedited(void)
 	struct rcu_state *rsp = rcu_state_p;
 	unsigned long s;
 
+	/* If expedited grace periods are prohibited, fall back to normal. */
+	if (rcu_gp_is_normal()) {
+		wait_rcu_gp(call_rcu);
+		return;
+	}
+
 	s = rcu_exp_gp_seq_snap(rsp);
 
 	rnp_unlock = exp_funnel_lock(rsp, s);
@@ -786,7 +792,7 @@ EXPORT_SYMBOL_GPL(rcu_barrier);
  */
 static void __init __rcu_init_preempt(void)
 {
-	rcu_init_one(rcu_state_p, rcu_data_p);
+	rcu_init_one(rcu_state_p);
 }
 
 /*
@@ -810,7 +816,6 @@ void exit_rcu(void)
 #else /* #ifdef CONFIG_PREEMPT_RCU */
 
 static struct rcu_state *const rcu_state_p = &rcu_sched_state;
-static struct rcu_data __percpu *const rcu_data_p = &rcu_sched_data;
 
 /*
  * Tell them what RCU they are running.
@@ -1871,7 +1876,8 @@ static void wake_nocb_leader(struct rcu_data *rdp, bool force)
 	if (READ_ONCE(rdp_leader->nocb_leader_sleep) || force) {
 		/* Prior smp_mb__after_atomic() orders against prior enqueue. */
 		WRITE_ONCE(rdp_leader->nocb_leader_sleep, false);
-		wake_up(&rdp_leader->nocb_wq);
+		smp_mb(); /* ->nocb_leader_sleep before swake_up(). */
+		swake_up(&rdp_leader->nocb_wq);
 	}
 }
 
@@ -2112,7 +2118,7 @@ wait_again:
 	/* Wait for callbacks to appear. */
 	if (!rcu_nocb_poll) {
 		trace_rcu_nocb_wake(my_rdp->rsp->name, my_rdp->cpu, "Sleep");
-		wait_event_interruptible(my_rdp->nocb_wq,
+		swait_event_interruptible(my_rdp->nocb_wq,
 				!READ_ONCE(my_rdp->nocb_leader_sleep));
 		/* Memory barrier handled by smp_mb() calls below and repoll. */
 	} else if (firsttime) {
@@ -2209,7 +2215,7 @@ static void nocb_follower_wait(struct rcu_data *rdp)
 		if (!rcu_nocb_poll) {
 			trace_rcu_nocb_wake(rdp->rsp->name, rdp->cpu,
 					    "FollowerSleep");
-			wait_event_interruptible(rdp->nocb_wq,
+			swait_event_interruptible(rdp->nocb_wq,
 						 READ_ONCE(rdp->nocb_follower_head));
 		} else if (firsttime) {
 			/* Don't drown trace log with "Poll"! */
