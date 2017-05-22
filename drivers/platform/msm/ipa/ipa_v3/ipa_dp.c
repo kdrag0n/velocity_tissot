@@ -367,6 +367,125 @@ static void ipa3_wq_handle_tx(struct work_struct *work)
 	ipa3_handle_tx(sys);
 }
 
+/**
+ * ipa3_send_one() - Send a single descriptor
+ * @sys:	system pipe context
+ * @desc:	descriptor to send
+ * @in_atomic:  whether caller is in atomic context
+ *
+ * - Allocate tx_packet wrapper
+ * - transfer data to the IPA
+ * - after the transfer was done the SPS will
+ *   notify the sending user via ipa_sps_irq_comp_tx()
+ *
+ * Return codes: 0: success, -EFAULT: failure
+ */
+int ipa3_send_one(struct ipa3_sys_context *sys, struct ipa3_desc *desc,
+		bool in_atomic)
+{
+	struct ipa3_tx_pkt_wrapper *tx_pkt;
+	struct gsi_xfer_elem gsi_xfer;
+	int result;
+	u16 sps_flags = SPS_IOVEC_FLAG_EOT;
+	dma_addr_t dma_address;
+	u16 len = 0;
+	u32 mem_flag = GFP_ATOMIC;
+
+	if (unlikely(!in_atomic))
+		mem_flag = GFP_KERNEL;
+
+	tx_pkt = kmem_cache_zalloc(ipa3_ctx->tx_pkt_wrapper_cache, mem_flag);
+	if (!tx_pkt) {
+		IPAERR("failed to alloc tx wrapper\n");
+		goto fail_mem_alloc;
+	}
+
+	if (!desc->dma_address_valid) {
+		dma_address = dma_map_single(ipa3_ctx->pdev, desc->pyld,
+			desc->len, DMA_TO_DEVICE);
+	} else {
+		dma_address = desc->dma_address;
+		tx_pkt->no_unmap_dma = true;
+	}
+	if (dma_mapping_error(ipa3_ctx->pdev, dma_address)) {
+		IPAERR("failed to DMA wrap\n");
+		goto fail_dma_map;
+	}
+
+	INIT_LIST_HEAD(&tx_pkt->link);
+	tx_pkt->type = desc->type;
+	tx_pkt->cnt = 1;    /* only 1 desc in this "set" */
+
+	tx_pkt->mem.phys_base = dma_address;
+	tx_pkt->mem.base = desc->pyld;
+	tx_pkt->mem.size = desc->len;
+	tx_pkt->sys = sys;
+	tx_pkt->callback = desc->callback;
+	tx_pkt->user1 = desc->user1;
+	tx_pkt->user2 = desc->user2;
+
+	if (ipa3_ctx->transport_prototype == IPA_TRANSPORT_TYPE_GSI) {
+		memset(&gsi_xfer, 0, sizeof(gsi_xfer));
+		gsi_xfer.addr = dma_address;
+		gsi_xfer.flags |= GSI_XFER_FLAG_EOT;
+		gsi_xfer.xfer_user_data = tx_pkt;
+		if (desc->type == IPA_IMM_CMD_DESC) {
+			gsi_xfer.len = desc->opcode;
+			gsi_xfer.type = GSI_XFER_ELEM_IMME_CMD;
+		} else {
+			gsi_xfer.len = desc->len;
+			gsi_xfer.type = GSI_XFER_ELEM_DATA;
+		}
+	} else {
+		/*
+		 * Special treatment for immediate commands, where the
+		 * structure of the descriptor is different
+		 */
+		if (desc->type == IPA_IMM_CMD_DESC) {
+			sps_flags |= SPS_IOVEC_FLAG_IMME;
+			len = desc->opcode;
+			IPADBG_LOW("sending cmd=%d pyld_len=%d sps_flags=%x\n",
+					desc->opcode, desc->len, sps_flags);
+			IPA_DUMP_BUFF(desc->pyld, dma_address, desc->len);
+		} else {
+			len = desc->len;
+		}
+	}
+
+	INIT_WORK(&tx_pkt->work, ipa3_wq_write_done);
+
+	spin_lock_bh(&sys->spinlock);
+	list_add_tail(&tx_pkt->link, &sys->head_desc_list);
+
+	if (ipa3_ctx->transport_prototype == IPA_TRANSPORT_TYPE_GSI) {
+		result = gsi_queue_xfer(sys->ep->gsi_chan_hdl, 1,
+					&gsi_xfer, true);
+		if (result != GSI_STATUS_SUCCESS) {
+			IPAERR("GSI xfer failed.\n");
+			goto fail_transport_send;
+		}
+	} else {
+		result = sps_transfer_one(sys->ep->ep_hdl, dma_address,
+					len, tx_pkt, sps_flags);
+		if (result) {
+			IPAERR("sps_transfer_one failed rc=%d\n", result);
+			goto fail_transport_send;
+		}
+	}
+
+	spin_unlock_bh(&sys->spinlock);
+
+	return 0;
+
+fail_transport_send:
+	list_del(&tx_pkt->link);
+	spin_unlock_bh(&sys->spinlock);
+	dma_unmap_single(ipa3_ctx->pdev, dma_address, desc->len, DMA_TO_DEVICE);
+fail_dma_map:
+	kmem_cache_free(ipa3_ctx->tx_pkt_wrapper_cache, tx_pkt);
+fail_mem_alloc:
+	return -EFAULT;
+}
 
 /**
  * ipa3_send() - Send multiple descriptors in one HW transaction
@@ -400,6 +519,7 @@ int ipa3_send(struct ipa3_sys_context *sys,
 	int i = 0;
 	int j;
 	int result;
+	uint size;
 	u32 mem_flag = GFP_ATOMIC;
 	const struct ipa_gsi_ep_config *gsi_ep_cfg;
 
@@ -425,6 +545,32 @@ int ipa3_send(struct ipa3_sys_context *sys,
 	if (!gsi_xfer_elem_array) {
 		IPAERR("Failed to alloc mem for gsi xfer array.\n");
 		return -EFAULT;
+	} else {
+		if (num_desc == IPA_NUM_DESC_PER_SW_TX) {
+			transfer.iovec = dma_pool_alloc(ipa3_ctx->dma_pool,
+					mem_flag, &dma_addr);
+			if (!transfer.iovec) {
+				IPAERR("fail to alloc dma mem\n");
+				return -EFAULT;
+			}
+		} else {
+			transfer.iovec = kmalloc(size, mem_flag);
+			if (!transfer.iovec) {
+				IPAERR("fail to alloc mem for sps xfr buff ");
+				IPAERR("num_desc = %d size = %d\n",
+						num_desc, size);
+				return -EFAULT;
+			}
+			dma_addr  = dma_map_single(ipa3_ctx->pdev,
+					transfer.iovec, size, DMA_TO_DEVICE);
+			if (dma_mapping_error(ipa3_ctx->pdev, dma_addr)) {
+				IPAERR("dma_map_single failed\n");
+				kfree(transfer.iovec);
+				return -EFAULT;
+			}
+		}
+		transfer.iovec_phys = dma_addr;
+		transfer.iovec_count = num_desc;
 	}
 
 	spin_lock_bh(&sys->spinlock);
@@ -566,6 +712,27 @@ failure:
 
 		if (!tx_pkt->no_unmap_dma) {
 			if (desc[j].type != IPA_DATA_DESC_SKB_PAGED) {
+				dma_unmap_single(ipa3_ctx->pdev,
+					tx_pkt->mem.phys_base,
+					tx_pkt->mem.size, DMA_TO_DEVICE);
+		    } else {
+				dma_unmap_page(ipa3_ctx->pdev,
+					tx_pkt->mem.phys_base,
+					tx_pkt->mem.size,
+					DMA_TO_DEVICE);
+			}
+		}
+		kmem_cache_free(ipa3_ctx->tx_pkt_wrapper_cache, tx_pkt);
+		tx_pkt = next_pkt;
+	}
+	if (ipa3_ctx->transport_prototype == IPA_TRANSPORT_TYPE_GSI) {
+		kfree(gsi_xfer_elem_array);
+	} else {
+		if (transfer.iovec_phys) {
+			if (num_desc == IPA_NUM_DESC_PER_SW_TX) {
+				dma_pool_free(ipa3_ctx->dma_pool,
+					transfer.iovec, transfer.iovec_phys);
+			} else {
 				dma_unmap_single(ipa3_ctx->pdev,
 					tx_pkt->mem.phys_base,
 					tx_pkt->mem.size, DMA_TO_DEVICE);

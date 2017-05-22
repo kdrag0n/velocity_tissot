@@ -605,7 +605,8 @@ ipa_insert_failed:
 	}
 	htbl->hdr_cnt--;
 	list_del(&entry->link);
-
+	dma_unmap_single(ipa3_ctx->pdev, entry->phys_base,
+			entry->hdr_len, DMA_TO_DEVICE);
 fail_dma_mapping:
 	entry->is_hdr_proc_ctx = false;
 
