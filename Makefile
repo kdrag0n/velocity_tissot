@@ -420,6 +420,10 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   $(call cc-disable-warning,shift-overflow,) \
 		   -std=gnu89
 
+# TODO: remove me b/62057517
+KBUILD_CFLAGS += \
+	-Wno-gcc-compat \
+
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
