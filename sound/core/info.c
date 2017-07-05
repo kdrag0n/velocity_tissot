@@ -813,6 +813,12 @@ static struct snd_info_entry *snd_info_create_entry(const char *name)
 	mutex_init(&entry->access);
 	INIT_LIST_HEAD(&entry->children);
 	INIT_LIST_HEAD(&entry->list);
+	entry->parent = parent;
+	if (parent) {
+		mutex_lock(&parent->access);
+		list_add_tail(&entry->list, &parent->children);
+		mutex_unlock(&parent->access);
+	}
 	return entry;
 }
 
@@ -912,7 +918,7 @@ static int snd_info_dev_register_entry(struct snd_device *device)
  * The parent is assumed as card->proc_root.
  *
  * For releasing this entry, use snd_device_free() instead of
- * snd_info_free_entry(). 
+ * snd_info_free_entry().
  *
  * Return: Zero if successful, or a negative error code on failure.
  */
