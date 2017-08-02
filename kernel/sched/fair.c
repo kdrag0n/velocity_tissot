@@ -6053,6 +6053,7 @@ static int start_cpu(bool boosted)
 static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 				   bool boosted, bool prefer_idle)
 {
+	unsigned long high_cpu_util = SCHED_CAPACITY_SCALE;
 	unsigned long best_idle_min_cap_orig = ULONG_MAX;
 	unsigned long min_util = boosted_task_util(p);
 	unsigned long target_capacity = ULONG_MAX;
@@ -6061,10 +6062,12 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 	unsigned long best_active_util = ULONG_MAX;
 	unsigned long target_idle_max_spare_cap = 0;
 	int best_idle_cstate = INT_MAX;
+	bool low_util_mode = true;
 	struct sched_domain *sd;
 	struct sched_group *sg;
 	int best_active_cpu = -1;
 	int best_idle_cpu = -1;
+	int low_util_cpu = -1;
 	int target_cpu = -1;
 	int cpu, i;
 
@@ -6089,6 +6092,12 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 		return -1;
 	}
 
+	/*
+	 * Consider a CPU highly utilized when it's utilization is bigger than
+	 * 1/4 of the maximum capacity.
+	 */
+	high_cpu_util = SCHED_CAPACITY_SCALE >> 2;
+
 	/* Scan CPUs in all SDs */
 	sg = sd->groups;
 	do {
@@ -6100,9 +6109,6 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 			if (!cpu_online(i))
 				continue;
 
-			if (walt_cpu_high_irqload(i))
-				continue;
-
 			/*
 			 * p's blocked utilization is still accounted for on prev_cpu
 			 * so prev_cpu will receive a negative bias due to the double
@@ -6110,6 +6116,18 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 			 */
 			wake_util = cpu_util_wake(i, p);
 			new_util = wake_util + task_util(p);
+
+			/*
+			 * Keep track of overall system utilization.
+			 * System is considered in low-utilization if the
+			 * utilization of each (online) CPU is below a
+			 */
+			if (new_util >= high_cpu_util)
+				low_util_mode = false;
+
+			/* Skip high IRQ loaded CPUs */
+			if (walt_cpu_high_irqload(i))
+				continue;
 
 			/*
 			 * Ensure minimum capacity to grant the required boost.
@@ -6162,18 +6180,54 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 
 				/*
 				 * Case A.1: IDLE CPU
-				 * Return the first IDLE CPU we find.
+				 *
+				 * This heuristics will return:
+				 * - the first IDLE CPU we find, if the system
+				 *   is !low_util, i.e. there is one CPU whith
+				 *   at least high_cpu_util utilization.
+				 * - the most energy_efficient IDLE CPU, if the
+				 *   system is low_util, i.e. all the CPUs
+				 *   have less then high_cpu_util utilization.
 				 */
 				if (idle_cpu(i)) {
-					schedstat_inc(p, se.statistics.nr_wakeups_fbt_pref_idle);
-					schedstat_inc(this_rq(), eas_stats.fbt_pref_idle);
 
-					trace_sched_find_best_target(p,
-							prefer_idle, min_util,
-							cpu, best_idle_cpu,
-							best_active_cpu, i);
+					/*
+					 * Keep track of first IDLE CPU and
+					 * return that one if the system
+					 * is not int low_util mode
+					 */
+					if (target_cpu == -1) {
+						target_capacity = capacity_orig;
+						target_cpu = i;
+						if (!low_util_mode)
+							break;
+						continue;
+					}
 
-					return i;
+					/*
+					 * Unconditionally favour first IDLE
+					 * CPU encountered on highly utilized
+					 * systems.
+					 */
+					if (!low_util_mode)
+						break;
+
+					/* Favor CPUs with smaller capacity */
+					if (capacity_orig >= target_capacity)
+						continue;
+
+					target_capacity = capacity_orig;
+					low_util_cpu = i;
+					continue;
+				}
+
+				/*
+				 * Restrict search on idle CPUs if we already
+				 * found at least one.
+				 */
+				if (target_cpu >= 0) {
+					best_active_cpu = -1;
+					continue;
 				}
 
 				/*
@@ -6312,33 +6366,41 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 	} while (sg = sg->next, sg != sd->groups);
 
 	/*
-	 * For non latency sensitive tasks, cases B and C in the previous loop,
-	 * we pick the best IDLE CPU only if we was not able to find a target
-	 * ACTIVE CPU.
-	 *
-	 * Policies priorities:
-	 *
-	 * - prefer_idle tasks:
-	 *
-	 *   a) IDLE CPU available, we return immediately
-	 *   b) ACTIVE CPU where task fits and has the bigger maximum spare
-	 *      capacity (i.e. target_cpu)
-	 *   c) ACTIVE CPU with less contention due to other tasks
-	 *      (i.e. best_active_cpu)
-	 *
-	 * - NON prefer_idle tasks:
-	 *
-	 *   a) ACTIVE CPU: target_cpu
-	 *   b) IDLE CPU: best_idle_cpu
+	 * For latency sensitive tasks, case A in the previous loop, we pick
+	 * the best ACTIVE CPU only if we was not able to find a target IDLE
+	 * CPU.
+	 * The target IDLE CPU is selected depending on CPUs utilization.
+	 * In !low_util_mode we always pick the first IDLE candidate
+	 * encountered. Otherwise, for low utilized systems, the most energy
+	 * efficient IDLE CPU is preferred.
 	 */
-	if (target_cpu == -1)
-		target_cpu = prefer_idle
-			? best_active_cpu
-			: best_idle_cpu;
-	else
-		*backup_cpu = prefer_idle
-		? best_active_cpu
-		: best_idle_cpu;
+	if (prefer_idle && !low_util_mode) {
+		if (target_cpu == -1)
+			target_cpu = best_active_cpu;
+		schedstat_inc(p, se.statistics.nr_wakeups_fbt_pref_idle);
+		schedstat_inc(this_rq(), eas_stats.fbt_pref_idle);
+		goto done;
+	}
+
+	if (prefer_idle && low_util_mode) {
+		if (low_util_cpu != -1)
+			target_cpu = low_util_cpu;
+		goto done;
+	}
+
+	/*
+	 * For non latency sensitive tasks, cases B and C in the previous
+	 * loop, we pick the best IDLE CPU only if we was not able to find a
+	 * target ACTIVE CPU.
+	 * Otherwise, the best IDLE CPU becomes our backup choice.
+	 */
+	if (target_cpu == -1) {
+		target_cpu = best_idle_cpu;
+		goto done;
+	}
+	*backup_cpu = best_idle_cpu;
+
+done:
 
 	trace_sched_find_best_target(p, prefer_idle, min_util, cpu,
 				     best_idle_cpu, best_active_cpu,
