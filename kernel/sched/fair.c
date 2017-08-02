@@ -6385,6 +6385,8 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 	if (prefer_idle && low_util_mode) {
 		if (low_util_cpu != -1)
 			target_cpu = low_util_cpu;
+		schedstat_inc(p, se.statistics.nr_wakeups_fbt_pref_idle_lum);
+		schedstat_inc(this_rq(), eas_stats.fbt_pref_idle_lum);
 		goto done;
 	}
 
@@ -6396,9 +6398,13 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 	 */
 	if (target_cpu == -1) {
 		target_cpu = best_idle_cpu;
+		schedstat_inc(p, se.statistics.nr_wakeups_fbt_best_idle);
+		schedstat_inc(this_rq(), eas_stats.fbt_best_idle);
 		goto done;
 	}
 	*backup_cpu = best_idle_cpu;
+	schedstat_inc(p, se.statistics.nr_wakeups_fbt_best_active);
+	schedstat_inc(this_rq(), eas_stats.fbt_best_active);
 
 done:
 

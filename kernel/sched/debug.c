@@ -613,6 +613,9 @@ void proc_sched_show_task(struct task_struct *p, struct seq_file *m)
 	P(se.statistics.nr_wakeups_fbt_no_cpu);
 	P(se.statistics.nr_wakeups_fbt_no_sd);
 	P(se.statistics.nr_wakeups_fbt_pref_idle);
+	P(se.statistics.nr_wakeups_fbt_pref_idle_lum);
+	P(se.statistics.nr_wakeups_fbt_best_active);
+	P(se.statistics.nr_wakeups_fbt_best_idle);
 	P(se.statistics.nr_wakeups_fbt_count);
 	/* cas */
 	/* select_task_rq_fair() */
