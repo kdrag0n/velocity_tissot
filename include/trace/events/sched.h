@@ -860,9 +860,11 @@ TRACE_EVENT(sched_find_best_target,
 
 	TP_PROTO(struct task_struct *tsk, bool prefer_idle,
 		unsigned long min_util, int start_cpu,
+		bool low_util_mode, int low_util_cpu,
 		int best_idle, int best_active, int target),
 
 	TP_ARGS(tsk, prefer_idle, min_util, start_cpu,
+		low_util_mode, low_util_cpu,
 		best_idle, best_active, target),
 
 	TP_STRUCT__entry(
@@ -871,6 +873,8 @@ TRACE_EVENT(sched_find_best_target,
 		__field( unsigned long,	min_util	)
 		__field( bool,	prefer_idle		)
 		__field( int,	start_cpu		)
+		__field( bool,	low_util_mode		)
+		__field( int,	low_util_cpu		)
 		__field( int,	best_idle		)
 		__field( int,	best_active		)
 		__field( int,	target			)
@@ -882,15 +886,19 @@ TRACE_EVENT(sched_find_best_target,
 		__entry->min_util	= min_util;
 		__entry->prefer_idle	= prefer_idle;
 		__entry->start_cpu 	= start_cpu;
+		__entry->low_util_mode 	= low_util_mode;
+		__entry->low_util_cpu 	= low_util_cpu;
 		__entry->best_idle	= best_idle;
 		__entry->best_active	= best_active;
 		__entry->target		= target;
 	),
 
 	TP_printk("pid=%d comm=%s prefer_idle=%d start_cpu=%d "
+		  "low_util_mode=%d, low_util_cpu=%d "
 		  "best_idle=%d best_active=%d target=%d",
 		__entry->pid, __entry->comm,
 		__entry->prefer_idle, __entry->start_cpu,
+		__entry->low_util_mode, __entry->low_util_cpu,
 		__entry->best_idle, __entry->best_active,
 		__entry->target)
 );

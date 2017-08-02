@@ -6409,6 +6409,7 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 done:
 
 	trace_sched_find_best_target(p, prefer_idle, min_util, cpu,
+				     low_util_mode, low_util_cpu,
 				     best_idle_cpu, best_active_cpu,
 				     target_cpu);
 
