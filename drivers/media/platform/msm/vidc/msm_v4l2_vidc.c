@@ -495,11 +495,8 @@ static int msm_vidc_probe_vidc_device(struct platform_device *pdev)
 	}
 
 	core = kzalloc(sizeof(*core), GFP_KERNEL);
-	if (!core) {
-		dprintk(VIDC_ERR,
-			"Failed to allocate memory for device core\n");
+	if (!core)
 		return -ENOMEM;
-	}
 
 	dev_set_drvdata(&pdev->dev, core);
 	rc = msm_vidc_initialize_core(pdev, core);
