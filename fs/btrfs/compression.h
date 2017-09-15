@@ -52,7 +52,6 @@ enum btrfs_compression_type {
 	BTRFS_COMPRESS_LZO   = 2,
 	BTRFS_COMPRESS_ZSTD  = 3,
 	BTRFS_COMPRESS_TYPES = 3,
-	BTRFS_COMPRESS_LAST  = 4,
 };
 
 struct btrfs_compress_op {
@@ -84,13 +83,10 @@ struct btrfs_compress_op {
 			  size_t srclen, size_t destlen);
 };
 
-<<<<<<< HEAD
-extern struct btrfs_compress_op btrfs_zlib_compress;
-extern struct btrfs_compress_op btrfs_lzo_compress;
-=======
 extern const struct btrfs_compress_op btrfs_zlib_compress;
 extern const struct btrfs_compress_op btrfs_lzo_compress;
 extern const struct btrfs_compress_op btrfs_zstd_compress;
->>>>>>> 5c1aab1dd544... btrfs: Add zstd support
+
+int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end);
 
 #endif
