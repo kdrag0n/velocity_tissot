@@ -4661,8 +4661,9 @@ tSirRetStatus
 limEnableHT20Protection(tpAniSirGlobal pMac, tANI_U8 enable,
     tANI_U8 overlap, tpUpdateBeaconParams pBeaconParams,tpPESession psessionEntry)
 {
-    if(!psessionEntry->htCapability)
+    if(!psessionEntry->htCapability) {
         return eSIR_SUCCESS; // this protection  is only for HT stations.
+    }
 
     //overlapping protection configuration check.
     if(overlap)
@@ -4871,8 +4872,9 @@ tSirRetStatus
 limEnableHTNonGfProtection(tpAniSirGlobal pMac, tANI_U8 enable,
     tANI_U8 overlap, tpUpdateBeaconParams pBeaconParams,tpPESession psessionEntry)
 {
-    if(!psessionEntry->htCapability)
+    if(!psessionEntry->htCapability) {
         return eSIR_SUCCESS; // this protection  is only for HT stations.
+    }
 
     //overlapping protection configuration check.
     if(overlap)
@@ -4942,7 +4944,7 @@ tSirRetStatus
 limEnableHTLsigTxopProtection(tpAniSirGlobal pMac, tANI_U8 enable,
     tANI_U8 overlap, tpUpdateBeaconParams pBeaconParams,tpPESession psessionEntry)
 {
-    if(!psessionEntry->htCapability)
+    if (!psessionEntry->htCapability)
         return eSIR_SUCCESS; // this protection  is only for HT stations.
 
     //overlapping protection configuration check.
@@ -4953,12 +4955,21 @@ limEnableHTLsigTxopProtection(tpAniSirGlobal pMac, tANI_U8 enable,
     {
         //normal protection config check
         if((psessionEntry->limSystemRole == eLIM_AP_ROLE ) &&
+<<<<<<< HEAD
            !psessionEntry->cfgProtection.lsigTxop)
+=======
+            !psessionEntry->cfgProtection.lsigTxop)
+>>>>>>> e9486065567d... fix build with GCC 7.x
         {
             // protection disabled.
             PELOG3(limLog(pMac, LOG3, FL(" protection from LsigTxop not supported is disabled"));)
             return eSIR_SUCCESS;
+<<<<<<< HEAD
         }else if(psessionEntry->limSystemRole != eLIM_AP_ROLE)
+=======
+        }
+        else if(psessionEntry->limSystemRole != eLIM_AP_ROLE)
+>>>>>>> e9486065567d... fix build with GCC 7.x
         {
             //normal protection config check
             if(!pMac->lim.cfgProtection.lsigTxop)
@@ -4984,7 +4995,8 @@ limEnableHTLsigTxopProtection(tpAniSirGlobal pMac, tANI_U8 enable,
             pBeaconParams->fLsigTXOPProtectionFullSupport= psessionEntry->beaconParams.fLsigTXOPProtectionFullSupport = false;
             pBeaconParams->paramChangeBitmap |= PARAM_LSIG_TXOP_FULL_SUPPORT_CHANGED;
         }
-    }else
+    }
+    else
     {
         if ((enable) && (false == psessionEntry->beaconParams.fLsigTXOPProtectionFullSupport))
         {
@@ -5018,20 +5030,29 @@ limEnableHtRifsProtection(tpAniSirGlobal pMac, tANI_U8 enable,
     if(!psessionEntry->htCapability)
         return eSIR_SUCCESS; // this protection  is only for HT stations.
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> e9486065567d... fix build with GCC 7.x
     //overlapping protection configuration check.
     if(overlap)
     {
     }
     else
     {
+<<<<<<< HEAD
          //normal protection config check
         if((psessionEntry->limSystemRole == eLIM_AP_ROLE) &&
            !psessionEntry->cfgProtection.rifs)
+=======
+        if((psessionEntry->limSystemRole == eLIM_AP_ROLE) &&
+            !psessionEntry->cfgProtection.rifs)
+>>>>>>> e9486065567d... fix build with GCC 7.x
         {
             // protection disabled.
             PELOG3(limLog(pMac, LOG3, FL(" protection from Rifs is disabled"));)
             return eSIR_SUCCESS;
+<<<<<<< HEAD
         }else if(psessionEntry->limSystemRole != eLIM_AP_ROLE )
         {
            //normal protection config check
@@ -5041,6 +5062,18 @@ limEnableHtRifsProtection(tpAniSirGlobal pMac, tANI_U8 enable,
               PELOG3(limLog(pMac, LOG3, FL(" protection from Rifs is disabled"));)
               return eSIR_SUCCESS;
            }
+=======
+        }
+        else if(psessionEntry->limSystemRole != eLIM_AP_ROLE )
+        {
+            //normal protection config check
+            if(!pMac->lim.cfgProtection.rifs)
+            {
+                // protection disabled.
+                PELOG3(limLog(pMac, LOG3, FL(" protection from Rifs is disabled"));)
+                return eSIR_SUCCESS;
+            }
+>>>>>>> e9486065567d... fix build with GCC 7.x
         }
     }
 
@@ -5668,7 +5701,6 @@ limProcessAddBaInd(tpAniSirGlobal pMac, tpSirMsgQ limMsg)
 #ifdef FEATURE_WLAN_TDLS
     boolean             htCapable = FALSE;
 #endif
-    
 
     if (limMsg->bodyptr == NULL)
         return;
@@ -5676,7 +5708,7 @@ limProcessAddBaInd(tpAniSirGlobal pMac, tpSirMsgQ limMsg)
     pBaActivityInd = (tpBaActivityInd)limMsg->bodyptr;
     baCandidateCnt = pBaActivityInd->baCandidateCnt;
 
-    if ((psessionEntry = peFindSessionByBssid(pMac,pBaActivityInd->bssId,&sessionId))== NULL)
+    if ((psessionEntry = peFindSessionByBssid(pMac,pBaActivityInd->bssId,&sessionId)) == NULL)
     {
         limLog(pMac, LOGE,FL("session does not exist for given BSSId"));
         vos_mem_free(limMsg->bodyptr);
@@ -5687,10 +5719,11 @@ limProcessAddBaInd(tpAniSirGlobal pMac, tpSirMsgQ limMsg)
     //if we are not HT capable we don't need to handle BA timeout indication from HAL.
 #ifdef FEATURE_WLAN_TDLS
     if ((baCandidateCnt  > pMac->lim.maxStation))
-#else
-    if ((baCandidateCnt  > pMac->lim.maxStation) || !psessionEntry->htCapability )
-#endif
     {
+#else
+    if ((baCandidateCnt  > pMac->lim.maxStation) || !psessionEntry->htCapability)
+    {
+#endif
         vos_mem_free(limMsg->bodyptr);
         limMsg->bodyptr = NULL;
         return;

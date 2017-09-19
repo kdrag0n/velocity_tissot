@@ -5974,14 +5974,15 @@ tSirRetStatus limSendAddBARsp( tpAniSirGlobal pMac,
             FL( "halTxFrame FAILED! Status [%d]" ),
             halStatus );
 
-        // FIXME - HAL error codes are different from PE error
-        // codes!! And, this routine is returning tSirRetStatus
-        statusCode = eSIR_FAILURE;
-        //Pkt will be freed up by the callback
-        return statusCode;
-    }
-    else
-        return eSIR_SUCCESS;
+    // FIXME - HAL error codes are different from PE error
+    // codes!! And, this routine is returning tSirRetStatus
+    statusCode = eSIR_FAILURE;
+    //Pkt will be freed up by the callback
+    return statusCode;
+  }
+  else {
+    return eSIR_SUCCESS;
+  }
 
 returnAfterError:
     // Release buffer, if allocated
@@ -6177,6 +6178,7 @@ tSirRetStatus limSendDelBAInd( tpAniSirGlobal pMac,
    MTRACE(macTrace(pMac, TRACE_CODE_TX_COMPLETE,
           psessionEntry->peSessionId,
           halStatus));
+<<<<<<< HEAD
     if( eHAL_STATUS_SUCCESS != halStatus )
     {
         PELOGE(limLog( pMac, LOGE, FL( "halTxFrame FAILED! Status [%d]" ), halStatus );)
@@ -6186,6 +6188,20 @@ tSirRetStatus limSendDelBAInd( tpAniSirGlobal pMac,
     }
     else
         return eSIR_SUCCESS;
+=======
+  if( eHAL_STATUS_SUCCESS != halStatus )
+  {
+    PELOGE(limLog( pMac, LOGE, FL( "halTxFrame FAILED! Status [%d]" ), halStatus );)
+    statusCode = eSIR_FAILURE;
+    //Pkt will be freed up by the callback
+    return statusCode;
+  }
+  else {
+    return eSIR_SUCCESS;
+  }
+
+    returnAfterError:
+>>>>>>> e9486065567d... fix build with GCC 7.x
 
 returnAfterError:
     // Release buffer, if allocated

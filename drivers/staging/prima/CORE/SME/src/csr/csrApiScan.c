@@ -5738,8 +5738,7 @@ static tANI_BOOLEAN csrScanProcessScanResults( tpAniSirGlobal pMac, tSmeCmd *pCo
     if (pMac->scan.defer_update_channel_list) {
         status = csrUpdateChannelList(pMac);
         if (eHAL_STATUS_SUCCESS != status)
-            smsLog(pMac, LOGE,
-                   FL( "failed to update the supported channel list"));
+            smsLog(pMac, LOGE, FL( "failed to update the supported channel list"));
         pMac->scan.defer_update_channel_list = false;
     }
 
