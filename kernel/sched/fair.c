@@ -5061,6 +5061,7 @@ struct energy_env {
 };
 
 static int cpu_util_wake(int cpu, struct task_struct *p);
+static int boosted_cpu_util_wake(int cpu, struct task_struct *p);
 
 /*
  * __cpu_norm_util() returns the cpu util relative to a specific capacity,
@@ -5242,7 +5243,7 @@ end:
 
 static unsigned long capacity_spare_wake(int cpu, struct task_struct *p)
 {
-	return capacity_orig_of(cpu) - cpu_util_wake(cpu, p);
+	return capacity_orig_of(cpu) - boosted_cpu_util_wake(cpu, p);
 }
 
 /*
@@ -6082,6 +6083,17 @@ static int start_cpu(bool boosted)
 	struct root_domain *rd = cpu_rq(smp_processor_id())->rd;
 
 	return boosted ? rd->max_cap_orig_cpu : rd->min_cap_orig_cpu;
+}
+
+static int boosted_cpu_util_wake(int cpu, struct task_struct *p)
+{
+	unsigned long util;
+	long margin;
+
+	util = cpu_util_wake(cpu, p);
+	margin = schedtune_cpu_margin(util);
+
+	return util + margin;
 }
 
 static inline int find_best_target(struct task_struct *p, int *backup_cpu,
