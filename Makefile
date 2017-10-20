@@ -393,7 +393,7 @@ CFLAGS_KCOV	= -fsanitize-coverage=trace-pc
 
 ifeq ($(cc-name),clang)
 ifneq ($(CROSS_COMPILE),)
-CLANG_TARGET	:= -target $(notdir $(CROSS_COMPILE:%-=%))
+CLANG_TARGET	:= --target=$(notdir $(CROSS_COMPILE:%-=%))
 GCC_TOOLCHAIN	:= $(dir $(CROSS_COMPILE))
 endif
 ifneq ($(GCC_TOOLCHAIN),)
