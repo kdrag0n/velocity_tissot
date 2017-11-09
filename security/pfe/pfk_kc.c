@@ -793,3 +793,60 @@ out:
 
 	return res;
 }
+
+/**
+ * pfk_kc_clear_on_reset() - clear the table and remove all keys from ICE
+ * The assumption is that at this point we don't have any pending transactions
+ * Also, there is no need to clear keys from ICE
+ *
+ * Return 0 on success, error otherwise
+ *
+ */
+void pfk_kc_clear_on_reset(void)
+{
+	struct kc_entry *entry = NULL;
+	int i = 0;
+
+	if (!kc_is_ready())
+		return;
+
+	kc_spin_lock();
+	for (i = 0; i < PFK_KC_TABLE_SIZE; i++) {
+		entry = kc_entry_at_index(i);
+		kc_clear_entry(entry);
+	}
+	kc_spin_unlock();
+}
+
+static int pfk_kc_find_storage_type(char **device)
+{
+	char boot[20] = {'\0'};
+	char *match = (char *)strnstr(saved_command_line,
+				"androidboot.bootdevice=",
+				strlen(saved_command_line));
+	if (match) {
+		memcpy(boot, (match + DSTRLEN("androidboot.bootdevice=")),
+			sizeof(boot) - 1);
+		if (strnstr(boot, PFK_UFS, strlen(boot)))
+			*device = PFK_UFS;
+
+		return 0;
+	}
+	return -EINVAL;
+}
+
+static int __init pfk_kc_pre_init(void)
+{
+	return pfk_kc_find_storage_type(&s_type);
+}
+
+static void __exit pfk_kc_exit(void)
+{
+	s_type = NULL;
+}
+
+module_init(pfk_kc_pre_init);
+module_exit(pfk_kc_exit);
+
+MODULE_LICENSE("GPL v2");
+MODULE_DESCRIPTION("Per-File-Key-KC driver");

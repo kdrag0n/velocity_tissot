@@ -62,7 +62,28 @@ unsigned long xen_remap_buf[P2M_PER_PAGE] __initdata;
  */
 #define EXTRA_MEM_RATIO		(10)
 
-static void __init xen_add_extra_mem(u64 start, u64 size)
+static bool xen_512gb_limit __initdata = IS_ENABLED(CONFIG_XEN_512GB);
+
+static void __init xen_parse_512gb(void)
+{
+	bool val = false;
+	char *arg;
+
+	arg = strstr(xen_start_info->cmd_line, "xen_512gb_limit");
+	if (!arg)
+		return;
+
+	arg = strstr(xen_start_info->cmd_line, "xen_512gb_limit=");
+	if (!arg)
+		val = true;
+	else if (strtobool(arg + DSTRLEN("xen_512gb_limit="), &val))
+		return;
+
+	xen_512gb_limit = val;
+}
+
+static void __init xen_add_extra_mem(unsigned long start_pfn,
+				     unsigned long n_pfns)
 {
 	unsigned long pfn;
 	int i;

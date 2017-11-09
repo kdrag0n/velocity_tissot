@@ -1398,7 +1398,7 @@ static int sony_leds_init(struct sony_sc *sc)
 	if (sc->quirks & BUZZ_CONTROLLER) {
 		sc->led_count = 4;
 		use_ds4_names = 0;
-		name_len = strlen("::buzz#");
+		name_len = DSTRLEN("::buzz#");
 		name_fmt = "%s::buzz%d";
 		/* Validate expected report characteristics. */
 		if (!hid_validate_values(hdev, HID_OUTPUT_REPORT, 0, 0, 7))
@@ -1412,12 +1412,27 @@ static int sony_leds_init(struct sony_sc *sc)
 		use_ds4_names = 1;
 		name_len = 0;
 		name_fmt = "%s:%s";
+	} else if (sc->quirks & MOTION_CONTROLLER) {
+		sc->led_count = 3;
+		memset(max_brightness, 255, 3);
+		use_ds4_names = 1;
+		name_len = 0;
+		name_fmt = "%s:%s";
+	} else if (sc->quirks & NAVIGATION_CONTROLLER) {
+		static const __u8 navigation_leds[4] = {0x01, 0x00, 0x00, 0x00};
+
+		memcpy(sc->led_state, navigation_leds, sizeof(navigation_leds));
+		sc->led_count = 1;
+		memset(use_hw_blink, 1, 4);
+		use_ds4_names = 0;
+		name_len = DSTRLEN("::sony#");
+		name_fmt = "%s::sony%d";
 	} else {
 		sixaxis_set_leds_from_id(sc->device_id, initial_values);
 		sc->led_count = 4;
 		memset(use_hw_blink, 1, 4);
 		use_ds4_names = 0;
-		name_len = strlen("::sony#");
+		name_len = DSTRLEN("::sony#");
 		name_fmt = "%s::sony%d";
 	}
 

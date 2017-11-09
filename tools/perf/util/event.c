@@ -63,6 +63,14 @@ static pid_t perf_event__get_comm_tgid(pid_t pid, char *comm, size_t len)
 		pr_debug("couldn't open %s\n", filename);
 		return 0;
 	}
+	bf[n] = '\0';
+
+	name = strstr(bf, "Name:");
+	tgids = strstr(bf, "Tgid:");
+	ppids = strstr(bf, "PPid:");
+
+	if (name) {
+		name += 5;  /* DSTRLEN("Name:") */
 
 	while (!comm[0] || (tgid < 0)) {
 		if (fgets(bf, sizeof(bf), fp) == NULL) {
@@ -71,25 +79,19 @@ static pid_t perf_event__get_comm_tgid(pid_t pid, char *comm, size_t len)
 			break;
 		}
 
-		if (memcmp(bf, "Name:", 5) == 0) {
-			char *name = bf + 5;
-			while (*name && isspace(*name))
-				++name;
-			size = strlen(name) - 1;
-			if (size >= len)
-				size = len - 1;
-			memcpy(comm, name, size);
-			comm[size] = '\0';
-
-		} else if (memcmp(bf, "Tgid:", 5) == 0) {
-			char *tgids = bf + 5;
-			while (*tgids && isspace(*tgids))
-				++tgids;
-			tgid = atoi(tgids);
-		}
+	if (tgids) {
+		tgids += 5;  /* DSTRLEN("Tgid:") */
+		*tgid = atoi(tgids);
+	} else {
+		pr_debug("Tgid: string not found for pid %d\n", pid);
 	}
 
-	fclose(fp);
+	if (ppids) {
+		ppids += 5;  /* DSTRLEN("PPid:") */
+		*ppid = atoi(ppids);
+	} else {
+		pr_debug("PPid: string not found for pid %d\n", pid);
+	}
 
 	return tgid;
 }

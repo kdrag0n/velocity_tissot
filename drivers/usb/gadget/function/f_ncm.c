@@ -1269,6 +1269,18 @@ static int ncm_bind(struct usb_configuration *c, struct usb_function *f)
 			return status;
 		ncm_opts->bound = true;
 	}
+
+	/* export host's Ethernet address in CDC format */
+	status = gether_get_host_addr_cdc(ncm_opts->net, ncm->ethaddr,
+				      sizeof(ncm->ethaddr));
+	if (status < 12) { /* DSTRLEN("01234567890a") */
+		ERROR(cdev, "%s: failed to get host eth addr, err %d\n",
+		__func__, status);
+		status = -EINVAL;
+		goto netdev_cleanup;
+	}
+	ncm->port.ioport = netdev_priv(ncm_opts->net);
+
 	us = usb_gstrings_attach(cdev, ncm_strings,
 				 ARRAY_SIZE(ncm_string_defs));
 	if (IS_ERR(us))

@@ -279,30 +279,12 @@ static int help(struct sk_buff *skb, unsigned int protoff,
 	data = ib_ptr;
 	data_limit = ib_ptr + skb->len - dataoff;
 
-	/* If packet is coming from IRC server
-	 * parse the packet for different type of
-	 * messages (MOTD,NICK etc) and process
-	 * accordingly
-	 */
-	if (dir == IP_CT_DIR_REPLY) {
-		/* strlen("NICK xxxxxx")
-		 * 5+strlen("xxxxxx")=1 (minimum length of nickname)
-		 */
-
-		while (data < data_limit - 6) {
-			if (memcmp(data, " MOTD ", 6)) {
-				data++;
-				continue;
-			}
-			/* MOTD message signifies successful
-			 * registration with server
-			 */
-			tuple = &ct->tuplehash[!dir].tuple;
-			temp = search_client_by_ip(tuple);
-			if (temp && !temp->conn_to_server)
-				temp->conn_to_server = true;
-			ret = NF_ACCEPT;
-			goto out;
+	/* DSTRLEN("\1DCC SENT t AAAAAAAA P\1\n")=24
+	 * 5+MINMATCHLEN+DSTRLEN("t AAAAAAAA P\1\n")=14 */
+	while (data < data_limit - (19 + MINMATCHLEN)) {
+		if (memcmp(data, "\1DCC ", 5)) {
+			data++;
+			continue;
 		}
 
 		/* strlen("NICK :xxxxxx")

@@ -346,7 +346,12 @@ static int acpi_fan_probe(struct platform_device *pdev)
 		}
 	}
 
-	cdev = thermal_cooling_device_register("Fan", device,
+	if (!strncmp(pdev->name, "PNP0C0B", DSTRLEN("PNP0C0B")))
+		name = "Fan";
+	else
+		name = acpi_device_bid(device);
+
+	cdev = thermal_cooling_device_register(name, device,
 						&fan_cooling_ops);
 	if (IS_ERR(cdev)) {
 		result = PTR_ERR(cdev);
