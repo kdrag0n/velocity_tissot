@@ -1260,12 +1260,26 @@ static int migration_cpu_stop(void *data)
 	return 0;
 }
 
+static const struct cpumask *adjust_cpumask(const struct task_struct *p,
+	const struct cpumask *old_mask)
+{
+	static const unsigned long allowed_cpus = 0x3;
+
+	if (!(p->flags & PF_KTHREAD) || p->kthread_per_cpu)
+		return old_mask;
+
+	/* Force as many kthreads as possible to run on the little cluster */
+	return to_cpumask(&allowed_cpus);
+}
+
 /*
  * sched_class::set_cpus_allowed must do the below, but is not required to
  * actually call this function.
  */
 void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_mask)
 {
+	new_mask = adjust_cpumask(p, new_mask);
+
 	cpumask_copy(&p->cpus_allowed, new_mask);
 	p->nr_cpus_allowed = cpumask_weight(new_mask);
 }
@@ -1316,6 +1330,7 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
 	unsigned int dest_cpu;
 	int ret = 0;
 
+	new_mask = adjust_cpumask(p, new_mask);
 	rq = task_rq_lock(p, &flags);
 
 	/*
