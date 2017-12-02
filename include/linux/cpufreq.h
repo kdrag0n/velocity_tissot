@@ -616,6 +616,9 @@ extern struct cpufreq_governor cpufreq_gov_ironactive;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMANDPLUS)
 extern struct cpufreq_governor cpufreq_gov_ondemandplus;
 #define CPUFREQ_DEFAULT_GOVERNOR (&cpufreq_gov_ondemandplus)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_CULTIVATION)
+extern struct cpufreq_governor cpufreq_gov_cultivation;
+#define CPUFREQ_DEFAULT_GOVERNOR (&cpufreq_gov_cultivation)
 #endif
 
 static inline void cpufreq_policy_apply_limits(struct cpufreq_policy *policy)
