@@ -1199,4 +1199,9 @@ config TOUCHSCREEN_TD4310
 
 source "drivers/input/touchscreen/gt9xx/Kconfig"
 
+config WAKE_GESTURES
+        bool "Wake Gestures"
+
+source "drivers/input/touchscreen/st/Kconfig"
+
 endif
