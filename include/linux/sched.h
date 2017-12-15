@@ -1059,32 +1059,6 @@ typedef int (*sched_domain_flags_f)(void);
 typedef
 const struct sched_group_energy * const(*sched_domain_energy_f)(int cpu);
 
-struct energy_env {
-	struct sched_group	*sg_top;
-	struct sched_group	*sg_cap;
-	struct sched_group 	*sg;
-
-	int			src_cpu;
-	int			dst_cpu;
-	int			util_delta;
-	struct task_struct	*task;
-
-	int			cap_idx;
-	int			payoff;
-
-	int nrg_delta;
-	int prf_delta;
-	struct {
-		unsigned int energy;
-		unsigned int capacity;
-		unsigned int utilization;
-
-		int speedup_idx;
-		int delay_idx;
-		int perf_idx;
-	} before, after;
-};
-
 #define SDTL_OVERLAP	0x01
 
 struct sd_data {

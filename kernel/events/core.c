@@ -777,21 +777,24 @@ perf_cgroup_mark_enabled(struct perf_event *event,
 static enum hrtimer_restart perf_mux_hrtimer_handler(struct hrtimer *hr)
 {
 	struct perf_cpu_context *cpuctx;
+	enum hrtimer_restart ret = HRTIMER_NORESTART;
 	int rotations = 0;
 
 	WARN_ON(!irqs_disabled());
 
 	cpuctx = container_of(hr, struct perf_cpu_context, hrtimer);
+
 	rotations = perf_rotate_context(cpuctx);
 
-	raw_spin_lock(&cpuctx->hrtimer_lock);
-	if (rotations)
+	/*
+	 * arm timer if needed
+	 */
+	if (rotations) {
 		hrtimer_forward_now(hr, cpuctx->hrtimer_interval);
-	else
-		cpuctx->hrtimer_active = 0;
-	raw_spin_unlock(&cpuctx->hrtimer_lock);
+		ret = HRTIMER_RESTART;
+	}
 
-	return rotations ? HRTIMER_RESTART : HRTIMER_NORESTART;
+	return ret;
 }
 
 static void __perf_mux_hrtimer_init(struct perf_cpu_context *cpuctx, int cpu)
@@ -814,8 +817,7 @@ static void __perf_mux_hrtimer_init(struct perf_cpu_context *cpuctx, int cpu)
 
 	cpuctx->hrtimer_interval = ns_to_ktime(NSEC_PER_MSEC * interval);
 
-	raw_spin_lock_init(&cpuctx->hrtimer_lock);
-	hrtimer_init(timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS_PINNED);
+	hrtimer_init(timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL_PINNED);
 	timer->function = perf_mux_hrtimer_handler;
 }
 
@@ -823,20 +825,15 @@ static int perf_mux_hrtimer_restart(struct perf_cpu_context *cpuctx)
 {
 	struct hrtimer *timer = &cpuctx->hrtimer;
 	struct pmu *pmu = cpuctx->ctx.pmu;
-	unsigned long flags;
 
 	/* not for SW PMU */
 	if (pmu->task_ctx_nr == perf_sw_context)
 		return 0;
 
-	raw_spin_lock_irqsave(&cpuctx->hrtimer_lock, flags);
-	if (!cpuctx->hrtimer_active) {
-		cpuctx->hrtimer_active = 1;
-		__hrtimer_start_range_ns(timer, cpuctx->hrtimer_interval,
-				0, HRTIMER_MODE_REL_PINNED, 0);
-	}
-	raw_spin_unlock_irqrestore(&cpuctx->hrtimer_lock, flags);
-
+	if (hrtimer_is_queued(timer))
+		return 0;
+ 
+	hrtimer_start(timer, cpuctx->hrtimer_interval, HRTIMER_MODE_REL_PINNED);
 	return 0;
 }
 

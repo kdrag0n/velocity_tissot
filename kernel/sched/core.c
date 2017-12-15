@@ -94,7 +94,26 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched.h>
 #include "walt.h"
-#include "tune.h"
+
+void start_bandwidth_timer(struct hrtimer *period_timer, ktime_t period)
+{
+	unsigned long delta;
+	ktime_t soft, hard, now;
+
+	for (;;) {
+		if (hrtimer_active(period_timer))
+			break;
+
+		now = hrtimer_cb_get_time(period_timer);
+		hrtimer_forward(period_timer, now, period);
+
+		soft = hrtimer_get_softexpires(period_timer);
+		hard = hrtimer_get_expires(period_timer);
+		delta = ktime_to_ns(ktime_sub(hard, soft));
+		__hrtimer_start_range_ns(period_timer, soft, delta,
+					 HRTIMER_MODE_ABS_PINNED, 0);
+	}
+}
 
 DEFINE_MUTEX(sched_domains_mutex);
 DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
@@ -408,11 +427,12 @@ static enum hrtimer_restart hrtick(struct hrtimer *timer)
 
 #ifdef CONFIG_SMP
 
-static void __hrtick_restart(struct rq *rq)
+static int __hrtick_restart(struct rq *rq)
 {
 	struct hrtimer *timer = &rq->hrtick_timer;
+	ktime_t time = hrtimer_get_softexpires(timer);
 
-	hrtimer_start_expires(timer, HRTIMER_MODE_ABS_PINNED);
+	return __hrtimer_start_range_ns(timer, time, 0, HRTIMER_MODE_ABS_PINNED, 0);
 }
 
 /*
@@ -492,8 +512,8 @@ void hrtick_start(struct rq *rq, u64 delay)
 	 * doesn't make sense. Rely on vruntime for fairness.
 	 */
 	delay = max_t(u64, delay, 10000LL);
-	hrtimer_start(&rq->hrtick_timer, ns_to_ktime(delay),
-		      HRTIMER_MODE_REL_PINNED);
+	__hrtimer_start_range_ns(&rq->hrtick_timer, ns_to_ktime(delay), 0,
+			HRTIMER_MODE_REL_PINNED, 0);
 }
 
 static inline void init_hrtick(void)
@@ -1029,11 +1049,7 @@ inline int task_curr(const struct task_struct *p)
 }
 
 /*
- * switched_from, switched_to and prio_changed must _NOT_ drop rq->lock,
- * use the balance_callback list if you want balancing.
- *
- * this means any call to check_class_changed() must be followed by a call to
- * balance_callback().
+ * Can drop rq->lock because from sched_class::switched_from() methods drop it.
  */
 static inline void check_class_changed(struct rq *rq, struct task_struct *p,
 				       const struct sched_class *prev_class,
@@ -1042,7 +1058,7 @@ static inline void check_class_changed(struct rq *rq, struct task_struct *p,
 	if (prev_class != p->sched_class) {
 		if (prev_class->switched_from)
 			prev_class->switched_from(rq, p);
-
+		/* Possble rq->lock 'hole'.  */
 		p->sched_class->switched_to(rq, p);
 	} else if (oldprio != p->prio || dl_task(p))
 		p->sched_class->prio_changed(rq, p, oldprio);
@@ -1714,16 +1730,12 @@ static void
 ttwu_do_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
 {
 	check_preempt_curr(rq, p, wake_flags);
-	p->state = TASK_RUNNING;
-	trace_sched_wakeup(p);
+	trace_sched_wakeup(p, true);
 
+	p->state = TASK_RUNNING;
 #ifdef CONFIG_SMP
-	if (p->sched_class->task_woken) {
-		/*
-		 * XXX can drop rq->lock; most likely ok.
-		 */
+	if (p->sched_class->task_woken)
 		p->sched_class->task_woken(rq, p);
-	}
 
 	if (rq->idle_stamp) {
 		u64 delta = rq_clock(rq) - rq->idle_stamp;
@@ -1928,8 +1940,6 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 	raw_spin_lock_irqsave(&p->pi_lock, flags);
 	if (!(p->state & state))
 		goto out;
-
-	trace_sched_waking(p);
 
 	success = 1; /* we're going to change ->state */
 	cpu = task_cpu(p);
@@ -2449,7 +2459,7 @@ void wake_up_new_task(struct task_struct *p)
 	walt_mark_task_starting(p);
 	activate_task(rq, p, ENQUEUE_WAKEUP_NEW);
 	p->on_rq = TASK_ON_RQ_QUEUED;
-	trace_sched_wakeup_new(p);
+	trace_sched_wakeup_new(p, true);
 	check_preempt_curr(rq, p, WF_FORK);
 #ifdef CONFIG_SMP
 	if (p->sched_class->task_woken)
@@ -2606,35 +2616,23 @@ static void finish_task_switch(struct rq *rq, struct task_struct *prev)
 #ifdef CONFIG_SMP
 
 /* rq->lock is NOT held, but preemption is disabled */
-static void __balance_callback(struct rq *rq)
+static inline void post_schedule(struct rq *rq)
 {
-	struct callback_head *head, *next;
-	void (*func)(struct rq *rq);
-	unsigned long flags;
+	if (rq->post_schedule) {
+		unsigned long flags;
 
-	raw_spin_lock_irqsave(&rq->lock, flags);
-	head = rq->balance_callback;
-	rq->balance_callback = NULL;
-	while (head) {
-		func = (void (*)(struct rq *))head->func;
-		next = head->next;
-		head->next = NULL;
-		head = next;
+		raw_spin_lock_irqsave(&rq->lock, flags);
+		if (rq->curr->sched_class->post_schedule)
+			rq->curr->sched_class->post_schedule(rq);
+		raw_spin_unlock_irqrestore(&rq->lock, flags);
 
-		func(rq);
+		rq->post_schedule = 0;
 	}
-	raw_spin_unlock_irqrestore(&rq->lock, flags);
-}
-
-static inline void balance_callback(struct rq *rq)
-{
-	if (unlikely(rq->balance_callback))
-		__balance_callback(rq);
 }
 
 #else
 
-static inline void balance_callback(struct rq *rq)
+static inline void post_schedule(struct rq *rq)
 {
 }
 
@@ -2655,7 +2653,7 @@ asmlinkage __visible void schedule_tail(struct task_struct *prev)
 	 * FIXME: do we need to worry about rq being invalidated by the
 	 * task_switch?
 	 */
-	balance_callback(rq);
+	post_schedule(rq);
 
 	if (current->set_child_tid)
 		put_user(task_pid_vnr(current), current->set_child_tid);
@@ -2882,7 +2880,7 @@ unsigned long sum_capacity_reqs(unsigned long cfs_cap,
 
 static void sched_freq_tick_pelt(int cpu)
 {
-	unsigned long cpu_utilization = boosted_cpu_util(cpu);
+	unsigned long cpu_utilization = cpu_util(cpu, UTIL_EST);
 	unsigned long capacity_curr = capacity_curr_of(cpu);
 	struct sched_capacity_reqs *scr;
 
@@ -2916,10 +2914,6 @@ static void sched_freq_tick_walt(int cpu)
 	 * NOTE: WALT tracks a single CPU signal for all the scheduling
 	 * classes, thus this margin is going to be added to the DL class as
 	 * well, which is something we do not do in sched_freq_tick_pelt case.
-	 *
-	 * TODO:
-	 * Here we're adding margin, but we're also adding margin in cpufreq.
-	 * There shouldn't be a double addition.
 	 */
 	cpu_utilization = add_capacity_margin(cpu_utilization);
 	if (cpu_utilization <= capacity_curr)
@@ -2931,6 +2925,7 @@ static void sched_freq_tick_walt(int cpu)
 	 * extra boost.
 	 */
 	set_cfs_cpu_capacity(cpu, true, cpu_utilization);
+
 }
 #define _sched_freq_tick(cpu) sched_freq_tick_walt(cpu)
 #else
@@ -3286,7 +3281,7 @@ need_resched:
 	} else
 		raw_spin_unlock_irq(&rq->lock);
 
-	balance_callback(rq);
+	post_schedule(rq);
 
 	sched_preempt_enable_no_resched();
 	if (need_resched())
@@ -3553,11 +3548,7 @@ void rt_mutex_setprio(struct task_struct *p, int prio)
 
 	check_class_changed(rq, p, prev_class, oldprio);
 out_unlock:
-	preempt_disable(); /* avoid rq from going away on us */
 	__task_rq_unlock(rq);
-
-	balance_callback(rq);
-	preempt_enable();
 }
 #endif
 
@@ -4103,16 +4094,9 @@ change:
 	}
 
 	check_class_changed(rq, p, prev_class, oldprio);
-	preempt_disable(); /* avoid rq from going away on us */
 	task_rq_unlock(rq, p, &flags);
 
 	rt_mutex_adjust_pi(p);
-
-	/*
-	 * Run balance callbacks after we've adjusted the PI chain.
-	 */
-	balance_callback(rq);
-	preempt_enable();
 
 	return 0;
 }
@@ -6479,28 +6463,6 @@ static void init_sched_energy(int cpu, struct sched_domain *sd,
 	sd->groups->sge = fn(cpu);
 }
 
-#ifdef CONFIG_SCHED_DEBUG
-void set_energy_aware()
-{
-	sched_feat_set("ENERGY_AWARE");
-}
-void clear_energy_aware()
-{
-	sched_feat_set("NO_ENERGY_AWARE");
-}
-#else
-struct static_key __read_mostly __energy_aware = STATIC_KEY_INIT_FALSE;
-
-void set_energy_aware()
-{
-	static_key_slow_inc(&__energy_aware);
-}
-void clear_energy_aware()
-{
-	static_key_slow_dec(&__energy_aware);
-}
-#endif /* CONFIG_SCHED_DEBUG */
-
 /*
  * Initializers for schedule domains
  * Non-inlined to reduce accumulated stack pressure in build_sched_domains()
@@ -7609,7 +7571,7 @@ void __init sched_init(void)
 		rq->sd = NULL;
 		rq->rd = NULL;
 		rq->cpu_capacity = rq->cpu_capacity_orig = SCHED_CAPACITY_SCALE;
-		rq->balance_callback = NULL;
+		rq->post_schedule = 0;
 		rq->active_balance = 0;
 		rq->next_balance = jiffies;
 		rq->push_cpu = 0;
@@ -8495,8 +8457,10 @@ static int tg_set_cfs_bandwidth(struct task_group *tg, u64 period, u64 quota)
 
 	__refill_cfs_bandwidth_runtime(cfs_b);
 	/* restart the period timer (if active) to handle new period expiry */
-	if (runtime_enabled)
-		start_cfs_bandwidth(cfs_b);
+	if (runtime_enabled && cfs_b->timer_active) {
+		/* force a reprogram */
+		__start_cfs_bandwidth(cfs_b, true);
+	}
 	raw_spin_unlock_irq(&cfs_b->lock);
 
 	for_each_online_cpu(i) {

@@ -17,7 +17,6 @@ static bool schedtune_initialized = false;
 
 unsigned int sysctl_sched_cfs_boost __read_mostly;
 
-static struct reciprocal_value schedtune_spc_rdiv;
 extern struct target_nrg schedtune_target_nrg;
 
 /* Performance Boost region (B) threshold params */
@@ -206,7 +205,7 @@ schedtune_accept_deltas(int nrg_delta, int cap_delta,
  *    implementation especially for the computation of the per-CPU boost
  *    value
  */
-#define BOOSTGROUPS_COUNT 5
+#define BOOSTGROUPS_COUNT 4
 
 /* Array of configured boostgroups */
 static struct schedtune *allocated_group[BOOSTGROUPS_COUNT] = {
@@ -738,7 +737,6 @@ schedtune_init_cgroups(void)
 	for_each_possible_cpu(cpu) {
 		bg = &per_cpu(cpu_boost_groups, cpu);
 		memset(bg, 0, sizeof(struct boost_groups));
-		raw_spin_lock_init(&bg->lock);
 	}
 
 	pr_info("schedtune: configured to support %d boost groups\n",
@@ -894,79 +892,6 @@ schedtune_add_cluster_nrg(
 	}
 }
 
-static long
-schedtune_margin(unsigned long signal, long boost)
-{
-	long long margin = 0;
-
-	/*
-	 * Signal proportional compensation (SPC)
-	 *
-	 * The Boost (B) value is used to compute a Margin (M) which is
-	 * proportional to the complement of the original Signal (S):
-	 *   M = B * (SCHED_CAPACITY_SCALE - S)
-	 * The obtained M could be used by the caller to "boost" S.
-	 */
-	if (boost >= 0) {
-		margin  = SCHED_CAPACITY_SCALE - signal;
-		margin *= boost;
-	} else
-		margin = -signal * boost;
-
-	margin  = reciprocal_divide(margin, schedtune_spc_rdiv);
-
-	if (boost < 0)
-		margin *= -1;
-	return margin;
-}
-
-static inline int
-schedtune_cpu_margin(unsigned long util, int cpu)
-{
-	int boost = schedtune_cpu_boost(cpu);
-
-	if (boost == 0)
-		return 0;
-
-	return schedtune_margin(util, boost);
-}
-
-static inline long
-schedtune_task_margin(struct task_struct *task)
-{
-	int boost = schedtune_task_boost(task);
-	unsigned long util;
-	long margin;
-
-	if (boost == 0)
-		return 0;
-
-	util = task_util(task, UTIL_AVG);
-	margin = schedtune_margin(util, boost);
-
-	return margin;
-}
-
-unsigned long boosted_cpu_util(int cpu)
-{
-	unsigned long util = cpu_util(cpu, UTIL_EST);
-	long margin = schedtune_cpu_margin(util, cpu);
-
-	trace_sched_boost_cpu(cpu, util, margin);
-
-	return util + margin;
-}
-
-unsigned long boosted_task_util(struct task_struct *task)
-{
-	unsigned long util = task_util(task, UTIL_EST);
-	long margin = schedtune_task_margin(task);
-
-	trace_sched_boost_task(task, util, margin);
-
-	return util + margin;
-}
-
 /*
  * Initialize the constants required to compute normalized energy.
  * The values of these constants depends on the EM data for the specific
@@ -1022,12 +947,9 @@ schedtune_init(void)
 	pr_info("schedtune: configured to support global boosting only\n");
 #endif
 
-	schedtune_spc_rdiv = reciprocal_value(100);
-
 	return 0;
 
 nodata:
-	pr_warning("schedtune: disabled!\n");
 	rcu_read_unlock();
 	return -EINVAL;
 }
