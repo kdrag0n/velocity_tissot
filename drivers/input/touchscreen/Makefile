@@ -92,3 +92,5 @@ obj-$(CONFIG_TOUCHSCREEN_FTS)		+= ft8716/
 obj-$(CONFIG_TOUCHSCREEN_TD4310)    += td4310/
 obj-$(CONFIG_VITURALSAR)		+= vituralsar_driver.o
 obj-$(CONFIG_WAKE_GESTURES)		+= wake_gestures.o
+obj-$(CONFIG_TOUCHSCREEN_SWEEP2WAKE)	+= sweep2wake.o
+obj-$(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE)	+= doubletap2wake.o
