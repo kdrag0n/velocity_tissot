@@ -74,6 +74,26 @@ void rcu_expedite_gp(void);
 void rcu_unexpedite_gp(void);
 #endif /* #else #ifdef CONFIG_TINY_RCU */
 
+#ifdef CONFIG_TINY_RCU
+/* Tiny RCU doesn't expedite, as its purpose in life is instead to be tiny. */
+static inline bool rcu_gp_is_expedited(void)  /* Internal RCU use. */
+{
+	return false;
+}
+
+static inline void rcu_expedite_gp(void)
+{
+}
+
+static inline void rcu_unexpedite_gp(void)
+{
+}
+#else /* #ifdef CONFIG_TINY_RCU */
+bool rcu_gp_is_expedited(void);  /* Internal RCU use. */
+void rcu_expedite_gp(void);
+void rcu_unexpedite_gp(void);
+#endif /* #else #ifdef CONFIG_TINY_RCU */
+
 enum rcutorture_type {
 	RCU_FLAVOR,
 	RCU_BH_FLAVOR,
@@ -542,6 +562,11 @@ static inline int rcu_read_lock_sched_held(void)
 
 #endif /* #else #ifdef CONFIG_DEBUG_LOCK_ALLOC */
 
+/* Deprecate rcu_lockdep_assert():  Use RCU_LOCKDEP_WARN() instead. */
+static inline void __attribute((deprecated)) deprecate_rcu_lockdep_assert(void)
+{
+}
+
 #ifdef CONFIG_PROVE_RCU
 
 /**
@@ -552,6 +577,7 @@ static inline int rcu_read_lock_sched_held(void)
 #define rcu_lockdep_assert(c, s)					\
 	do {								\
 		static bool __section(.data.unlikely) __warned;		\
+		deprecate_rcu_lockdep_assert();				\
 		if (debug_lockdep_rcu_enabled() && !__warned && !(c)) {	\
 			__warned = true;				\
 			lockdep_rcu_suspicious(__FILE__, __LINE__, s);	\
@@ -595,7 +621,7 @@ static inline void rcu_preempt_sleep_check(void)
 
 #else /* #ifdef CONFIG_PROVE_RCU */
 
-#define rcu_lockdep_assert(c, s) do { } while (0)
+#define rcu_lockdep_assert(c, s) deprecate_rcu_lockdep_assert()
 #define RCU_LOCKDEP_WARN(c, s) do { } while (0)
 #define rcu_sleep_check() do { } while (0)
 
@@ -658,6 +684,21 @@ static inline void rcu_preempt_sleep_check(void)
  * @v: The value to statically initialize with.
  */
 #define RCU_INITIALIZER(v) (typeof(*(v)) __force __rcu *)(v)
+
+/**
+ * lockless_dereference() - safely load a pointer for later dereference
+ * @p: The pointer to load
+ *
+ * Similar to rcu_dereference(), but for situations where the pointed-to
+ * object's lifetime is managed by something other than RCU.  That
+ * "something other" might be reference counting or simple immortality.
+ */
+#define lockless_dereference(p) \
+({ \
+	typeof(p) _________p1 = READ_ONCE(p); \
+	smp_read_barrier_depends(); /* Dependency order vs. p above. */ \
+	(_________p1); \
+})
 
 /**
  * rcu_assign_pointer() - assign to RCU-protected pointer
