@@ -27,7 +27,6 @@
 #include <linux/threads.h>
 #include <linux/cpumask.h>
 #include <linux/seqlock.h>
-#include <linux/swait.h>
 #include <linux/stop_machine.h>
 
 /*
@@ -385,10 +384,6 @@ struct rcu_data {
 	struct rcu_head oom_head;
 #endif /* #ifdef CONFIG_RCU_FAST_NO_HZ */
 	struct mutex exp_funnel_mutex;
-	atomic_long_t expedited_workdone0;	/* # done by others #0. */
-	atomic_long_t expedited_workdone1;	/* # done by others #1. */
-	atomic_long_t expedited_workdone2;	/* # done by others #2. */
-	atomic_long_t expedited_workdone3;	/* # done by others #3. */
 
 	/* 7) Callback offloading. */
 #ifdef CONFIG_RCU_NOCB_CPU
@@ -398,7 +393,7 @@ struct rcu_data {
 	atomic_long_t nocb_q_count_lazy; /*  invocation (all stages). */
 	struct rcu_head *nocb_follower_head; /* CBs ready to invoke. */
 	struct rcu_head **nocb_follower_tail;
-	struct swait_queue_head nocb_wq; /* For nocb kthreads to sleep on. */
+	wait_queue_head_t nocb_wq;	/* For nocb kthreads to sleep on. */
 	struct task_struct *nocb_kthread;
 	int nocb_defer_wakeup;		/* Defer wakeup of nocb_kthread. */
 
@@ -503,9 +498,13 @@ struct rcu_state {
 	/* End of fields guarded by barrier_mutex. */
 
 	unsigned long expedited_sequence;	/* Take a ticket. */
+	atomic_long_t expedited_workdone0;	/* # done by others #0. */
+	atomic_long_t expedited_workdone1;	/* # done by others #1. */
+	atomic_long_t expedited_workdone2;	/* # done by others #2. */
+	atomic_long_t expedited_workdone3;	/* # done by others #3. */
 	atomic_long_t expedited_normal;		/* # fallbacks to normal. */
 	atomic_t expedited_need_qs;		/* # CPUs left to check in. */
-	struct swait_queue_head expedited_wq;	/* Wait for check-ins. */
+	wait_queue_head_t expedited_wq;		/* Wait for check-ins. */
 	int ncpus_snap;				/* # CPUs seen last time. */
 
 	unsigned long jiffies_force_qs;		/* Time at which to invoke */
@@ -597,8 +596,8 @@ static int rcu_spawn_one_boost_kthread(struct rcu_state *rsp,
 #endif /* #ifdef CONFIG_RCU_BOOST */
 static void __init rcu_spawn_boost_kthreads(void);
 static void rcu_prepare_kthreads(int cpu);
-static void rcu_cleanup_after_idle(int cpu);
-static void rcu_prepare_for_idle(int cpu);
+static void rcu_cleanup_after_idle(void);
+static void rcu_prepare_for_idle(void);
 static void rcu_idle_count_callbacks_posted(void);
 static bool rcu_preempt_has_tasks(struct rcu_node *rnp);
 static void print_cpu_stall_info_begin(void);
