@@ -61,20 +61,14 @@ static inline void start_logging_wakeup_reasons(void)
 {
 	extern bool log_wakeups;
 	extern struct completion wakeups_completion;
-	ACCESS_ONCE(log_wakeups) = true;
+	log_wakeups = true;
 	init_completion(&wakeups_completion);
-}
-
-static inline bool logging_wakeup_reasons_nosync(void)
-{
-	extern bool log_wakeups;
-	return ACCESS_ONCE(log_wakeups);
 }
 
 static inline bool logging_wakeup_reasons(void)
 {
-	smp_rmb();
-	return logging_wakeup_reasons_nosync();
+	extern bool log_wakeups;
+	return ACCESS_ONCE(log_wakeups);
 }
 
 void log_base_wakeup_reason(int irq);
