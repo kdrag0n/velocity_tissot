@@ -49,8 +49,8 @@
  * The new code replaces the old recursive symlink resolution with
  * an iterative one (in case of non-nested symlink chains).  It does
  * this with calls to <fs>_follow_link().
- * As a side effect, dir_namei(), _namei() and follow_link() are now 
- * replaced with a single function lookup_dentry() that can handle all 
+ * As a side effect, dir_namei(), _namei() and follow_link() are now
+ * replaced with a single function lookup_dentry() that can handle all
  * the special cases of the former code.
  *
  * With the new dcache, the pathname is stored at each inode, at least as
@@ -561,7 +561,7 @@ static int unlazy_walk(struct nameidata *nd, struct dentry *dentry)
 	nd->flags &= ~LOOKUP_RCU;
 
 	if (!lockref_get_not_dead(&parent->d_lockref)) {
-		nd->path.dentry = NULL;	
+		nd->path.dentry = NULL;
 		goto out;
 	}
 
@@ -1785,7 +1785,7 @@ static int link_path_walk(const char *name, struct nameidata *nd)
 {
 	struct path next;
 	int err;
-	
+
 	while (*name=='/')
 		name++;
 	if (!*name)
@@ -1853,7 +1853,7 @@ static int link_path_walk(const char *name, struct nameidata *nd)
 				return err;
 		}
 		if (!d_can_lookup(nd->path.dentry)) {
-			err = -ENOTDIR; 
+			err = -ENOTDIR;
 			break;
 		}
 	}
