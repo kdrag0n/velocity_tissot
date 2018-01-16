@@ -6054,8 +6054,8 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 				   bool boosted, bool prefer_idle)
 {
 	unsigned long high_cpu_util = SCHED_CAPACITY_SCALE;
+	unsigned long task_util_boosted = boosted_task_util(p);
 	unsigned long best_idle_min_cap_orig = ULONG_MAX;
-	unsigned long min_util = boosted_task_util(p);
 	unsigned long target_capacity = ULONG_MAX;
 	unsigned long min_wake_util = ULONG_MAX;
 	unsigned long target_max_spare_cap = 0;
@@ -6115,14 +6115,13 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 			 * accounting. However, the blocked utilization may be zero.
 			 */
 			wake_util = cpu_util_wake(i, p);
-			new_util = wake_util + task_util(p);
 
 			/*
 			 * Keep track of overall system utilization.
 			 * System is considered in low-utilization if the
 			 * utilization of each (online) CPU is below a
 			 */
-			if (new_util >= high_cpu_util)
+			if (wake_util + task_util_boosted >= high_cpu_util)
 				low_util_mode = false;
 
 			/* Skip high IRQ loaded CPUs */
@@ -6134,7 +6133,8 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 			 * The target CPU can be already at a capacity level higher
 			 * than the one required to boost the task.
 			 */
-			new_util = max(min_util, new_util);
+			new_util = wake_util + task_util(p);
+			new_util = max(task_util_boosted, new_util);
 
 			/*
 			 * Include minimum capacity constraint:
@@ -6408,7 +6408,7 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 
 done:
 
-	trace_sched_find_best_target(p, prefer_idle, min_util, cpu,
+	trace_sched_find_best_target(p, prefer_idle, task_util_boosted, cpu,
 				     low_util_mode, low_util_cpu,
 				     best_idle_cpu, best_active_cpu,
 				     target_cpu);
