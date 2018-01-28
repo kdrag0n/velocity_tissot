@@ -8010,6 +8010,9 @@ long __sched io_schedule_timeout(long timeout)
 	current->in_iowait = 1;
 	blk_schedule_flush_plug(current);
 
+	current->in_iowait = 1;
+	blk_schedule_flush_plug(current);
+
 	delayacct_blkio_start();
 	rq = raw_rq();
 	atomic_inc(&rq->nr_iowait);
