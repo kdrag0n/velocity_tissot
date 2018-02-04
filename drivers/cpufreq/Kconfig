@@ -164,6 +164,14 @@ config CPU_FREQ_DEFAULT_GOV_BLU_ACTIVE
 	  loading your cpufreq low-level hardware driver, using the
 	  'interactive' governor for latency-sensitive workloads.
 
+config CPU_FREQ_DEFAULT_GOV_IRONACTIVE
+	bool "ironactive"
+	select CPU_FREQ_GOV_IRONACTIVE
+	help
+	  Use the CPUFreq governor 'ironactive' as default. This cpugovernor
+	  is based on the 'interactive' governor with many changes made by
+	  CAF.
+
 config CPU_FREQ_DEFAULT_GOV_IMPULSE
 	bool "impulse"
 	select CPU_FREQ_GOV_IMPULSE
@@ -321,6 +329,20 @@ config CPU_FREQ_GOV_INTELLIACTIVE
 	bool "'intelliactive' cpufreq policy governor"
 	help
 	  'interactive' - This driver adds a dynamic cpufreq policy governor
+	  designed for latency-sensitive workloads.
+
+	  This governor attempts to reduce the latency of clock
+	  increases so that the system is more responsive to
+	  interactive workloads.
+
+	  For details, take a look at linux/Documentation/cpu-freq.
+
+	  If in doubt, say N.
+
+config CPU_FREQ_GOV_IRONACTIVE
+	tristate "'ironactive' cpufreq policy governor"
+	help
+	  'ironactive' - This driver adds a dynamic cpufreq policy governor
 	  designed for latency-sensitive workloads.
 
 	  This governor attempts to reduce the latency of clock
