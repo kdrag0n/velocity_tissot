@@ -1329,7 +1329,11 @@ out:
 /**
  * mem_cgroup_page_lruvec - return lruvec for adding an lru page
  * @page: the page
- * @zone: zone of the page
+ * @pgdat: pgdat of the page
+ *
+ * This function is only safe when following the LRU page isolation
+ * and putback protocol: the LRU lock must be held, and the page must
+ * either be PageLRU() or the caller must have isolated/allocated it.
  */
 struct lruvec *mem_cgroup_page_lruvec(struct page *page, struct zone *zone)
 {
