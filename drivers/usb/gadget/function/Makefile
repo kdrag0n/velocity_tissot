@@ -1,7 +1,7 @@
 #
 # USB peripheral controller drivers
 #
-
+CFLAGS_f_mbim.o := -Wno-enum-conversion
 ccflags-y			:= -I$(srctree)/drivers/usb/gadget/
 ccflags-y			+= -I$(srctree)/drivers/usb/gadget/udc/
 

@@ -1,7 +1,7 @@
 #
 # Makefile for sensor chip drivers.
 #
-
+CFLAGS_msm-tsens.o := -Wno-enum-conversion
 obj-$(CONFIG_THERMAL)		+= thermal_sys.o
 thermal_sys-y			+= thermal_core.o
 

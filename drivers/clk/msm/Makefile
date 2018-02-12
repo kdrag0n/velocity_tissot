@@ -1,3 +1,5 @@
+CFLAGS_clock-gcc-8996.o := -Wno-literal-conversion
+CFLAGS_clock-mmss-8996.o := -Wno-literal-conversion
 obj-y				+= clock.o
 obj-y				+= clock-dummy.o
 obj-y				+= clock-generic.o

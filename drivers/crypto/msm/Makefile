@@ -1,3 +1,4 @@
+CFLAGS_qcedev.o := -Wno-frame-larger-than=
 obj-$(CONFIG_CRYPTO_DEV_QCEDEV) += qcedev.o
 ifeq ($(CONFIG_CRYPTO_DEV_QCE50), y)
         obj-$(CONFIG_CRYPTO_DEV_QCOM_MSM_QCE) += qce50.o

@@ -1,3 +1,6 @@
+CFLAGS_ion_system_secure_heap.o := -Wno-enum-conversion
+CFLAGS_ion_cma_secure_heap.o := -Wno-enum-conversion
+CFLAGS_ion_cma_heap.o := -Wno-enum-conversion
 obj-$(CONFIG_ION) +=	ion.o ion_heap.o ion_page_pool.o ion_system_heap.o \
 			ion_carveout_heap.o ion_chunk_heap.o ion_system_secure_heap.o
 ifeq ($(CONFIG_CMA),y)
