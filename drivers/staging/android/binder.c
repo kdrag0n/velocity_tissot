@@ -89,10 +89,7 @@ static DEFINE_RT_MUTEX(binder_deferred_lock);
 
 static HLIST_HEAD(binder_devices);
 static HLIST_HEAD(binder_procs);
-static DEFINE_RT_MUTEX(binder_procs_lock);
-
 static HLIST_HEAD(binder_dead_nodes);
-static DEFINE_SPINLOCK(binder_dead_nodes_lock);
 
 static struct dentry *binder_debugfs_dir_entry_root;
 static struct dentry *binder_debugfs_dir_entry_proc;
@@ -1519,17 +1516,17 @@ static bool binder_dec_node_nilocked(struct binder_node *node,
 					     node->debug_id);
 			} else {
 				BUG_ON(!list_empty(&node->work.entry));
-				spin_lock(&binder_dead_nodes_lock);
+				rcu_read_lock();
 				/*
 				 * tmp_refs could have changed so
 				 * check it again
 				 */
 				if (node->tmp_refs) {
-					spin_unlock(&binder_dead_nodes_lock);
+					rcu_read_unlock();
 					return false;
 				}
-				hlist_del(&node->dead_node);
-				spin_unlock(&binder_dead_nodes_lock);
+				hlist_del_rcu(&node->dead_node);
+				rcu_read_unlock();
 				binder_debug(BINDER_DEBUG_INTERNAL_REFS,
 					     "dead node %d deleted\n",
 					     node->debug_id);
@@ -1580,12 +1577,12 @@ static void binder_inc_node_tmpref(struct binder_node *node)
 	if (node->proc)
 		binder_inner_proc_lock(node->proc);
 	else
-		spin_lock(&binder_dead_nodes_lock);
+		rcu_read_lock();
 	binder_inc_node_tmpref_ilocked(node);
 	if (node->proc)
 		binder_inner_proc_unlock(node->proc);
 	else
-		spin_unlock(&binder_dead_nodes_lock);
+		rcu_read_unlock();
 	binder_node_unlock(node);
 }
 
@@ -1601,11 +1598,11 @@ static void binder_dec_node_tmpref(struct binder_node *node)
 
 	binder_node_inner_lock(node);
 	if (!node->proc)
-		spin_lock(&binder_dead_nodes_lock);
+		rcu_read_lock();
 	node->tmp_refs--;
 	BUG_ON(node->tmp_refs < 0);
 	if (!node->proc)
-		spin_unlock(&binder_dead_nodes_lock);
+		rcu_read_unlock();
 	/*
 	 * Call binder_dec_node() to check if all refcounts are 0
 	 * and cleanup is needed. Calling with strong=0 and internal=1
@@ -5054,9 +5051,11 @@ static int binder_open(struct inode *nodp, struct file *filp)
 	INIT_LIST_HEAD(&proc->waiting_threads);
 	filp->private_data = proc;
 
-	rt_mutex_lock(&binder_procs_lock);
-	hlist_add_head(&proc->proc_node, &binder_procs);
-	rt_mutex_unlock(&binder_procs_lock);
+	INIT_LLIST_NODE(&proc->deferred_work_node);
+
+	rcu_read_lock();
+	hlist_add_head_rcu(&proc->proc_node, &binder_procs);
+	rcu_read_unlock();
 
 	if (binder_debugfs_dir_entry_proc) {
 		char strbuf[11];
@@ -5147,9 +5146,9 @@ static int binder_node_release(struct binder_node *node, int refs)
 	node->local_weak_refs = 0;
 	binder_inner_proc_unlock(proc);
 
-	spin_lock(&binder_dead_nodes_lock);
-	hlist_add_head(&node->dead_node, &binder_dead_nodes);
-	spin_unlock(&binder_dead_nodes_lock);
+	rcu_read_lock();
+	hlist_add_head_rcu(&node->dead_node, &binder_dead_nodes);
+	rcu_read_unlock();
 
 	hlist_for_each_entry(ref, &node->refs, node_entry) {
 		refs++;
@@ -5190,9 +5189,9 @@ static void binder_deferred_release(struct binder_proc *proc)
 	struct rb_node *n;
 	int threads, nodes, incoming_refs, outgoing_refs, active_transactions;
 
-	rt_mutex_lock(&binder_procs_lock);
-	hlist_del(&proc->proc_node);
-	rt_mutex_unlock(&binder_procs_lock);
+	rcu_read_lock();
+	hlist_del_rcu(&proc->proc_node);
+	rcu_read_unlock();
 
 	rt_mutex_lock(&context->context_mgr_node_lock);
 	if (context->binder_context_mgr_node &&
@@ -5704,33 +5703,33 @@ static int binder_state_show(struct seq_file *m, void *unused)
 
 	seq_puts(m, "binder state:\n");
 
-	spin_lock(&binder_dead_nodes_lock);
+	rcu_read_lock();
 	if (!hlist_empty(&binder_dead_nodes))
 		seq_puts(m, "dead nodes:\n");
-	hlist_for_each_entry(node, &binder_dead_nodes, dead_node) {
+	hlist_for_each_entry_rcu(node, &binder_dead_nodes, dead_node) {
 		/*
 		 * take a temporary reference on the node so it
 		 * survives and isn't removed from the list
 		 * while we print it.
 		 */
 		node->tmp_refs++;
-		spin_unlock(&binder_dead_nodes_lock);
+		rcu_read_lock();
 		if (last_node)
 			binder_put_node(last_node);
 		binder_node_lock(node);
 		print_binder_node_nilocked(m, node);
 		binder_node_unlock(node);
 		last_node = node;
-		spin_lock(&binder_dead_nodes_lock);
+		rcu_read_unlock();
 	}
-	spin_unlock(&binder_dead_nodes_lock);
+	rcu_read_unlock();
 	if (last_node)
 		binder_put_node(last_node);
 
-	rt_mutex_lock(&binder_procs_lock);
-	hlist_for_each_entry(proc, &binder_procs, proc_node)
+	rcu_read_lock();
+	hlist_for_each_entry_rcu(proc, &binder_procs, proc_node)
 		print_binder_proc(m, proc, 1);
-	rt_mutex_unlock(&binder_procs_lock);
+	rcu_read_unlock();
 
 	return 0;
 }
@@ -5743,10 +5742,10 @@ static int binder_stats_show(struct seq_file *m, void *unused)
 
 	print_binder_stats(m, "", &binder_stats);
 
-	rt_mutex_lock(&binder_procs_lock);
-	hlist_for_each_entry(proc, &binder_procs, proc_node)
+	rcu_read_lock();
+	hlist_for_each_entry_rcu(proc, &binder_procs, proc_node)
 		print_binder_proc_stats(m, proc);
-	rt_mutex_unlock(&binder_procs_lock);
+	rcu_read_unlock();
 
 	return 0;
 }
@@ -5756,10 +5755,10 @@ static int binder_transactions_show(struct seq_file *m, void *unused)
 	struct binder_proc *proc;
 
 	seq_puts(m, "binder transactions:\n");
-	rt_mutex_lock(&binder_procs_lock);
-	hlist_for_each_entry(proc, &binder_procs, proc_node)
+	rcu_read_lock();
+	hlist_for_each_entry_rcu(proc, &binder_procs, proc_node)
 		print_binder_proc(m, proc, 0);
-	rt_mutex_unlock(&binder_procs_lock);
+	rcu_read_unlock();
 
 	return 0;
 }
@@ -5769,14 +5768,14 @@ static int binder_proc_show(struct seq_file *m, void *unused)
 	struct binder_proc *itr;
 	int pid = (unsigned long)m->private;
 
-	rt_mutex_lock(&binder_procs_lock);
-	hlist_for_each_entry(itr, &binder_procs, proc_node) {
+	rcu_read_lock();
+	hlist_for_each_entry_rcu(itr, &binder_procs, proc_node) {
 		if (itr->pid == pid) {
 			seq_puts(m, "binder proc state:\n");
 			print_binder_proc(m, itr, 1);
 		}
 	}
-	rt_mutex_unlock(&binder_procs_lock);
+	rcu_read_unlock();
 
 	return 0;
 }
