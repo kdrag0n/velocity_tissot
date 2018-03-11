@@ -409,7 +409,108 @@ static void dump_header(struct task_struct *p, gfp_t gfp_mask, int order,
  * Primarily used by PM freezer to check for potential races with
  * OOM killed frozen task.
  */
-static atomic_t oom_kills = ATOMIC_INIT(0);
+static atomic_t oom_victims = ATOMIC_INIT(0);
+static DECLARE_WAIT_QUEUE_HEAD(oom_victims_wait);
+
+bool oom_killer_disabled __read_mostly;
+
+#define K(x) ((x) << (PAGE_SHIFT-10))
+
+#ifdef CONFIG_MMU
+/*
+ * OOM Reaper kernel thread which tries to reap the memory used by the OOM
+ * victim (if that is possible) to help the OOM killer to move on.
+ */
+static struct task_struct *oom_reaper_th;
+static DECLARE_WAIT_QUEUE_HEAD(oom_reaper_wait);
+static struct task_struct *oom_reaper_list;
+static DEFINE_SPINLOCK(oom_reaper_lock);
+
+
+static bool __oom_reap_task(struct task_struct *tsk)
+{
+	struct mmu_gather tlb;
+	struct vm_area_struct *vma;
+	struct mm_struct *mm;
+	struct task_struct *p;
+	struct zap_details details = {.check_swap_entries = true,
+				      .ignore_dirty = true};
+	bool ret = true;
+
+	/*
+	 * Make sure we find the associated mm_struct even when the particular
+	 * thread has already terminated and cleared its mm.
+	 * We might have race with exit path so consider our work done if there
+	 * is no mm.
+	 */
+	p = find_lock_task_mm(tsk);
+	if (!p)
+		return true;
+
+	mm = p->mm;
+	if (!atomic_inc_not_zero(&mm->mm_users)) {
+		task_unlock(p);
+		return true;
+	}
+
+	task_unlock(p);
+
+	if (!down_read_trylock(&mm->mmap_sem)) {
+		ret = false;
+		goto out;
+	}
+
+	tlb_gather_mmu(&tlb, mm, 0, -1);
+	for (vma = mm->mmap ; vma; vma = vma->vm_next) {
+		if (is_vm_hugetlb_page(vma))
+			continue;
+
+		/*
+		 * mlocked VMAs require explicit munlocking before unmap.
+		 * Let's keep it simple here and skip such VMAs.
+		 */
+		if (vma->vm_flags & VM_LOCKED)
+			continue;
+
+		/*
+		 * Only anonymous pages have a good chance to be dropped
+		 * without additional steps which we cannot afford as we
+		 * are OOM already.
+		 *
+		 * We do not even care about fs backed pages because all
+		 * which are reclaimable have already been reclaimed and
+		 * we do not want to block exit_mmap by keeping mm ref
+		 * count elevated without a good reason.
+		 */
+		if (vma_is_anonymous(vma) || !(vma->vm_flags & VM_SHARED))
+			unmap_page_range(&tlb, vma, vma->vm_start, vma->vm_end,
+					 &details);
+	}
+	tlb_finish_mmu(&tlb, 0, -1);
+	pr_info("oom_reaper: reaped process %d (%s), now anon-rss:%lukB, file-rss:%lukB\n",
+			task_pid_nr(tsk), tsk->comm,
+			K(get_mm_counter(mm, MM_ANONPAGES)),
+			K(get_mm_counter(mm, MM_FILEPAGES)));
+	up_read(&mm->mmap_sem);
+
+	/*
+	 * Clear TIF_MEMDIE because the task shouldn't be sitting on a
+	 * reasonably reclaimable memory anymore. OOM killer can continue
+	 * by selecting other victim if unmapping hasn't led to any
+	 * improvements. This also means that selecting this task doesn't
+	 * make any sense.
+	 */
+	tsk->signal->oom_score_adj = OOM_SCORE_ADJ_MIN;
+	exit_oom_victim(tsk);
+out:
+	/*
+	 * Drop our reference but make sure the mmput slow path is called from a
+	 * different context because we shouldn't risk we get stuck there and
+	 * put the oom_reaper out of the way.
+	 */
+	mmput_async(mm);
+	return ret;
+}
 
 int oom_kills_count(void)
 {
