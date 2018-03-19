@@ -23,6 +23,7 @@
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/delay.h>
+#include <linux/display_state.h>
 #include <linux/init.h>
 #include <linux/err.h>
 #include <linux/input/sweep2wake.h>
@@ -80,7 +81,6 @@ MODULE_LICENSE("GPLv2");
 
 /* Resources */
 int s2w_switch = 0;
-bool s2w_scr_suspended = false;
 static int s2w_debug = 0;
 static int s2w_pwrkey_dur = 60;
 static int touch_x = 0, touch_y = 0;
@@ -149,7 +149,7 @@ static void detect_sweep2wake(int x, int y)
 		pr_info(LOGTAG"x: %d, y: %d\n", x, y);
 
 	//left->right
-	if (s2w_scr_suspended == true) {
+	if (!is_display_on()) {
 		prevx = 0;
 		nextx = S2W_X_B1;
 		if ((barrier[0] == true) ||
@@ -178,7 +178,7 @@ static void detect_sweep2wake(int x, int y)
 			}
 		}
 	//right->left
-	} else if ((s2w_scr_suspended == false) && (s2w_switch > 0)) {
+	} else if ((is_display_on()) && (s2w_switch > 0)) {
 		scr_on_touch=true;
 		prevx = (S2W_X_MAX - S2W_X_FINAL);
 		nextx = S2W_X_B2;
@@ -221,7 +221,7 @@ static void s2w_input_callback(struct work_struct *unused) {
 static void s2w_input_event(struct input_handle *handle, unsigned int type,
 				unsigned int code, int value)
 {
-	if ((!s2w_switch) || ((s2w_scr_suspended) && (s2w_switch > 1)))
+	if ((!s2w_switch) || ((is_display_on()) && (s2w_switch > 1)))
 		return;
 
 	if (code == ABS_MT_SLOT) {
@@ -253,7 +253,8 @@ static void s2w_input_event(struct input_handle *handle, unsigned int type,
 
 static int input_dev_filter(struct input_dev *dev) {
 	if (strstr(dev->name, "touch") ||
-		strstr(dev->name, "synaptics_dsx_i2c")) {
+		strstr(dev->name, "synaptics_dsx_i2c") ||
+		strstr(dev->name, "ft5435_ts")) {
 		return 0;
 	} else {
 		return 1;
