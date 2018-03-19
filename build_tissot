@@ -1,0 +1,144 @@
+#!/bin/bash
+
+export ARCH=arm64
+export CROSS_COMPILE=aarch64-linux-android-
+export CCOMPILE=$CROSS_COMPILE
+
+#Change Toolchain GCC versions from here
+#But I personally prefer Google's x86_64-linux-android-4.9
+GCC_VERSION=4.9
+
+TC_PREFIX=aarch64-linux-android
+TOOLCHAIN=$TC_PREFIX-$GCC_VERSION
+CUR_DIR=$PWD
+
+toolchain_url="https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9"
+
+clear
+
+echo "---------------SETTING UP ENVIRONMENT---------------"
+start=`date +%s`
+NOW=$(date +"%d-%m-%Y")
+echo "Current Date : $NOW"
+echo "Applying Build Settings"
+export SLEEP=1
+echo "Setting CPU Cores/Threads"
+export CPUS=`nproc`
+echo "Setting Version Number"
+export VER=v$1
+echo "Setting Defconfig"
+export DEFCONFIG=tissot-perf_defconfig
+echo "Setting bzImage Location For FlareN kernel"
+export BZIMAGE=gen/arch/arm64/boot/Image.gz-dtb
+echo "Enabling Graphite Optimizations"
+export ENABLE_GRAPHITE=true
+echo "Environment Setup Complete Now Moving To Compiling"
+echo ""
+echo ""
+echo ""
+echo "-----CHECKING IF TOOLCHAIN IS IN CORRECT PATH-------"
+sleep $SLEEP
+cd ..
+TC=$PWD
+if [ -f $TC/$TOOLCHAIN/bin/$TC_PREFIX-gcc ];
+then
+   cd $CUR_DIR
+   echo "ToolChain exists"
+   echo "Starting Compilation"
+   echo "SETTING TOOLCHAIN PATH : $TC/$TOOLCHAIN/bin"
+   export PATH=$TC/$TOOLCHAIN/bin-ccache:$TC/$TOOLCHAIN/bin:$PATH
+   echo ""
+   echo ""
+   echo ""
+   sleep $SLEEP
+   echo "------------------COMPILING----------------------"
+else
+   echo "Could not find toolchain at $TC/$TOOLCHAIN/"
+   echo "DOWNLOADING TOOLCAHIN"
+   git clone $toolchain_url
+   echo "Starting Compilation"
+   echo "SETTING TOOLCHAIN PATH : $TC/$TOOLCHAIN/bin"
+   export PATH=$TC/$TOOLCHAIN/bin-ccache:$TC/$TOOLCHAIN/bin:$PATH
+   echo ""
+   echo ""
+   echo ""
+   sleep $SLEEP
+   cd $CUR_DIR
+   exit
+   echo "------------------COMPILING----------------------"
+fi
+
+#Build
+sleep $SLEEP
+#make O=gen clean && make O=gen mrproper
+echo "Starting Build Process"
+export USE_CCACHE=1
+sleep $SLEEP
+if [ -f .config ];
+then
+   echo ".config exists"
+else
+   echo ".config Does Not Exists"
+   echo "Compiling From $DEFCONFIG"
+   make O=gen $DEFCONFIG
+   sleep $SLEEP
+fi
+mkdir -p gen
+make O=gen $EV -j$CPUS 2>&1 | tee build.log
+
+if [ -f $BZIMAGE ];
+then
+   echo "$BZIMAGE exists"
+   echo "-------------------SUCCESS-----------------------"
+   echo ""
+   echo ""
+   echo ""
+   sleep $SLEEP
+else
+   echo "-----------------------------------ERROR------------------------------------"
+   echo "      Failed to compile. Please Check *build.log* For Compile Errors"
+   echo "-----------------------------------ERROR------------------------------------"
+   echo "exiting script"
+   sleep $SLEEP
+   exit 0
+fi
+
+clear
+echo "--------------------PACKING-------------------------"
+echo "Starting Packing To Recovery Flashable Zip"
+rm -rf out/modules/*
+find . -name '*.ko' -exec $TC/$TOOLCHAIN/bin/aarch64-linux-android-strip --strip-debug {} \;
+#find . -name '*.ko' -exec ./scripts/sign-file sha256 ./signing_key.priv ./signing_key.x509 {} \;
+find . -name '*.ko' -exec cp {} out/modules/ \;
+cd out/
+mv modules/wlan.ko pronto_wlan.ko
+rm -rf modules/*
+mkdir -p modules/system/system/vendor/lib/modules/pronto/
+mv pronto_wlan.ko modules/system/system/vendor/lib/modules/pronto/pronto_wlan.ko
+echo "Removing Old Files"
+rm -rf Image.gz-dtb *.zip
+sleep $SLEEP
+echo "Copying bzImage"
+mv ../gen/arch/arm64/boot/Image.gz-dtb Image.gz-dtb
+sleep $SLEEP
+echo "Packing Flare-O_"$VER".zip"
+zip -r Flare-O_"$VER".zip *
+nowf=$(date +"%T")
+cd ..
+echo "Current Date : $NOW"
+echo "Applying Build Settings : done"
+echo "Version Number = $VER"
+echo "cleaning previous files : done"
+echo "Starting Build Process  : done"
+echo "Build complete"
+
+end=`date +%s`
+runtime=$((end-start))
+echo "Completion Time :"
+echo "$runtime sec\n"
+
+echo "------------------- CLEANING------------------------"
+make O=gen clean
+rm -rf gen
+echo "----------------------DONE--------------------------"
+
