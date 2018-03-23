@@ -28,10 +28,11 @@ echo "Setting Version Number"
 export VER=v$1
 echo "Setting Defconfig"
 export DEFCONFIG=tissot-perf_defconfig
-echo "Setting bzImage Location For FlareN kernel"
+echo "Setting bzImage Location For MetaPhoenix-O kernel"
 export BZIMAGE=gen/arch/arm64/boot/Image.gz-dtb
 echo "Enabling Graphite Optimizations"
 export ENABLE_GRAPHITE=true
+export EV=EXTRAVERSION=_MetaPhoenix-O_v$1
 echo "Environment Setup Complete Now Moving To Compiling"
 echo ""
 echo ""
