@@ -27,7 +27,7 @@ export CPUS=`nproc`
 echo "Setting Version Number"
 export VER=v$1
 echo "Setting Defconfig"
-export DEFCONFIG=tissot-perf_defconfig
+export DEFCONFIG=metaphoenix_defconfig
 echo "Setting bzImage Location For MetaPhoenix-O kernel"
 export BZIMAGE=gen/arch/arm64/boot/Image.gz-dtb
 echo "Enabling Graphite Optimizations"
@@ -122,8 +122,8 @@ sleep $SLEEP
 echo "Copying bzImage"
 mv ../gen/arch/arm64/boot/Image.gz-dtb Image.gz-dtb
 sleep $SLEEP
-echo "Packing Flare-O_"$VER".zip"
-zip -r Flare-O_"$VER".zip *
+echo "Packing MetaPhoenix-O_"$VER".zip"
+zip -r MetaPhoenix-O_"$VER".zip *
 nowf=$(date +"%T")
 cd ..
 echo "Current Date : $NOW"
