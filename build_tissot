@@ -27,7 +27,20 @@ export CPUS=`nproc`
 echo "Setting Version Number"
 export VER=v$1
 echo "Setting Defconfig"
+echo "Select the type: "
+echo "1 Stock"
+echo "2 Custom"
+read TYPE
+if [ $TYPE = 1 ]
+then
 export DEFCONFIG=metaphoenix_defconfig
+elif [ $TYPE = 2 ]
+then
+export DEFCONFIG=custom_metaphoenix_defconfig
+else
+echo "Invalid input"
+exit
+fi
 echo "Setting bzImage Location For MetaPhoenix-O kernel"
 export BZIMAGE=gen/arch/arm64/boot/Image.gz-dtb
 echo "Enabling Graphite Optimizations"
