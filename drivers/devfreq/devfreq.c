@@ -1111,66 +1111,6 @@ static struct attribute *devfreq_attrs[] = {
 };
 ATTRIBUTE_GROUPS(devfreq);
 
-<<<<<<< HEAD
-static void set_wake_boost(bool enable)
-{
-	struct devfreq *df;
-
-	mutex_lock(&devfreq_list_lock);
-	list_for_each_entry(df, &devfreq_list, node) {
-		if (!df->needs_wake_boost)
-			continue;
-
-		mutex_lock(&df->lock);
-		df->do_wake_boost = enable;
-		update_devfreq(df);
-		mutex_unlock(&df->lock);
-	}
-	mutex_unlock(&devfreq_list_lock);
-}
-
-static void wake_boost_fn(struct work_struct *work)
-{
-	set_wake_boost(true);
-	schedule_delayed_work(&wake_unboost_work,
-			msecs_to_jiffies(WAKE_BOOST_DURATION_MS));
-}
-
-static void wake_unboost_fn(struct work_struct *work)
-{
-	set_wake_boost(false);
-}
-
-static int fb_notifier_callback(struct notifier_block *nb,
-		unsigned long action, void *data)
-{
-	struct fb_event *evdata = data;
-	int *blank = evdata->data;
-
-	/* Parse framebuffer events as soon as they occur */
-	if (action != FB_EARLY_EVENT_BLANK)
-		return NOTIFY_OK;
-
-	switch (*blank) {
-	case FB_BLANK_UNBLANK:
-		schedule_work(&wake_boost_work);
-		break;
-	default:
-		cancel_work_sync(&wake_boost_work);
-		if (cancel_delayed_work_sync(&wake_unboost_work))
-			set_wake_boost(false);
-	}
-
-	return NOTIFY_OK;
-}
-
-static struct notifier_block fb_notifier_callback_nb = {
-	.notifier_call = fb_notifier_callback,
-	.priority = INT_MAX,
-};
-
-=======
->>>>>>> 9e7150ba874f... Revert "PM / devfreq: Add an interface to boost devices when the screen is woken"
 static int __init devfreq_init(void)
 {
 	devfreq_class = class_create(THIS_MODULE, "devfreq");
