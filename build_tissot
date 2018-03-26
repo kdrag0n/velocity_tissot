@@ -45,7 +45,6 @@ echo "Setting bzImage Location For MetaPhoenix-O kernel"
 export BZIMAGE=gen/arch/arm64/boot/Image.gz-dtb
 echo "Enabling Graphite Optimizations"
 export ENABLE_GRAPHITE=true
-export EV=EXTRAVERSION=_MetaPhoenix-O_v$1
 echo "Environment Setup Complete Now Moving To Compiling"
 echo ""
 echo ""
@@ -98,7 +97,7 @@ else
    sleep $SLEEP
 fi
 mkdir -p gen
-make O=gen $EV -j$CPUS 2>&1 | tee build.log
+make O=gen LOCALVERSION=$VER -j$CPUS 2>&1 | tee build.log
 
 if [ -f $BZIMAGE ];
 then
