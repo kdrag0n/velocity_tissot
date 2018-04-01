@@ -102,7 +102,7 @@ static void freeze_enter(void)
 	cpuidle_resume();
 
 	/* Push all the CPUs into the idle loop. */
-	wake_up_idle_cpus(cpu_online_mask);
+	wake_up_all_idle_cpus();
 	pr_debug("PM: suspend-to-idle\n");
 	/* Make the current CPU wait so it can enter the idle loop too. */
 	wait_event(suspend_freeze_wait_head,
@@ -595,9 +595,6 @@ int pm_suspend(suspend_state_t state)
 		return -EINVAL;
 
 	pm_suspend_marker("entry");
-#ifdef CONFIG_MSM_RPM_STATS_LOG
-	msm_rpmstats_log_suspend_enter();
-#endif
 	error = enter_state(state);
 	if (error) {
 		suspend_stats.fail++;
@@ -605,9 +602,6 @@ int pm_suspend(suspend_state_t state)
 	} else {
 		suspend_stats.success++;
 	}
-#ifdef CONFIG_MSM_RPM_STATS_LOG
-	msm_rpmstats_log_suspend_exit(error);
-#endif
 	pm_suspend_marker("exit");
 	return error;
 }
