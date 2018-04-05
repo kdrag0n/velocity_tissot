@@ -414,9 +414,14 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
-		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   -std=gnu89
+		   -Wno-error \
+		   $(call cc-disable-warning,maybe-uninitialized,) \
+		   $(call cc-disable-warning,misleading-indentation,) \
+		   $(call cc-disable-warning,memset-transposed-args,) \
+		   $(call cc-disable-warning,bool-compare,) \
+		   $(call cc-disable-warning,shift-overflow,) \
+		   -std=gnu99
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
