@@ -242,6 +242,16 @@ config CPU_FREQ_GOV_INTELLIACTIVE
 
 	  If in doubt, say N.
 
+config CPU_FREQ_GOV_BIOSHOCK
+	bool "'bioshock' cpufreq policy governor"
+	help
+	  bioshock cpu governor
+
+config CPU_FREQ_GOV_DARKNESS
+	bool "'darkness' cpufreq policy governor"
+	help
+	  darkness cpu governor
+
 config CPU_FREQ_GOV_CONSERVATIVE
 	tristate "'conservative' cpufreq governor"
 	depends on CPU_FREQ
