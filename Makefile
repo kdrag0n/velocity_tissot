@@ -418,7 +418,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   $(call cc-disable-warning,memset-transposed-args,) \
 		   $(call cc-disable-warning,bool-compare,) \
 		   $(call cc-disable-warning,shift-overflow,) \
-		   -std=gnu99
+		   -std=gnu89
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
