@@ -268,6 +268,54 @@ struct apr_client *apr_get_client(int dest_id, int client_id)
 	return &client[dest_id][client_id];
 }
 
+inline int apr_fill_hdr(void *handle, uint32_t *buf, uint16_t src_port,
+			uint16_t msg_type, uint16_t dest_port,
+			uint32_t token, uint32_t opcode, uint16_t h_len)
+{
+	struct apr_svc *svc = handle;
+	struct apr_client *clnt;
+	struct apr_hdr *hdr;
+	uint16_t dest_id;
+	uint16_t client_id;
+	uint16_t type;
+	uint16_t hdr_len;
+	uint16_t ver;
+
+	if (!handle || !buf || h_len < APR_HDR_SIZE) {
+		pr_err("APR: Wrong parameters\n");
+		return -EINVAL;
+	}
+	dest_id = svc->dest_id;
+	client_id = svc->client_id;
+	clnt = &client[dest_id][client_id];
+
+	if (!client[dest_id][client_id].handle) {
+		pr_err("APR: Still service is not yet opened\n");
+		return -EINVAL;
+	}
+
+	hdr = (struct apr_hdr *)buf;
+	hdr_len = h_len >> 2;
+	hdr->pkt_size = h_len;
+	hdr->src_domain = APR_DOMAIN_APPS;
+	hdr->src_svc = svc->id;
+	hdr->dest_svc = svc->id;
+	if (dest_id == APR_DEST_MODEM)
+		hdr->dest_domain = APR_DOMAIN_MODEM;
+	else if (dest_id == APR_DEST_QDSP6)
+		hdr->dest_domain = APR_DOMAIN_ADSP;
+
+	hdr->src_port = src_port;
+	hdr->dest_port = dest_port;
+	hdr->token = token;
+	hdr->opcode = opcode;
+	ver = APR_PKT_VER;
+	type = msg_type;
+	hdr->hdr_field = ((msg_type & 0x0003) << 0x8) |
+			((hdr_len & 0x000F) << 0x4) | (ver & 0x000F);
+	return 0;
+}
+
 int apr_send_pkt(void *handle, uint32_t *buf)
 {
 	struct apr_svc *svc = handle;

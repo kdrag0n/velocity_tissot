@@ -29,6 +29,7 @@
 #include <linux/workqueue.h>
 
 #include <soc/qcom/subsystem_restart.h>
+#include "../media/platform/msm/vidc/hfi_packetization.h"
 
 #define IMAGE_LOAD_CMD 1
 #define IMAGE_UNLOAD_CMD 0

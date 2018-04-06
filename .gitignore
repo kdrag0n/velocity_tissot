@@ -101,3 +101,6 @@ all.config
 # Standalone kernel compiled files
 build.log
 out/
+
+# Misc
+drivers/platform/msm/ipa/ipa_common

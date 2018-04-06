@@ -468,7 +468,7 @@ int create_pkt_cmd_sys_ping(struct hfi_cmd_sys_ping_packet *pkt)
 	return rc;
 }
 
-inline int create_pkt_cmd_sys_session_init(
+int create_pkt_cmd_sys_session_init(
 		struct hfi_cmd_sys_session_init_packet *pkt,
 		struct hal_session *session,
 		u32 session_domain, u32 session_codec)
