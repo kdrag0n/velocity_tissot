@@ -73,6 +73,31 @@
 #include <asm/tlbflush.h>
 #include "internal.h"
 
+extern void __mmu_notifier_invalidate_range(struct mm_struct *mm,
+				  unsigned long start, unsigned long end);
+
+static inline void mmu_notifier_invalidate_range(struct mm_struct *mm,
+				  unsigned long start, unsigned long end)
+{
+	if (mm_has_notifiers(mm))
+		__mmu_notifier_invalidate_range(mm, start, end);
+}
+
+
+#define	ptep_clear_flush_notify(__vma, __address, __ptep)		\
+({									\
+	unsigned long ___addr = __address & PAGE_MASK;			\
+	struct mm_struct *___mm = (__vma)->vm_mm;			\
+	pte_t ___pte;							\
+									\
+	___pte = ptep_clear_flush(__vma, __address, __ptep);		\
+	mmu_notifier_invalidate_range(___mm, ___addr,			\
+					___addr + PAGE_SIZE);		\
+									\
+	___pte;								\
+    })
+
+
 #ifdef CONFIG_X86
 #undef memcmp
 

@@ -61,6 +61,10 @@ config SPARSEMEM_MANUAL
 
 endchoice
 
+config MMU_NOTIFIER
+	def_bool y
+	select SRCU
+
 config DISCONTIGMEM
 	def_bool y
 	depends on (!SELECT_MEMORY_MODEL && ARCH_DISCONTIGMEM_ENABLE) || DISCONTIGMEM_MANUAL
