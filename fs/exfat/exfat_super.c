@@ -1379,6 +1379,12 @@ const struct inode_operations exfat_dir_inode_operations = {
 	.rename        = exfat_rename,
 	.setattr       = exfat_setattr,
 	.getattr       = exfat_getattr,
+#ifdef CONFIG_EXFAT_VIRTUAL_XATTR
+	.setxattr	= exfat_setxattr,
+	.getxattr	= exfat_getxattr,
+	.listxattr	= exfat_listxattr,
+	.removexattr	= exfat_removexattr,
+#endif
 };
 
 /*======================================================================*/
@@ -1421,6 +1427,12 @@ const struct inode_operations exfat_symlink_inode_operations = {
 	#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)
 		.get_link = exfat_get_link,
 	#endif
+#ifdef CONFIG_EXFAT_VIRTUAL_XATTR
+	.setxattr	= exfat_setxattr,
+	.getxattr	= exfat_getxattr,
+	.listxattr	= exfat_listxattr,
+	.removexattr	= exfat_removexattr,
+#endif
 };
 
 static int exfat_file_release(struct inode *inode, struct file *filp)
@@ -1507,6 +1519,12 @@ const struct inode_operations exfat_file_inode_operations = {
 #endif
 	.setattr     = exfat_setattr,
 	.getattr     = exfat_getattr,
+#ifdef CONFIG_EXFAT_VIRTUAL_XATTR
+	.setxattr	= exfat_setxattr,
+	.getxattr	= exfat_getxattr,
+	.listxattr	= exfat_listxattr,
+	.removexattr	= exfat_removexattr,
+#endif
 };
 
 /*======================================================================*/
