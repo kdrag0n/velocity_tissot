@@ -6478,27 +6478,6 @@ find_idlest_group(struct sched_domain *sd, struct task_struct *p,
 		}
 	} while (group = group->next, group != sd->groups);
 
-	/*
-	 * The cross-over point between using spare capacity or least load
-	 * is too conservative for high utilization tasks on partially
-	 * utilized systems if we require spare_capacity > task_util(p),
-	 * so we allow for some task stuffing by using
-	 * spare_capacity > task_util(p)/2.
-	 *
-	 * Spare capacity can't be used for fork because the utilization has
-	 * not been set yet, we must first select a rq to compute the initial
-	 * utilization.
-	 */
-	if (sd_flag & SD_BALANCE_FORK)
-		goto skip_spare;
-
-	if (this_spare > task_util(p) / 2 &&
-	    imbalance*this_spare > 100*most_spare)
-		return NULL;
-	else if (most_spare > task_util(p) / 2)
-		return most_spare_sg;
-
-skip_spare:
 	if (!idlest || 100*this_load < imbalance*min_load)
 		return NULL;
 	return idlest;
