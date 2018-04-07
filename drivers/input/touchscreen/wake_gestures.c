@@ -158,7 +158,6 @@ static void wake_pwrtrigger(void) {
 	if (pwrtrigger_time[0] - pwrtrigger_time[1] < TRIGGER_TIMEOUT)
 		return;
 
-	set_vibrate(vib_strength);
 	schedule_work(&wake_presspwr_work);
 
         return;
