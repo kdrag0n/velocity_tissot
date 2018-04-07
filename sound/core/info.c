@@ -813,12 +813,6 @@ static struct snd_info_entry *snd_info_create_entry(const char *name)
 	mutex_init(&entry->access);
 	INIT_LIST_HEAD(&entry->children);
 	INIT_LIST_HEAD(&entry->list);
-	entry->parent = parent;
-	if (parent) {
-		mutex_lock(&parent->access);
-		list_add_tail(&entry->list, &parent->children);
-		mutex_unlock(&parent->access);
-	}
 	return entry;
 }
 
