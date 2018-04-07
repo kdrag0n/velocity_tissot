@@ -17300,16 +17300,13 @@ static int __wlan_hdd_cfg80211_sched_scan_start(struct wiphy *wiphy,
         pnoRequest.scanTimers.ucScanTimersCount =
                                                HDD_PNO_SCAN_TIMERS_SET_MULTIPLE;
 
-    tempInterval = (request->interval)/1000;
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
               "Base scan interval = %d PNOScanTimerRepeatValue = %d",
               tempInterval, pHddCtx->cfg_ini->configPNOScanTimerRepeatValue);
     for ( i = 0; i < pnoRequest.scanTimers.ucScanTimersCount; i++)
     {
-        pnoRequest.scanTimers.aTimerValues[i].uTimerRepeat =
-                                 pHddCtx->cfg_ini->configPNOScanTimerRepeatValue;
-        pnoRequest.scanTimers.aTimerValues[i].uTimerValue = tempInterval;
-        tempInterval *= 2;
+        pnoRequest.scanTimers.aTimerValues[i].uTimerRepeat = request->scan_plans[i].iterations;
+        pnoRequest.scanTimers.aTimerValues[i].uTimerValue = request->scan_plans[i].interval;
     }
     //Repeat last timer until pno disabled.
     pnoRequest.scanTimers.aTimerValues[i-1].uTimerRepeat = 0;
