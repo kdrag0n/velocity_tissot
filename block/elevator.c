@@ -227,12 +227,12 @@ int elevator_init(struct request_queue *q, char *name)
 		 */
 		if (q->mq_ops) {
 			if (q->nr_hw_queues == 1)
-				e = elevator_get(q, CONFIG_DEFAULT_IOSCHED, false);
+				e = elevator_get(CONFIG_DEFAULT_IOSCHED, false);
 
 			if (!e)
 				return 0;
 		} else
-			e = elevator_get(q, CONFIG_DEFAULT_IOSCHED, false);
+			e = elevator_get(CONFIG_DEFAULT_IOSCHED, false);
 
 		if (!e) {
 			printk(KERN_ERR
