@@ -157,6 +157,27 @@ config CPU_FREQ_DEFAULT_GOV_IMPULSE
 	  loading your cpufreq low-level hardware driver, using the
 	  'impulse' governor for latency-sensitive workloads.
 
+config CPU_FREQ_DEFAULT_GOV_ZZMOOVE
+        bool "zzmoove"
+	select CPU_FREQ_GOV_ZZMOOVE
+	select CPU_FREQ_GOV_PERFORMANCE
+	help
+	Use the CPUFreq governor 'zzmoove' as default, using predefined
+	frequency lookup tables and optimized scaling triggers instead of
+	% frequency steps to get smooth up/downscaling dependant on CPU load.
+
+config CPU_FREQ_DEFAULT_GOV_BIOSHOCK
+	bool "bioshock"
+	select CPU_FREQ_GOV_BIOSHOCK
+	help
+	  default bioshock
+
+config CPU_FREQ_DEFAULT_GOV_DARKNESS
+	bool "darkness"
+	select CPU_FREQ_GOV_DARKNESS
+	help
+	  default darkness
+
 endchoice
 
 config CPU_FREQ_GOV_PERFORMANCE
@@ -330,15 +351,6 @@ config CPU_FREQ_GOV_BLU_ACTIVE
 
 	  If in doubt, say N.
 
-config CPU_FREQ_DEFAULT_GOV_ZZMOOVE
-        bool "zzmoove"
-	select CPU_FREQ_GOV_ZZMOOVE
-	select CPU_FREQ_GOV_PERFORMANCE
-	help
-	Use the CPUFreq governor 'zzmoove' as default, using predefined
-	frequency lookup tables and optimized scaling triggers instead of
-	% frequency steps to get smooth up/downscaling dependant on CPU load.
-
 config CPU_FREQ_GOV_ZZMOOVE
 	tristate "'zzmoove' cpufreq governor"
 	depends on CPU_FREQ
@@ -358,7 +370,7 @@ config CPU_FREQ_GOV_IMPULSE
 
 config FINGERPRINT_BOOST
 	bool "Fingerprint Boost"
-	default y
+	default n
 	help
 	  Boosts available CPUs to max frequency on fingerprint sensor input.
 
