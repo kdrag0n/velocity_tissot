@@ -36,36 +36,22 @@
 
 /* Tunables */
 #define WG_DEBUG		0
-#define WG_DEFAULT		0
-#define S2W_DEFAULT		0
-#define S2S_DEFAULT		0
+#define WG_DEFAULT		1
+#define S2W_DEFAULT		1
+#define S2S_DEFAULT		1
 #define WG_PWRKEY_DUR           180
 
-/* taimen */
-#define SWEEP_Y_MAX             2880
-#define SWEEP_X_MAX             1440
-#define SWEEP_EDGE		130
-#define SWEEP_Y_LIMIT           SWEEP_Y_MAX-SWEEP_EDGE
-#define SWEEP_X_LIMIT           SWEEP_X_MAX-SWEEP_EDGE
-#define SWEEP_X_B1              532
-#define SWEEP_X_B2              960
-#define SWEEP_Y_START		1066
-#define SWEEP_X_START		720
-#define SWEEP_X_FINAL           360
-#define SWEEP_Y_NEXT            240
-
-/* walleye */
-#define SWEEP_Y_MAX_WALLEYE	1920
-#define SWEEP_X_MAX_WALLEYE	1080
-#define SWEEP_EDGE_WALLEYE	90
-#define SWEEP_Y_LIMIT_WALLEYE	SWEEP_Y_MAX_WALLEYE-SWEEP_EDGE
-#define SWEEP_X_LIMIT_WALLEYE	SWEEP_X_MAX_WALLEYE-SWEEP_EDGE
-#define SWEEP_X_B1_WALLEYE	340
-#define SWEEP_X_B2_WALLEYE	620
-#define SWEEP_Y_START_WALLEYE	800
-#define SWEEP_X_START_WALLEYE	540
-#define SWEEP_X_FINAL_WALLEYE	270
-#define SWEEP_Y_NEXT_WALLEYE	135
+#define SWEEP_Y_MAX	1920
+#define SWEEP_X_MAX	1080
+#define SWEEP_EDGE	90
+#define SWEEP_Y_LIMIT	SWEEP_Y_MAX-SWEEP_EDGE
+#define SWEEP_X_LIMIT	SWEEP_X_MAX-SWEEP_EDGE
+#define SWEEP_X_B1	340
+#define SWEEP_X_B2	620
+#define SWEEP_Y_START	800
+#define SWEEP_X_START	540
+#define SWEEP_X_FINAL	270
+#define SWEEP_Y_NEXT	135
 
 /* Wake Gestures */
 #define SWEEP_TIMEOUT		90
@@ -81,8 +67,6 @@
 #define WAKE_GESTURES_ENABLED	1
 
 #define LOGTAG			"WG"
-#define WALLEYE			1
-#define TAIMEN			2
 
 #if (WAKE_GESTURES_ENABLED)
 int gestures_switch = WG_DEFAULT;
@@ -119,7 +103,7 @@ static unsigned int sweep_y_next = SWEEP_Y_NEXT;
 static unsigned int sweep_x_max = SWEEP_X_MAX;
 static unsigned int sweep_edge = SWEEP_EDGE;
 
-static struct input_dev * wake_dev;
+static struct input_dev *wake_dev;
 static DEFINE_MUTEX(pwrkeyworklock);
 static struct workqueue_struct *s2w_input_wq;
 static struct workqueue_struct *dt2w_input_wq;
@@ -127,34 +111,9 @@ static struct work_struct s2w_input_work;
 static struct work_struct dt2w_input_work;
 static struct wake_lock dt2w_wakelock;
 
-//get hardware type
-static int hw_version = TAIMEN;
-static int __init get_model(char *cmdline_model)
+static inline bool is_suspended(void)
 {
-	if (strstr(cmdline_model, "walleye")) {
-		sweep_y_limit = SWEEP_Y_LIMIT_WALLEYE;
-		sweep_x_limit = SWEEP_X_LIMIT_WALLEYE;
-		sweep_x_b1 = SWEEP_X_B1_WALLEYE;
-		sweep_x_b2 = SWEEP_X_B2_WALLEYE;
-		sweep_y_start = SWEEP_Y_START_WALLEYE;
-		sweep_x_start = SWEEP_X_START_WALLEYE;
-		sweep_x_final = SWEEP_X_FINAL_WALLEYE;
-		sweep_y_next = SWEEP_Y_NEXT_WALLEYE;
-		sweep_x_max = SWEEP_X_MAX_WALLEYE;
-		sweep_edge = SWEEP_EDGE_WALLEYE;
-		hw_version = WALLEYE;
-	}
-
-	return 0;
-}
-__setup("androidboot.hardware=", get_model);
-
-static bool is_suspended(void)
-{
-	if (hw_version == WALLEYE)
-		return scr_suspended();
-	else
-		return scr_suspended_taimen();
+	return scr_suspended();
 }
 
 /* Wake Gestures */
@@ -788,12 +747,10 @@ static int __init wake_gestures_init(void)
 	}
 #endif
 
-	if (hw_version == TAIMEN) {
-		android_touch_kobj = kobject_create_and_add("android_touch", NULL);
-		if (android_touch_kobj == NULL) {
-			pr_err("%s: subsystem_register failed\n", __func__);
-			goto err_input_dev;
-		}
+	android_touch_kobj = kobject_create_and_add("android_touch", NULL);
+	if (android_touch_kobj == NULL) {
+		pr_err("%s: subsystem_register failed\n", __func__);
+		goto err_input_dev;
 	}
 	rc = sysfs_create_file(android_touch_kobj, &dev_attr_sweep2wake.attr);
 	if (rc) {
