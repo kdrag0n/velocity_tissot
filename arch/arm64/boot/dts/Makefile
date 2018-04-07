@@ -4,3 +4,5 @@ dts-dirs += cavium
 dts-dirs += qcom
 
 subdir-y	:= $(dts-dirs)
+
+tissot.dtb:
