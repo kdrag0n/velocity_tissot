@@ -1,8 +1,8 @@
 VERSION = 3
 PATCHLEVEL = 18
 SUBLEVEL = 102
-EXTRAVERSION =
-NAME = Diseased Newt
+EXTRAVERSION = -en
+NAME = Adamant Abyss
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
