@@ -1149,7 +1149,7 @@ static int __init early_numa(char *p)
 
 	p = strstr(p, "fake=");
 	if (p)
-		cmdline = p + DSTRLEN("fake=");
+		cmdline = p + strlen("fake=");
 
 	return 0;
 }

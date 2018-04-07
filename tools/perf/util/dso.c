@@ -767,7 +767,7 @@ static void dso__set_basename(struct dso *dso)
 int dso__name_len(const struct dso *dso)
 {
 	if (!dso)
-		return DSTRLEN("[unknown]");
+		return strlen("[unknown]");
 	if (verbose)
 		return dso->long_name_len;
 

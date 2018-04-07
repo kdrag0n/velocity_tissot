@@ -14294,18 +14294,18 @@ static void wcd_swr_ctrl_add_devices(struct work_struct *work)
 
 	platdata = &tasha->swr_plat_data;
 
-	for_each_available_child_of_node(wcd9xxx->dev->of_node, node) {
-		if (!strcmp(node->name, "swr_master"))
-			strlcpy(plat_dev_name, "tasha_swr_ctrl",
-				(WCD9335_STRING_LEN - 1));
-		else if (strnstr(node->name, "msm_cdc_pinctrl",
-				 DSTRLEN("msm_cdc_pinctrl")) != NULL)
-			strlcpy(plat_dev_name, node->name,
-				(WCD9335_STRING_LEN - 1));
-		else
-			continue;
-
-		pdev = platform_device_alloc(plat_dev_name, -1);
+	for_each_child_of_node(wcd9xxx->dev->of_node, node) {
+		temp = krealloc(swr_ctrl_data,
+			(ctrl_num + 1) * sizeof(struct tasha_swr_ctrl_data),
+			GFP_KERNEL);
+		if (!temp) {
+			dev_err(wcd9xxx->dev, "out of memory\n");
+			ret = -ENOMEM;
+			goto err;
+		}
+		swr_ctrl_data = temp;
+		swr_ctrl_data[ctrl_num].swr_pdev = NULL;
+		pdev = platform_device_alloc("tasha_swr_ctrl", -1);
 		if (!pdev) {
 			dev_err(wcd9xxx->dev, "%s: pdev memory alloc failed\n",
 				__func__);

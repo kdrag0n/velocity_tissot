@@ -1142,8 +1142,7 @@ static char *setup_root_args(char *args)
 	if (!src)
 		return NULL;
 
-	/* The worst case is that we add ",subvolid=0" to the end. */
-	buf = dst = kmalloc(strlen(args) + DSTRLEN(",subvolid=0") + 1, GFP_NOFS);
+	buf = dst = kmalloc(len, GFP_NOFS);
 	if (!buf)
 		return NULL;
 
