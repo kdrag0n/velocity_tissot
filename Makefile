@@ -437,7 +437,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 
 # TODO: remove me b/62057517
 KBUILD_CFLAGS += \
-	-Wno-gcc-compat \
+	$(call cc-option,-Wno-gcc-compat) \
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
