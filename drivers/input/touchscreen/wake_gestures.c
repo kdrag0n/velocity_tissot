@@ -685,7 +685,7 @@ static DEVICE_ATTR(vib_strength, (S_IWUSR|S_IRUGO),
  * INIT / EXIT stuff below here
  */
 
-extern struct kobject *android_touch_kobj;
+struct kobject *android_touch_kobj;
 
 static int __init wake_gestures_init(void)
 {

@@ -38,15 +38,20 @@
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
 
-#if defined(CONFIG_FB)
+#ifdef CONFIG_FB
 #include <linux/notifier.h>
 #include <linux/fb.h>
+#endif
 
-#elif defined(CONFIG_HAS_EARLYSUSPEND)
+#ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
 #include <linux/sensors.h>
 /* Early-suspend level */
 #define FT_SUSPEND_LEVEL 1
+#endif
+
+#ifdef CONFIG_WAKE_GESTURES
+#include <linux/wake_gestures.h>
 #endif
 
 #define FTS_VENDOR_1    0x3b
@@ -290,16 +295,17 @@ struct ft5435_ts_data {
 	u32 tch_data_len;
 	u8 fw_ver[3];
 	int touch_log_switch;
-#if defined(FOCALTECH_FW_COMPAT)
+#ifdef FOCALTECH_FW_COMPAT
 	u8 fw_compat;
 #endif
-#if defined(FOCALTECH_PWRON_UPGRADE)
+#ifdef FOCALTECH_PWRON_UPGRADE
 	struct delayed_work focaltech_update_work;
 #endif
 	u8 fw_vendor_id;
-#if defined(CONFIG_FB)
+#ifdef CONFIG_FB
 	struct notifier_block fb_notif;
-#elif defined(CONFIG_HAS_EARLYSUSPEND)
+#endif
+#ifdef CONFIG_HAS_EARLYSUSPEND
 	struct early_suspend early_suspend;
 #endif
 
@@ -311,15 +317,15 @@ struct ft5435_ts_data {
 	u8 glove_id;
 #endif
 
-#if defined(USB_CHARGE_DETECT)
+#ifdef USB_CHARGE_DETECT
 struct work_struct	work;
 u8 charger_in;
 #endif
-#if defined(LEATHER_COVER)
+#ifdef LEATHER_COVER
 struct work_struct work_cover;
 u8 cover_on;
 #endif
-#if defined(VR_GLASS)
+#ifdef VR_GLASS
 struct work_struct work_vr;
 u8 vr_on;
 #endif
@@ -379,7 +385,13 @@ static struct ft5435_ts_data *g_ft5435_ts_data;
 static int init_ok;
 module_param_named(init_ok, init_ok, int, 0644);
 
-
+#ifdef CONFIG_WAKE_GESTURES
+bool scr_suspended(void)
+{
+	struct ft5435_ts_data *ts_data = g_ft5435_ts_data;
+	return ts_data->suspended;
+}
+#endif
 
 static void ft5435_update_fw_ver(struct ft5435_ts_data *data)
 {
@@ -1164,6 +1176,11 @@ static irqreturn_t ft5435_ts_interrupt(int irq, void *dev_id)
 		input_mt_slot(ip_dev, id);
 
 		if (x < data->pdata->panel_maxx && y < data->pdata->panel_maxy) {
+#ifdef CONFIG_WAKE_GESTURES
+			if (data->suspended && wg_switch)
+				x += 5000;
+#endif
+
 			if (status == FT_TOUCH_DOWN || status == FT_TOUCH_CONTACT) {
 				input_mt_report_slot_state(ip_dev, MT_TOOL_FINGER, 1);
 				input_report_abs(ip_dev, ABS_MT_POSITION_X, x);
@@ -1432,6 +1449,12 @@ static int  ft_tp_suspend(struct ft5435_ts_data *data)
 		printk("[FTS]TPD gesture write 0x01 to d0 fail \n");
 	}
 
+#ifdef CONFIG_WAKE_GESTURES
+	if (wg_switch) {
+		enable_irq_wake(data->client->irq);
+	}
+#endif
+
 	data->suspended = true;
 	printk("[FTS] FTS_GESTRUE suspend end\n");
 	return 0;
@@ -1474,7 +1497,7 @@ static int ft5435_ts_suspend(struct device *dev)
 	}
 #endif
 
-    disable_irq(data->client->irq);
+	disable_irq(data->client->irq);
 
 	if (gpio_is_valid(data->pdata->reset_gpio)) {
 		gpio_set_value_cansleep(data->pdata->reset_gpio, 1);
@@ -1494,6 +1517,12 @@ static int ft5435_ts_suspend(struct device *dev)
 		}
 	}
 
+#ifdef CONFIG_WAKE_GESTURES
+	if (wg_switch) {
+		enable_irq_wake(data->client->irq);
+	}
+#endif
+
 	data->suspended = true;
 	return 0;
 }
@@ -1511,9 +1540,15 @@ static int ft5435_ts_resume(struct device *dev)
 	input_mt_report_slot_state(data->input_dev, MT_TOOL_FINGER, 0);
 	__set_bit(BTN_TOUCH, data->input_dev->keybit);
 	input_sync(data->input_dev);
-	
+
 	if (gesture_func_on)
                  disable_irq_wake(data->client->irq);
+
+#ifdef CONFIG_WAKE_GESTURES
+	if (wg_switch) {
+		disable_irq_wake(data->client->irq);
+	}
+#endif
 
 /*hw rst*/
 	if (gpio_is_valid(data->pdata->reset_gpio)) {
@@ -1528,6 +1563,13 @@ static int ft5435_ts_resume(struct device *dev)
 	ft5x0x_write_reg(data->client, 0x8c, 0x01);
 	enable_irq(data->client->irq);
 	data->suspended = false;
+
+#ifdef CONFIG_WAKE_GESTURES
+	if (wg_changed) {
+		wg_switch = wg_switch_temp;
+		wg_changed = false;
+	}
+#endif
 
 #if defined(USB_CHARGE_DETECT)
 	queue_work(ft5435_wq, &data->work);
