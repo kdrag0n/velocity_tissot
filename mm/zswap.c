@@ -633,6 +633,10 @@ end:
 	return ret;
 }
 
+static const struct zpool_ops zswap_zpool_ops = {
+	.evict = zswap_writeback_entry
+};
+
 /*********************************
 * frontswap hooks
 **********************************/
