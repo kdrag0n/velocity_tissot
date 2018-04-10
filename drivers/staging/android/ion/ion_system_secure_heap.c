@@ -39,10 +39,10 @@ struct prefetch_info {
 
 static bool is_cp_flag_present(unsigned long flags)
 {
-	return flags && (ION_FLAG_CP_TOUCH ||
-			ION_FLAG_CP_BITSTREAM ||
-			ION_FLAG_CP_PIXEL ||
-			ION_FLAG_CP_NON_PIXEL ||
+	return flags & (ION_FLAG_CP_TOUCH |
+			ION_FLAG_CP_BITSTREAM |
+			ION_FLAG_CP_PIXEL |
+			ION_FLAG_CP_NON_PIXEL |
 			ION_FLAG_CP_CAMERA);
 }
 
@@ -319,7 +319,7 @@ struct ion_heap *ion_system_secure_heap_create(struct ion_platform_heap *unused)
 	if (!heap)
 		return ERR_PTR(-ENOMEM);
 	heap->heap.ops = &system_secure_heap_ops;
-	heap->heap.type = ION_HEAP_TYPE_SYSTEM_SECURE;
+	heap->heap.type = (ion_heap_type) ION_HEAP_TYPE_SYSTEM_SECURE;
 	heap->sys_heap = get_ion_heap(ION_SYSTEM_HEAP_ID);
 
 	heap->destroy_heap = false;

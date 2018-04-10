@@ -505,9 +505,9 @@ static int set_enabled(const char *val, const struct kernel_param *kp)
 
 	ret = param_set_uint(val, kp);
 	blu_plug_enabled = i;
-	if ((blu_plug_enabled == 1))
+	if (blu_plug_enabled == 1)
 		blu = dyn_hp_init();
-	if ((blu_plug_enabled == 0))
+	if (blu_plug_enabled == 0)
 		dyn_hp_exit();
 	return i;
 }

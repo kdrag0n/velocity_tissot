@@ -127,15 +127,15 @@ static char *bam_enable_strings[MAX_BAMS] = {
  * since both share the same prod & cons rm resourses
  */
 static enum ipa_client_type ipa_rm_resource_prod[MAX_BAMS] = {
-	[CI_CTRL] = IPA_RM_RESOURCE_USB_PROD,
-	[HSIC_CTRL]  = IPA_RM_RESOURCE_HSIC_PROD,
-	[DWC3_CTRL] = IPA_RM_RESOURCE_USB_PROD,
+	[CI_CTRL] = (ipa_client_type) IPA_RM_RESOURCE_USB_PROD,
+	[HSIC_CTRL]  = (ipa_client_type) IPA_RM_RESOURCE_HSIC_PROD,
+	[DWC3_CTRL] = (ipa_client_type) IPA_RM_RESOURCE_USB_PROD,
 };
 
 static enum ipa_client_type ipa_rm_resource_cons[MAX_BAMS] = {
-	[CI_CTRL] = IPA_RM_RESOURCE_USB_CONS,
-	[HSIC_CTRL]  = IPA_RM_RESOURCE_HSIC_CONS,
-	[DWC3_CTRL] = IPA_RM_RESOURCE_USB_CONS,
+	[CI_CTRL] = (ipa_client_type) IPA_RM_RESOURCE_USB_CONS,
+	[HSIC_CTRL]  = (ipa_client_type) IPA_RM_RESOURCE_HSIC_CONS,
+	[DWC3_CTRL] = (ipa_client_type) IPA_RM_RESOURCE_USB_CONS,
 };
 
 static int usb_cons_request_resource(void);
@@ -1364,7 +1364,7 @@ static void usb_bam_finish_suspend(enum usb_ctrl cur_bam)
 	     info[cur_bam].cur_cons_state == IPA_RM_RESOURCE_RELEASED) {
 		ipa_rm_notify_completion(
 			IPA_RM_RESOURCE_RELEASED,
-			ipa_rm_resource_cons[cur_bam]);
+			(ipa_rm_resource_name) ipa_rm_resource_cons[cur_bam]);
 	}
 
 	log_event_dbg("%s: Starting LPM on Bus Suspend, RT PUT:%d\n", __func__,
@@ -1388,7 +1388,7 @@ no_lpm:
 	   by the data in the pipes */
 	if (info[cur_bam].cur_cons_state == IPA_RM_RESOURCE_RELEASED)
 		ipa_rm_notify_completion(IPA_RM_RESOURCE_RELEASED,
-				ipa_rm_resource_cons[cur_bam]);
+				(ipa_rm_resource_name) ipa_rm_resource_cons[cur_bam]);
 
 	/* Put to match _get at the beginning of this routine */
 	pm_runtime_put(bam_dev);
@@ -1403,7 +1403,7 @@ void usb_bam_finish_suspend_(struct work_struct *w)
 
 	info_ptr = container_of(w, struct usb_bam_ipa_handshake_info,
 			finish_suspend_work);
-	cur_bam = info_ptr->cur_bam_mode;
+	cur_bam = (usb_ctrl) info_ptr->cur_bam_mode;
 
 	log_event_dbg("%s: Finishing suspend sequence(BAM=%s)\n", __func__,
 			bam_enable_strings[cur_bam]);
@@ -1604,7 +1604,7 @@ static void usb_bam_ipa_create_resources(enum usb_ctrl cur_bam)
 
 	/* Create USB/HSIC_PROD entity */
 	memset(&usb_prod_create_params, 0, sizeof(usb_prod_create_params));
-	usb_prod_create_params.name = ipa_rm_resource_prod[cur_bam];
+	usb_prod_create_params.name = (ipa_rm_resource_name) ipa_rm_resource_prod[cur_bam];
 	usb_prod_create_params.reg_params.notify_cb = usb_prod_notify_cb;
 	usb_prod_create_params.reg_params.user_data = &pdata->bam_type;
 	usb_prod_create_params.floor_voltage = IPA_VOLTAGE_SVS;
@@ -1617,7 +1617,7 @@ static void usb_bam_ipa_create_resources(enum usb_ctrl cur_bam)
 
 	/* Create USB_CONS entity */
 	memset(&usb_cons_create_params, 0, sizeof(usb_cons_create_params));
-	usb_cons_create_params.name = ipa_rm_resource_cons[cur_bam];
+	usb_cons_create_params.name = (ipa_rm_resource_name) ipa_rm_resource_cons[cur_bam];
 	usb_cons_create_params.request_resource = request_resource_cb[cur_bam];
 	usb_cons_create_params.release_resource = release_resource_cb[cur_bam];
 	usb_cons_create_params.floor_voltage = IPA_VOLTAGE_SVS;
@@ -1644,7 +1644,7 @@ static void wait_for_prod_granted(enum usb_ctrl cur_bam)
 
 	init_completion(&info[cur_bam].prod_avail);
 
-	ret = ipa_rm_request_resource(ipa_rm_resource_prod[cur_bam]);
+	ret = (ipa_rm_resource_name) ipa_rm_request_resource(ipa_rm_resource_prod[cur_bam]);
 	if (!ret) {
 		info[cur_bam].cur_prod_state = IPA_RM_RESOURCE_GRANTED;
 		complete_all(&info[cur_bam].prod_avail);
@@ -1673,7 +1673,7 @@ void notify_usb_connected(enum usb_ctrl cur_bam)
 		log_event_dbg("%s: Notify %s CONS_GRANTED\n", __func__,
 				bam_enable_strings[cur_bam]);
 		ipa_rm_notify_completion(IPA_RM_RESOURCE_GRANTED,
-				 ipa_rm_resource_cons[cur_bam]);
+				 (ipa_rm_resource_name) ipa_rm_resource_cons[cur_bam]);
 	}
 }
 
@@ -1689,7 +1689,7 @@ static void wait_for_prod_release(enum usb_ctrl cur_bam)
 	init_completion(&info[cur_bam].prod_released);
 	log_event_dbg("%s: Releasing %s_PROD\n", __func__,
 				bam_enable_strings[cur_bam]);
-	ret = ipa_rm_release_resource(ipa_rm_resource_prod[cur_bam]);
+	ret = (ipa_rm_resource_name) ipa_rm_release_resource(ipa_rm_resource_prod[cur_bam]);
 	if (!ret) {
 		log_event_dbg("%s: Released without waiting\n", __func__);
 		info[cur_bam].cur_prod_state = IPA_RM_RESOURCE_RELEASED;
@@ -1929,7 +1929,7 @@ static void usb_bam_finish_resume(struct work_struct *w)
 	if (info[cur_bam].cur_cons_state == IPA_RM_RESOURCE_GRANTED) {
 		log_event_dbg("%s: Notify CONS_GRANTED\n", __func__);
 		ipa_rm_notify_completion(IPA_RM_RESOURCE_GRANTED,
-				 ipa_rm_resource_cons[cur_bam]);
+				 (ipa_rm_resource_name) ipa_rm_resource_cons[cur_bam]);
 	}
 	spin_unlock(&usb_bam_ipa_handshake_info_lock);
 
@@ -1956,7 +1956,7 @@ static void usb_bam_finish_resume(struct work_struct *w)
 		if (info[cur_bam].cur_cons_state == IPA_RM_RESOURCE_GRANTED) {
 			log_event_dbg("%s: Notify CONS_GRANTED\n", __func__);
 			ipa_rm_notify_completion(IPA_RM_RESOURCE_GRANTED,
-						 ipa_rm_resource_cons[cur_bam]);
+						 (ipa_rm_resource_name) ipa_rm_resource_cons[cur_bam]);
 		}
 	}
 
@@ -2161,13 +2161,13 @@ static int usb_bam_set_ipa_perf(enum usb_ctrl cur_bam,
 		log_event_dbg("%s: vote ipa_perf resource=%d perf=%d mbps\n",
 			__func__, ipa_rm_resource_prod[cur_bam],
 			ipa_rm_perf_prof.max_supported_bandwidth_mbps);
-		ret = ipa_rm_set_perf_profile(ipa_rm_resource_prod[cur_bam],
+		ret = (ipa_rm_resource_name) ipa_rm_set_perf_profile(ipa_rm_resource_prod[cur_bam],
 					&ipa_rm_perf_prof);
 	} else {
 		log_event_dbg("%s: vote ipa_perf resource=%d perf=%d mbps\n",
 			__func__, ipa_rm_resource_cons[cur_bam],
 			ipa_rm_perf_prof.max_supported_bandwidth_mbps);
-		ret = ipa_rm_set_perf_profile(ipa_rm_resource_cons[cur_bam],
+		ret = (ipa_rm_resource_name) ipa_rm_set_perf_profile(ipa_rm_resource_cons[cur_bam],
 					&ipa_rm_perf_prof);
 	}
 
@@ -2730,7 +2730,7 @@ int usb_bam_disconnect_ipa(enum usb_ctrl cur_bam,
 			log_event_dbg("%s: Notify CONS_RELEASED\n", __func__);
 			ipa_rm_notify_completion(
 				IPA_RM_RESOURCE_RELEASED,
-				ipa_rm_resource_cons[cur_bam]);
+				(ipa_rm_resource_name) ipa_rm_resource_cons[cur_bam]);
 		}
 	}
 

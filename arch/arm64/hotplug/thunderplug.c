@@ -436,7 +436,7 @@ static void __cpuinit tplug_work_fn(struct work_struct *work)
 						thunder_param.boost_lock_dur))
 					goto reschedule;
 
-				if (!(i + 1) == 0) {
+				if ((!(i + 1)) == 0) {
 					now[i + 1] = ktime_to_ms(ktime_get());
 					if ((now[i + 1] - last_time[i + 1]) >
 							MIN_CPU_UP_TIME)
