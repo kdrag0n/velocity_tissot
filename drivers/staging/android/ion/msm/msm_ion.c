@@ -153,15 +153,6 @@ int msm_ion_do_cache_op(struct ion_client *client, struct ion_handle *handle,
 }
 EXPORT_SYMBOL(msm_ion_do_cache_op);
 
-int msm_ion_do_cache_offset_op(
-		struct ion_client *client, struct ion_handle *handle,
-		void *vaddr, unsigned int offset, unsigned long len,
-		unsigned int cmd)
-{
-	return ion_do_cache_op(client, handle, vaddr, offset, len, cmd);
-}
-EXPORT_SYMBOL(msm_ion_do_cache_offset_op);
-
 static int ion_no_pages_cache_ops(struct ion_client *client,
 			struct ion_handle *handle,
 			void *vaddr,
@@ -310,23 +301,13 @@ static int ion_pages_cache_ops(struct ion_client *client,
 	};
 
 	for_each_sg(table->sgl, sg, table->nents, i) {
-		unsigned int sg_offset, sg_left, size = 0;
-
 		len += sg->length;
-		if (len <= offset)
+		if (len < offset)
 			continue;
 
-		sg_left = len - offset;
-		sg_offset = sg->length - sg_left;
+		__do_cache_ops(sg_page(sg), sg->offset, sg->length, op);
 
-		size = (length < sg_left) ? length : sg_left;
-
-		__do_cache_ops(sg_page(sg), sg_offset, size, op);
-
-		offset += size;
-		length -= size;
-
-		if (length == 0)
+		if (len > length + offset)
 			break;
 	}
 	return 0;
@@ -641,6 +622,7 @@ int ion_heap_allow_heap_secure(enum ion_heap_type type)
 
 bool is_secure_vmid_valid(int vmid)
 {
+
 	return (vmid == VMID_CP_TOUCH ||
 		vmid == VMID_CP_BITSTREAM ||
 		vmid == VMID_CP_PIXEL ||
@@ -765,9 +747,9 @@ long msm_ion_custom_ioctl(struct ion_client *client,
 			return ret;
 
 		ret = ion_walk_heaps(client, data.prefetch_data.heap_id,
-				     ION_HEAP_TYPE_SYSTEM_SECURE,
-				     (void *)&data.prefetch_data,
-				     ion_system_secure_heap_prefetch);
+			ION_HEAP_TYPE_SYSTEM_SECURE,
+			(void *)&data.prefetch_data,
+			ion_system_secure_heap_prefetch);
 		if (ret)
 			return ret;
 		break;
@@ -780,14 +762,6 @@ long msm_ion_custom_ioctl(struct ion_client *client,
 			ION_HEAP_TYPE_SECURE_DMA,
 			(void *)data.prefetch_data.len,
 			ion_secure_cma_drain_pool);
-
-		if (ret)
-			return ret;
-
-		ret = ion_walk_heaps(client, data.prefetch_data.heap_id,
-				     ION_HEAP_TYPE_SYSTEM_SECURE,
-				     (void *)&data.prefetch_data,
-				     ion_system_secure_heap_drain);
 
 		if (ret)
 			return ret;
@@ -1123,3 +1097,4 @@ static void __exit msm_ion_exit(void)
 
 subsys_initcall(msm_ion_init);
 module_exit(msm_ion_exit);
+
