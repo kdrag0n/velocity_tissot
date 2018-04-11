@@ -6178,7 +6178,7 @@ tSirRetStatus limSendDelBAInd( tpAniSirGlobal pMac,
    MTRACE(macTrace(pMac, TRACE_CODE_TX_COMPLETE,
           psessionEntry->peSessionId,
           halStatus));
-<<<<<<< HEAD
+
     if( eHAL_STATUS_SUCCESS != halStatus )
     {
         PELOGE(limLog( pMac, LOGE, FL( "halTxFrame FAILED! Status [%d]" ), halStatus );)
@@ -6188,7 +6188,7 @@ tSirRetStatus limSendDelBAInd( tpAniSirGlobal pMac,
     }
     else
         return eSIR_SUCCESS;
-=======
+
   if( eHAL_STATUS_SUCCESS != halStatus )
   {
     PELOGE(limLog( pMac, LOGE, FL( "halTxFrame FAILED! Status [%d]" ), halStatus );)
@@ -6199,9 +6199,6 @@ tSirRetStatus limSendDelBAInd( tpAniSirGlobal pMac,
   else {
     return eSIR_SUCCESS;
   }
-
-    returnAfterError:
->>>>>>> e9486065567d... fix build with GCC 7.x
 
 returnAfterError:
     // Release buffer, if allocated

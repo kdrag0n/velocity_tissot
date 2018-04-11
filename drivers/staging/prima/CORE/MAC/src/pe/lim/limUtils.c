@@ -4955,21 +4955,13 @@ limEnableHTLsigTxopProtection(tpAniSirGlobal pMac, tANI_U8 enable,
     {
         //normal protection config check
         if((psessionEntry->limSystemRole == eLIM_AP_ROLE ) &&
-<<<<<<< HEAD
-           !psessionEntry->cfgProtection.lsigTxop)
-=======
             !psessionEntry->cfgProtection.lsigTxop)
->>>>>>> e9486065567d... fix build with GCC 7.x
         {
             // protection disabled.
             PELOG3(limLog(pMac, LOG3, FL(" protection from LsigTxop not supported is disabled"));)
             return eSIR_SUCCESS;
-<<<<<<< HEAD
-        }else if(psessionEntry->limSystemRole != eLIM_AP_ROLE)
-=======
         }
         else if(psessionEntry->limSystemRole != eLIM_AP_ROLE)
->>>>>>> e9486065567d... fix build with GCC 7.x
         {
             //normal protection config check
             if(!pMac->lim.cfgProtection.lsigTxop)
@@ -5030,39 +5022,18 @@ limEnableHtRifsProtection(tpAniSirGlobal pMac, tANI_U8 enable,
     if(!psessionEntry->htCapability)
         return eSIR_SUCCESS; // this protection  is only for HT stations.
 
-<<<<<<< HEAD
-
-=======
->>>>>>> e9486065567d... fix build with GCC 7.x
     //overlapping protection configuration check.
     if(overlap)
     {
     }
     else
     {
-<<<<<<< HEAD
-         //normal protection config check
-        if((psessionEntry->limSystemRole == eLIM_AP_ROLE) &&
-           !psessionEntry->cfgProtection.rifs)
-=======
         if((psessionEntry->limSystemRole == eLIM_AP_ROLE) &&
             !psessionEntry->cfgProtection.rifs)
->>>>>>> e9486065567d... fix build with GCC 7.x
         {
             // protection disabled.
             PELOG3(limLog(pMac, LOG3, FL(" protection from Rifs is disabled"));)
             return eSIR_SUCCESS;
-<<<<<<< HEAD
-        }else if(psessionEntry->limSystemRole != eLIM_AP_ROLE )
-        {
-           //normal protection config check
-           if(!pMac->lim.cfgProtection.rifs)
-           {
-              // protection disabled.
-              PELOG3(limLog(pMac, LOG3, FL(" protection from Rifs is disabled"));)
-              return eSIR_SUCCESS;
-           }
-=======
         }
         else if(psessionEntry->limSystemRole != eLIM_AP_ROLE )
         {
@@ -5073,7 +5044,6 @@ limEnableHtRifsProtection(tpAniSirGlobal pMac, tANI_U8 enable,
                 PELOG3(limLog(pMac, LOG3, FL(" protection from Rifs is disabled"));)
                 return eSIR_SUCCESS;
             }
->>>>>>> e9486065567d... fix build with GCC 7.x
         }
     }
 
