@@ -87,7 +87,7 @@ static unsigned char firmware_data_vendor2[] = {
 
 
 /* [PLATFORM]-Mod-BEGIN by TCTNB.ZXZ, PR-814306, 2014/10/24, add for rawdata test */
-#define CONFIG_TCT_TP_FTDEBUG
+//#define CONFIG_TCT_TP_FTDEBUG
 
 /* [PLATFORM]-Mod-END by TCTNB.ZXZ */
 
