@@ -678,7 +678,7 @@ static int is_ctrl_valid_for_codec(struct msm_vidc_inst *inst,
 	int rc = 0;
 	switch (ctrl->id) {
 	case V4L2_CID_MPEG_VIDC_VIDEO_MVC_BUFFER_LAYOUT:
-		if (inst->fmts[OUTPUT_PORT]->fourcc != V4L2_PIX_FMT_H264_MVC) {
+		if (inst->fmts[OUTPUT_PORT].fourcc != V4L2_PIX_FMT_H264_MVC) {
 			dprintk(VIDC_ERR, "Control %#x only valid for MVC\n",
 					ctrl->id);
 			rc = -ENOTSUPP;
@@ -686,7 +686,7 @@ static int is_ctrl_valid_for_codec(struct msm_vidc_inst *inst,
 		}
 		break;
 	case V4L2_CID_MPEG_VIDEO_H264_PROFILE:
-		if (inst->fmts[OUTPUT_PORT]->fourcc == V4L2_PIX_FMT_H264_MVC &&
+		if (inst->fmts[OUTPUT_PORT].fourcc == V4L2_PIX_FMT_H264_MVC &&
 			ctrl->val != V4L2_MPEG_VIDEO_H264_PROFILE_STEREO_HIGH) {
 			dprintk(VIDC_ERR,
 					"Profile %#x not supported for MVC\n",
@@ -696,7 +696,7 @@ static int is_ctrl_valid_for_codec(struct msm_vidc_inst *inst,
 		}
 		break;
 	case V4L2_CID_MPEG_VIDEO_H264_LEVEL:
-		if (inst->fmts[OUTPUT_PORT]->fourcc == V4L2_PIX_FMT_H264_MVC &&
+		if (inst->fmts[OUTPUT_PORT].fourcc == V4L2_PIX_FMT_H264_MVC &&
 			ctrl->val >= V4L2_MPEG_VIDEO_H264_LEVEL_5_2) {
 			dprintk(VIDC_ERR, "Level %#x not supported for MVC\n",
 					ctrl->val);
@@ -907,10 +907,10 @@ int msm_vdec_prepare_buf(struct msm_vidc_inst *inst,
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
 		break;
 	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
-		if (b->length != inst->fmts[CAPTURE_PORT]->num_planes) {
+		if (b->length != inst->fmts[CAPTURE_PORT].num_planes) {
 			dprintk(VIDC_ERR,
 			"Planes mismatch: needed: %d, allocated: %d\n",
-			inst->fmts[CAPTURE_PORT]->num_planes,
+			inst->fmts[CAPTURE_PORT].num_planes,
 			b->length);
 			rc = -EINVAL;
 			break;
@@ -986,10 +986,10 @@ int msm_vdec_release_buf(struct msm_vidc_inst *inst,
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
 		break;
 	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
-		if (b->length != inst->fmts[CAPTURE_PORT]->num_planes) {
+		if (b->length != inst->fmts[CAPTURE_PORT].num_planes) {
 			dprintk(VIDC_ERR,
 			"Planes mismatch: needed: %d, to release: %d\n",
-			inst->fmts[CAPTURE_PORT]->num_planes, b->length);
+			inst->fmts[CAPTURE_PORT].num_planes, b->length);
 			rc = -EINVAL;
 			break;
 		}
@@ -1110,9 +1110,9 @@ int msm_vdec_g_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 
 	hdev = inst->core->device;
 	if (f->type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE)
-		fmt = inst->fmts[CAPTURE_PORT];
+		fmt = &inst->fmts[CAPTURE_PORT];
 	else if (f->type == V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE)
-		fmt = inst->fmts[OUTPUT_PORT];
+		fmt = &inst->fmts[OUTPUT_PORT];
 	else
 		return -ENOTSUPP;
 
@@ -1288,7 +1288,7 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 			get_output_frame_size(inst, &inst->fmts[fmt->type],
 			f->fmt.pix_mp.height, f->fmt.pix_mp.width, 0);
 
-		extra_idx = EXTRADATA_IDX(inst->fmts[fmt->type]->num_planes);
+		extra_idx = EXTRADATA_IDX(inst->fmts[fmt->type].num_planes);
 		if (extra_idx && extra_idx < VIDEO_MAX_PLANES) {
 			f->fmt.pix_mp.plane_fmt[extra_idx].sizeimage =
 				VENUS_EXTRADATA_SIZE(
@@ -1296,8 +1296,8 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 					inst->prop.width[CAPTURE_PORT]);
 		}
 
-		f->fmt.pix_mp.num_planes = inst->fmts[fmt->type]->num_planes;
-		for (i = 0; i < inst->fmts[fmt->type]->num_planes; ++i) {
+		f->fmt.pix_mp.num_planes = inst->fmts[fmt->type].num_planes;
+		for (i = 0; i < inst->fmts[fmt->type].num_planes; ++i) {
 			inst->bufq[CAPTURE_PORT].vb2_bufq.plane_sizes[i] =
 				f->fmt.pix_mp.plane_fmt[i].sizeimage;
 		}
@@ -1325,11 +1325,11 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 			goto err_invalid_fmt;
 		}
 
-		if (!(get_hal_codec(inst->fmts[fmt->type]->fourcc) &
+		if (!(get_hal_codec(inst->fmts[fmt->type].fourcc) &
 			inst->core->dec_codec_supported)) {
 			dprintk(VIDC_ERR,
 				"Codec(%#x) is not present in the supported codecs list(%#x)\n",
-				get_hal_codec(inst->fmts[fmt->type]->fourcc),
+				get_hal_codec(inst->fmts[fmt->type].fourcc),
 				inst->core->dec_codec_supported);
 			rc = -EINVAL;
 			goto err_invalid_fmt;
@@ -1364,8 +1364,8 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 			f->fmt.pix_mp.plane_fmt[0].sizeimage = max_input_size;
 		}
 
-		f->fmt.pix_mp.num_planes = inst->fmts[fmt->type]->num_planes;
-		for (i = 0; i < inst->fmts[fmt->type]->num_planes; ++i) {
+		f->fmt.pix_mp.num_planes = inst->fmts[fmt->type].num_planes;
+		for (i = 0; i < inst->fmts[fmt->type].num_planes; ++i) {
 			inst->bufq[OUTPUT_PORT].vb2_bufq.plane_sizes[i] =
 				f->fmt.pix_mp.plane_fmt[i].sizeimage;
 		}
@@ -1480,7 +1480,7 @@ static int msm_vdec_queue_setup(struct vb2_queue *q,
 
 	switch (q->type) {
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
-		*num_planes = inst->fmts[OUTPUT_PORT]->num_planes;
+		*num_planes = inst->fmts[OUTPUT_PORT].num_planes;
 		if (*num_buffers < MIN_NUM_OUTPUT_BUFFERS ||
 				*num_buffers > MAX_NUM_OUTPUT_BUFFERS)
 			*num_buffers = MIN_NUM_OUTPUT_BUFFERS;
@@ -1490,7 +1490,7 @@ static int msm_vdec_queue_setup(struct vb2_queue *q,
 		 * than 4 subframes requires more than 4
 		 * reference frames to decode.
 		 */
-		if (inst->fmts[OUTPUT_PORT]->fourcc ==
+		if (inst->fmts[OUTPUT_PORT].fourcc ==
 				V4L2_PIX_FMT_VP9 &&
 				*num_buffers < MIN_NUM_OUTPUT_BUFFERS_VP9)
 			*num_buffers = MIN_NUM_OUTPUT_BUFFERS_VP9;
@@ -1504,7 +1504,7 @@ static int msm_vdec_queue_setup(struct vb2_queue *q,
 		break;
 	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
 		dprintk(VIDC_DBG, "Getting bufreqs on capture plane\n");
-		*num_planes = inst->fmts[CAPTURE_PORT]->num_planes;
+		*num_planes = inst->fmts[CAPTURE_PORT].num_planes;
 		rc = msm_comm_try_state(inst, MSM_VIDC_OPEN_DONE);
 		if (rc) {
 			dprintk(VIDC_ERR, "Failed to open instance\n");
@@ -1589,7 +1589,7 @@ static int msm_vdec_queue_setup(struct vb2_queue *q,
 		}
 
 		extra_idx =
-			EXTRADATA_IDX(inst->fmts[CAPTURE_PORT]->num_planes);
+			EXTRADATA_IDX(inst->fmts[CAPTURE_PORT].num_planes);
 		if (extra_idx && extra_idx < VIDEO_MAX_PLANES) {
 			sizes[extra_idx] =
 				VENUS_EXTRADATA_SIZE(
