@@ -1365,7 +1365,7 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 		}
 
 		f->fmt.pix_mp.num_planes = inst->fmts[fmt->type].num_planes;
-		for (i = 0; i < inst->fmts[fmt->type].num_planes; ++i) {
+		for (i = 0; i < inst->fmts[fmt->type]->num_planes; ++i) {
 			inst->bufq[OUTPUT_PORT].vb2_bufq.plane_sizes[i] =
 				f->fmt.pix_mp.plane_fmt[i].sizeimage;
 		}
@@ -1589,7 +1589,7 @@ static int msm_vdec_queue_setup(struct vb2_queue *q,
 		}
 
 		extra_idx =
-			EXTRADATA_IDX(inst->fmts[CAPTURE_PORT].num_planes);
+			EXTRADATA_IDX(inst->fmts[CAPTURE_PORT]->num_planes);
 		if (extra_idx && extra_idx < VIDEO_MAX_PLANES) {
 			sizes[extra_idx] =
 				VENUS_EXTRADATA_SIZE(
