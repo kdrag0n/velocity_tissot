@@ -4264,6 +4264,9 @@ g_ft5435_ts_data = data;
 	strcat(tp_info_summary, tp_temp_info);
 	strcat(tp_info_summary, "\0");
 	printk("~~~~~ ft5435_ts_probe end\n");
+
+    // Force enable changing scanning frequency
+    ft5435_enable_change_scanning_frq();
 	return 0;
 
 free_debug_dir:
