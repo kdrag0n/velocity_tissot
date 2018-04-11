@@ -20,7 +20,10 @@ alias make="make CC=$CLANG_TCHAIN CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=
 # helpers
 mkzip() {
     rm anykernel/Image.gz-dtb
+    rm enlight_kernel.zip
     cp arch/arm64/boot/Image.gz-dtb anykernel/
-    zip -r enlight_kernel.zip anykernel/*
+    cd anykernel
+    zip -r ../enlight_kernel.zip *
+    cd ..
     echo 'Done. Output is enlight_kernel.zip'
 }
