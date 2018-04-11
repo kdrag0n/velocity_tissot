@@ -30,10 +30,10 @@
 #include <linux/sched.h>
 #include <linux/shrinker.h>
 #include <linux/types.h>
-#include <linux/device.h>
 #ifdef CONFIG_ION_POOL_CACHE_POLICY
 #include <asm/cacheflush.h>
 #endif
+#include <linux/device.h>
 
 #include "ion.h"
 
@@ -41,7 +41,7 @@ struct ion_buffer *ion_handle_buffer(struct ion_handle *handle);
 
 /**
  * struct ion_buffer - metadata for a particular buffer
- * @ref:		refernce count
+ * @ref:		reference count
  * @node:		node in the ion_device buffers tree
  * @dev:		back pointer to the ion_device
  * @heap:		back pointer to the heap the buffer came from
@@ -318,7 +318,7 @@ void ion_heap_freelist_add(struct ion_heap *heap, struct ion_buffer *buffer);
 /**
  * ion_heap_freelist_drain - drain the deferred free list
  * @heap:		the heap
- * @size:		ammount of memory to drain in bytes
+ * @size:		amount of memory to drain in bytes
  *
  * Drains the indicated amount of memory from the deferred freelist immediately.
  * Returns the total amount freed.  The total freed may be higher depending
@@ -406,14 +406,13 @@ void ion_carveout_free(struct ion_heap *heap, ion_phys_addr_t addr,
  * to keep a pool of pre allocated memory to use from your heap.  Keeping
  * a pool of memory that is ready for dma, ie any cached mapping have been
  * invalidated from the cache, provides a significant performance benefit on
- * many systems */
+ * many systems
+ */
 
 /**
  * struct ion_page_pool - pagepool struct
  * @high_count:		number of highmem items in the pool
  * @low_count:		number of lowmem items in the pool
- * @nr_unreserved:	number of items in the pool which have not been reserved
- *			by a prefetch allocation
  * @high_items:		list of highmem items
  * @low_items:		list of lowmem items
  * @mutex:		lock protecting this struct and especially the count
@@ -430,7 +429,6 @@ void ion_carveout_free(struct ion_heap *heap, ion_phys_addr_t addr,
 struct ion_page_pool {
 	int high_count;
 	int low_count;
-	int nr_unreserved;
 	struct list_head high_items;
 	struct list_head low_items;
 	struct mutex mutex;
@@ -443,10 +441,10 @@ struct ion_page_pool *ion_page_pool_create(gfp_t gfp_mask, unsigned int order);
 void ion_page_pool_destroy(struct ion_page_pool *);
 void *ion_page_pool_alloc(struct ion_page_pool *, bool *from_pool);
 void *ion_page_pool_alloc_pool_only(struct ion_page_pool *);
-void ion_page_pool_free(struct ion_page_pool *, struct page *, bool prefetch);
+void ion_page_pool_free(struct ion_page_pool *, struct page *);
 void ion_page_pool_free_immediate(struct ion_page_pool *, struct page *);
 int ion_page_pool_total(struct ion_page_pool *pool, bool high);
-void *ion_page_pool_prefetch(struct ion_page_pool *pool, bool *from_pool);
+size_t ion_system_heap_secure_page_pool_total(struct ion_heap *heap, int vmid);
 
 #ifdef CONFIG_ION_POOL_CACHE_POLICY
 static inline void ion_page_pool_alloc_set_cache_policy
