@@ -30,10 +30,10 @@
 #include <linux/sched.h>
 #include <linux/shrinker.h>
 #include <linux/types.h>
+#include <linux/device.h>
 #ifdef CONFIG_ION_POOL_CACHE_POLICY
 #include <asm/cacheflush.h>
 #endif
-#include <linux/device.h>
 
 #include "ion.h"
 
@@ -318,7 +318,7 @@ void ion_heap_freelist_add(struct ion_heap *heap, struct ion_buffer *buffer);
 /**
  * ion_heap_freelist_drain - drain the deferred free list
  * @heap:		the heap
- * @size:		amount of memory to drain in bytes
+ * @size:		ammount of memory to drain in bytes
  *
  * Drains the indicated amount of memory from the deferred freelist immediately.
  * Returns the total amount freed.  The total freed may be higher depending
@@ -406,8 +406,7 @@ void ion_carveout_free(struct ion_heap *heap, ion_phys_addr_t addr,
  * to keep a pool of pre allocated memory to use from your heap.  Keeping
  * a pool of memory that is ready for dma, ie any cached mapping have been
  * invalidated from the cache, provides a significant performance benefit on
- * many systems
- */
+ * many systems */
 
 /**
  * struct ion_page_pool - pagepool struct
