@@ -669,8 +669,6 @@ KBUILD_CFLAGS   += -mcpu=cortex-a53+crypto+crc -march=armv8-a+crypto+crc -Wa,-ma
 KBUILD_CFLAGS   += -O3
 else
 KBUILD_CFLAGS	+= -Ofast
-# CPU optimization
-KBUILD_CFLAGS   += -march=armv8-a+crypto+crc -mtune=cortex-a72.cortex-a53
 endif
 endif
 
