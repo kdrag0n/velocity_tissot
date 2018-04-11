@@ -3278,7 +3278,7 @@ static void binder_transaction(struct binder_proc *proc,
 		 * latency. We will then return the TRANSACTION_COMPLETE when
 		 * the target replies (or there is an error).
 		 */
-		binder_enqueue_deferred_thread_work_ilocked(thread, tcomplete);
+		queue_work(thread, tcomplete);
 		t->need_reply = 1;
 		t->from_parent = thread->transaction_stack;
 		thread->transaction_stack = t;
