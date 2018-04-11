@@ -87,7 +87,7 @@ static unsigned char firmware_data_vendor2[] = {
 
 
 /* [PLATFORM]-Mod-BEGIN by TCTNB.ZXZ, PR-814306, 2014/10/24, add for rawdata test */
-#define CONFIG_TCT_TP_FTDEBUG
+//#define CONFIG_TCT_TP_FTDEBUG
 
 /* [PLATFORM]-Mod-END by TCTNB.ZXZ */
 
@@ -4264,6 +4264,9 @@ g_ft5435_ts_data = data;
 	strcat(tp_info_summary, tp_temp_info);
 	strcat(tp_info_summary, "\0");
 	printk("~~~~~ ft5435_ts_probe end\n");
+
+    // Force enable changing scanning frequency
+    ft5435_enable_change_scanning_frq();
 	return 0;
 
 free_debug_dir:
