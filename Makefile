@@ -679,7 +679,7 @@ ifeq ($(cc-name),clang)
 KBUILD_CFLAGS   += -mcpu=cortex-a53+crypto -march=armv8-a+crypto -Wa,-march=armv8-a+crypto
 KBUILD_CFLAGS   += -O3
 else
-KBUILD_CFLAGS	+= -Ofast -ffast-math -mlow-precision-recip-sqrt -mlow-precision-sqrt -mlow-precision-div -funsafe-math-optimizations -march=armv8-a -mtune=cortex-a53 -mcpu=cortex-a53+crypto+sve+fp16+rcpc+dotprod+aes+sha2 -mpc-relative-literal-loads
+KBUILD_CFLAGS	+= -Ofast -ffast-math -mlow-precision-recip-sqrt -mlow-precision-sqrt -mlow-precision-div -funsafe-math-optimizations -march=armv8-a+crypto+fp16+rcpc+dotprod+crc -mtune=cortex-a53 -mpc-relative-literal-loads -mcpu=cortex-a53+crypto+fp16+rcpc+dotprod+crc
 endif
 endif
 
