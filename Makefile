@@ -430,13 +430,6 @@ LINUXINCLUDE    := \
 
 KBUILD_CPPFLAGS := -D__KERNEL__ $(CLANG_FLAGS)
 
-# Determine C language standard to use
-ifeq ($(cc-name),clang)
-CSTD := -std=gnu11
-else
-# TODO: test for gcc version >= 7.0.0 and use gnu99
-CSTD := -std=gnu89
-endif
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Wno-format-security \
@@ -445,7 +438,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   $(call cc-disable-warning,memset-transposed-args,) \
 		   $(call cc-disable-warning,bool-compare,) \
 		   $(call cc-disable-warning,shift-overflow,) \
-		   $(CSTD) $(CLANG_FLAGS)
+		   -std=gnu11 $(CLANG_FLAGS)
 
 # TODO: remove me b/62057517
 KBUILD_CFLAGS += \
