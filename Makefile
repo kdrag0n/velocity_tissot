@@ -441,8 +441,9 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -std=gnu11 $(CLANG_FLAGS)
 
 # TODO: remove me b/62057517
-KBUILD_CFLAGS += \
-	$(call cc-option,-Wno-gcc-compat) \
+ifeq ($(cc-name),clang)
+KBUILD_CFLAGS += -Wno-gcc-compat
+endif
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
