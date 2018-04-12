@@ -2359,7 +2359,7 @@ ctnetlink_exp_dump_expect(struct sk_buff *skb,
 		nat_tuple.src.u = exp->saved_proto;
 
 		if (ctnetlink_exp_dump_tuple(skb, &nat_tuple,
-						(ctattr_expect) CTA_EXPECT_NAT_TUPLE) < 0)
+						(enum ctattr_expect) CTA_EXPECT_NAT_TUPLE) < 0)
 	                goto nla_put_failure;
 	        nla_nest_end(skb, nest_parms);
 	}
@@ -2592,7 +2592,7 @@ static int ctnetlink_dump_exp_ct(struct sock *ctnl, struct sk_buff *skb,
 		.done = ctnetlink_exp_done,
 	};
 
-	err = ctnetlink_parse_tuple(cda, &tuple, (ctattr_expect) CTA_EXPECT_MASTER, u3);
+	err = ctnetlink_parse_tuple(cda, &tuple, (enum ctattr_type) CTA_EXPECT_MASTER, u3);
 	if (err < 0)
 		return err;
 
@@ -2646,9 +2646,9 @@ ctnetlink_get_expect(struct sock *ctnl, struct sk_buff *skb,
 		return err;
 
 	if (cda[CTA_EXPECT_TUPLE])
-		err = ctnetlink_parse_tuple(cda, &tuple, (ctattr_expect) CTA_EXPECT_TUPLE, u3);
+		err = ctnetlink_parse_tuple(cda, &tuple, (enum ctattr_type) CTA_EXPECT_TUPLE, u3);
 	else if (cda[CTA_EXPECT_MASTER])
-		err = ctnetlink_parse_tuple(cda, &tuple, (ctattr_expect) CTA_EXPECT_MASTER, u3);
+		err = ctnetlink_parse_tuple(cda, &tuple, (enum ctattr_type) CTA_EXPECT_MASTER, u3);
 	else
 		return -EINVAL;
 
@@ -2716,7 +2716,7 @@ ctnetlink_del_expect(struct sock *ctnl, struct sk_buff *skb,
 		if (err < 0)
 			return err;
 
-		err = ctnetlink_parse_tuple(cda, &tuple, (ctattr_expect) CTA_EXPECT_TUPLE, u3);
+		err = ctnetlink_parse_tuple(cda, &tuple, (enum ctattr_type) CTA_EXPECT_TUPLE, u3);
 		if (err < 0)
 			return err;
 
@@ -2823,7 +2823,7 @@ ctnetlink_parse_expect_nat(const struct nlattr *attr,
 		return -EINVAL;
 
 	err = ctnetlink_parse_tuple((const struct nlattr * const *)tb,
-					&nat_tuple, (ctattr_expect) CTA_EXPECT_NAT_TUPLE, u3);
+					&nat_tuple, (enum ctattr_type) CTA_EXPECT_NAT_TUPLE, u3);
 	if (err < 0)
 		return err;
 
@@ -2923,13 +2923,13 @@ ctnetlink_create_expect(struct net *net, u16 zone,
 	int err;
 
 	/* caller guarantees that those three CTA_EXPECT_* exist */
-	err = ctnetlink_parse_tuple(cda, &tuple, (ctattr_expect) CTA_EXPECT_TUPLE, u3);
+	err = ctnetlink_parse_tuple(cda, &tuple, (enum ctattr_type) CTA_EXPECT_TUPLE, u3);
 	if (err < 0)
 		return err;
-	err = ctnetlink_parse_tuple(cda, &mask, (ctattr_expect) CTA_EXPECT_MASK, u3);
+	err = ctnetlink_parse_tuple(cda, &mask, (enum ctattr_type) CTA_EXPECT_MASK, u3);
 	if (err < 0)
 		return err;
-	err = ctnetlink_parse_tuple(cda, &master_tuple, (ctattr_expect) CTA_EXPECT_MASTER, u3);
+	err = ctnetlink_parse_tuple(cda, &master_tuple, (enum ctattr_type) CTA_EXPECT_MASTER, u3);
 	if (err < 0)
 		return err;
 
@@ -2997,7 +2997,7 @@ ctnetlink_new_expect(struct sock *ctnl, struct sk_buff *skb,
 	if (err < 0)
 		return err;
 
-	err = ctnetlink_parse_tuple(cda, &tuple, (ctattr_expect) CTA_EXPECT_TUPLE, u3);
+	err = ctnetlink_parse_tuple(cda, &tuple, (enum ctattr_type) CTA_EXPECT_TUPLE, u3);
 	if (err < 0)
 		return err;
 

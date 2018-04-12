@@ -1225,7 +1225,7 @@ int icnss_wlan_enable(struct icnss_wlan_enable_cfg *config,
 		goto out;
 	}
 skip:
-	ret = (wlfw_driver_mode_enum_v01) wlfw_wlan_mode_send_sync_msg(mode);
+	ret = (enum wlfw_driver_mode_enum_v01) wlfw_wlan_mode_send_sync_msg(mode);
 	if (ret)
 		pr_err("%s: Failed to send mode, ret = %d\n", __func__, ret);
 out:
