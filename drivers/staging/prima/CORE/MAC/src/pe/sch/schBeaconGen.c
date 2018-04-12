@@ -36,7 +36,7 @@
  * --------------------------------------------------------------------
  *
  */
- 
+
 #include "palTypes.h"
 #include "wniCfg.h"
 #include "aniGlobal.h"
@@ -60,12 +60,12 @@
 // Temporarily (maybe for all of Alpha-1), assuming TIM = 0
 //
 
-const tANI_U8 P2pOui[] = {0x50, 0x6F, 0x9A, 0x9};
+tANI_U8 P2pOui[] = {0x50, 0x6F, 0x9A, 0x9};
 
 
 tSirRetStatus schGetP2pIeOffset(tANI_U8 *pExtraIe, tANI_U32 extraIeLen, tANI_U16 *pP2pIeOffset)
 {
-    tSirRetStatus status = eSIR_FAILURE;   
+    tSirRetStatus status = eSIR_FAILURE;
     *pP2pIeOffset = 0;
 
     // Extra IE is not present
@@ -88,7 +88,7 @@ tSirRetStatus schGetP2pIeOffset(tANI_U8 *pExtraIe, tANI_U32 extraIeLen, tANI_U16
 
         (*pP2pIeOffset)++;
         pExtraIe++;
-     }while(--extraIeLen > 0); 
+     }while(--extraIeLen > 0);
 
      return status;
 }
@@ -100,7 +100,7 @@ tSirRetStatus schAppendAddnIE(tpAniSirGlobal pMac, tpPESession psessionEntry,
     tSirRetStatus status = eSIR_FAILURE;
     tANI_U32 present, len;
     tANI_U8 addIE[WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA_LEN];
-    
+
      if((status = wlan_cfgGetInt(pMac, WNI_CFG_PROBE_RSP_BCN_ADDNIE_FLAG,
                                  &present)) != eSIR_SUCCESS)
     {
@@ -118,10 +118,10 @@ tSirRetStatus schAppendAddnIE(tpAniSirGlobal pMac, tpPESession psessionEntry,
             return status;
         }
 
-        if(len <= WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA_LEN && len && 
+        if(len <= WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA_LEN && len &&
           ((len + *nBytes) <= maxBeaconSize))
         {
-            if((status = wlan_cfgGetStr(pMac, 
+            if((status = wlan_cfgGetStr(pMac,
                           WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA, &addIE[0], &len))
                           == eSIR_SUCCESS)
             {
@@ -235,7 +235,7 @@ tSirRetStatus schSetFixedBeaconFields(tpAniSirGlobal pMac,tpPESession psessionEn
 
     for (i=0; i<6; i++)
         mac->da[i] = 0xff;
-    
+
     /* Knocking out Global pMac update */
     /* limGetMyMacAddr(pMac, mac->sa); */
     /* limGetBssid(pMac, mac->bssId); */
@@ -273,7 +273,7 @@ tSirRetStatus schSetFixedBeaconFields(tpAniSirGlobal pMac,tpPESession psessionEn
     offset = sizeof( tAniBeaconStruct );
     ptr    = pMac->sch.schObject.gSchBeaconFrameBegin + offset;
 
-    if((psessionEntry->limSystemRole == eLIM_AP_ROLE) 
+    if((psessionEntry->limSystemRole == eLIM_AP_ROLE)
         && ((psessionEntry->proxyProbeRspEn)
         || (IS_FEATURE_SUPPORTED_BY_FW(WPS_PRBRSP_TMPL)))
         && vos_is_probe_rsp_offload_enabled()
@@ -323,7 +323,7 @@ tSirRetStatus schSetFixedBeaconFields(tpAniSirGlobal pMac,tpPESession psessionEn
      * Initialize the 'new' fields at the end of the beacon
      */
 
-    
+
     PopulateDot11fCountry( pMac, &pBcn2->Country, psessionEntry);
     if(pBcn1->Capabilities.qos)
     {
@@ -364,7 +364,7 @@ tSirRetStatus schSetFixedBeaconFields(tpAniSirGlobal pMac,tpPESession psessionEn
 
 #ifdef WLAN_FEATURE_11AC
     if(psessionEntry->vhtCapability)
-    {        
+    {
         schLog( pMac, LOGW, FL("Populate VHT IEs in Beacon"));
         PopulateDot11fVHTCaps( pMac, &pBcn2->VHTCaps,
                               psessionEntry->currentOperChannel, eSIR_TRUE );
@@ -379,7 +379,7 @@ tSirRetStatus schSetFixedBeaconFields(tpAniSirGlobal pMac,tpPESession psessionEn
 
     PopulateDot11fExtSuppRates( pMac, POPULATE_DOT11F_RATES_OPERATIONAL,
                                 &pBcn2->ExtSuppRates, psessionEntry );
- 
+
     if( psessionEntry->pLimStartBssReq != NULL )
     {
           PopulateDot11fWPA( pMac, &psessionEntry->pLimStartBssReq->rsnIE,
@@ -396,7 +396,7 @@ tSirRetStatus schSetFixedBeaconFields(tpAniSirGlobal pMac,tpPESession psessionEn
     {
         if(psessionEntry->wps_state != SAP_WPS_DISABLED)
         {
-            PopulateDot11fBeaconWPSIEs( pMac, &pBcn2->WscBeacon, psessionEntry);            
+            PopulateDot11fBeaconWPSIEs( pMac, &pBcn2->WscBeacon, psessionEntry);
         }
     }
     else
@@ -424,7 +424,7 @@ tSirRetStatus schSetFixedBeaconFields(tpAniSirGlobal pMac,tpPESession psessionEn
         }
     }
 
-    if((psessionEntry->limSystemRole == eLIM_AP_ROLE) 
+    if((psessionEntry->limSystemRole == eLIM_AP_ROLE)
         && ((psessionEntry->proxyProbeRspEn)
         || (IS_FEATURE_SUPPORTED_BY_FW(WPS_PRBRSP_TMPL)))
         && vos_is_probe_rsp_offload_enabled()
@@ -479,7 +479,7 @@ tSirRetStatus schSetFixedBeaconFields(tpAniSirGlobal pMac,tpPESession psessionEn
     extraIeOffset = nBytes;
 
     //TODO: Append additional IE here.
-    schAppendAddnIE(pMac, psessionEntry, 
+    schAppendAddnIE(pMac, psessionEntry,
                     pMac->sch.schObject.gSchBeaconFrameEnd + nBytes,
                     SCH_MAX_BEACON_SIZE, &nBytes);
 
@@ -493,7 +493,7 @@ tSirRetStatus schSetFixedBeaconFields(tpAniSirGlobal pMac,tpPESession psessionEn
     if(eSIR_SUCCESS == status)
     {
        //Update the P2P Ie Offset
-       pMac->sch.schObject.p2pIeOffset = 
+       pMac->sch.schObject.p2pIeOffset =
                     pMac->sch.schObject.gSchBeaconOffsetBegin + TIM_IE_SIZE +
                     extraIeOffset + p2pIeOffset;
     }
@@ -767,7 +767,7 @@ void writeBeaconToMemory(tpAniSirGlobal pMac, tANI_U16 size, tANI_U16 length, tp
         for (i=0; i < pMac->sch.schObject.gSchBeaconOffsetEnd; i++)
             pMac->sch.schObject.gSchBeaconFrameBegin[size++] = pMac->sch.schObject.gSchBeaconFrameEnd[i];
     }
-    
+
     // Update the beacon length
     pBeacon = (tpAniBeaconStruct) pMac->sch.schObject.gSchBeaconFrameBegin;
     // Do not include the beaconLength indicator itself
@@ -836,8 +836,8 @@ schProcessPreBeaconInd(tpAniSirGlobal pMac, tpSirMsgQ limMsg)
     {
         PELOGE(schLog(pMac, LOGE, FL("session lookup fails"));)
         goto end;
-    } 
-           
+    }
+
 
 
     // If SME is not in normal mode, no need to generate beacon
