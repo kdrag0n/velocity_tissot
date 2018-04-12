@@ -1128,7 +1128,7 @@
 	devfreq-cpufreq {
 		cpubw-cpufreq {
 		target-dev = <&cpubw>;
-		cpu-to-dev-map =	
+		cpu-to-dev-map =
 			 <  307200  1611>,
 			 <  480000  1611>,
 			 <  652800  1611>,
