@@ -17,7 +17,7 @@ device.name3=tissot_sprout
 # shell variables
 block=/dev/block/platform/soc/7824900.sdhci/by-name/boot;
 is_slot_device=1;
-ramdisk_compression=auto;
+ramdisk_compression=lz4;
 
 
 ## AnyKernel methods (DO NOT CHANGE)
