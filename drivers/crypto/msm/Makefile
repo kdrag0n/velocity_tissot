@@ -13,8 +13,6 @@ obj-$(CONFIG_CRYPTO_DEV_QCOM_ICE) += ice.o
 
 # TODO: remove me b/62057517
 ifeq ($(cc-name),clang)
-ifneq ($(CONFIG_FRAME_WARN),0)
-KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
+CFLAGS_qcedev.o := -Wno-frame-larger-than=
+subdir-cc-flags-y += $(call cc-option,-Wno-frame-larger-than=)
 endif
-endif
-
