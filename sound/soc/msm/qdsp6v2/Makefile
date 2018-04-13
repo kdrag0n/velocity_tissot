@@ -1,3 +1,4 @@
+CFLAGS_q6lsm.o := -Wno-non-literal-null-conversion
 snd-soc-qdsp6v2-objs += msm-dai-q6-v2.o msm-pcm-q6-v2.o msm-pcm-routing-v2.o \
 			msm-compress-q6-v2.o \
 			msm-pcm-lpa-v2.o \
