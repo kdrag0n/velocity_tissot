@@ -1,4 +1,3 @@
-CFLAGS_qcedev.o := -Wno-frame-larger-than=
 obj-$(CONFIG_CRYPTO_DEV_QCEDEV) += qcedev.o
 ifeq ($(CONFIG_CRYPTO_DEV_QCE50), y)
         obj-$(CONFIG_CRYPTO_DEV_QCOM_MSM_QCE) += qce50.o
@@ -13,5 +12,9 @@ obj-$(CONFIG_CRYPTO_DEV_OTA_CRYPTO) += ota_crypto.o
 obj-$(CONFIG_CRYPTO_DEV_QCOM_ICE) += ice.o
 
 # TODO: remove me b/62057517
-subdir-ccflags-y += \
-	$(call cc-option,-Wno-frame-larger-than=)
+ifeq ($(cc-name),clang)
+ifneq ($(CONFIG_FRAME_WARN),0)
+KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
+endif
+endif
+
