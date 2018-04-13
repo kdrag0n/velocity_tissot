@@ -743,7 +743,6 @@ endif
 endif
 KBUILD_CFLAGS += $(stackp-flag)
 
-<<<<<<< HEAD
 ifdef CONFIG_KCOV
   ifeq ($(call cc-option, $(CFLAGS_KCOV)),)
     $(warning Cannot use CONFIG_KCOV: \
@@ -752,8 +751,6 @@ ifdef CONFIG_KCOV
   endif
 endif
 
-=======
->>>>>>> a211c50ce9ac... BACKPORT: kbuild: Fix clang detection
 ifeq ($(cc-name),clang)
 KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-variable)
