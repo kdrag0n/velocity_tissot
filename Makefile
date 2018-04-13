@@ -475,7 +475,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 ifeq ($(cc-name),clang)
 KBUILD_CFLAGS += -Wno-gcc-compat
 endif
-=======
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
