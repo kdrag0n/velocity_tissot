@@ -23,7 +23,7 @@
 	interrupt-parent = <&intc>;
 
 	chosen {
-		bootargs = "boot_cpus=0,1,2,3,4,5,6,7 sched_enable_hmp=1 sched_enable_power_aware=1";
+		bootargs = "sched_enable_hmp=1 sched_enable_power_aware=1";
 	};
 
 	firmware: firmware {
@@ -542,7 +542,6 @@
 		qcom,disable-vdd-mx;
 		qcom,disable-psm;
 		qcom,disable-ocr;
-		qcom,disable-vdd-rstr;
 		qcom,vdd-restriction-temp = <5>;
 		qcom,vdd-restriction-temp-hysteresis = <10>;
 		vdd-dig-supply = <&pm8953_s2_floor_level>;
@@ -1027,7 +1026,7 @@
 			<  806400000 7>,
 			<  860160000 8>,
 			<  883200000 9>;
-                qcom,speed6-bin-v0-cl =
+		qcom,speed6-bin-v0-cl =
 			<          0 0>,
 			<  307200000 1>,
 			<  480000000 1>,
@@ -1125,7 +1124,7 @@
 	devfreq-cpufreq {
 		cpubw-cpufreq {
 		target-dev = <&cpubw>;
-		cpu-to-dev-map =
+		cpu-to-dev-map =	
 			 <  307200  1611>,
 			 <  480000  1611>,
 			 <  652800  1611>,
@@ -1140,7 +1139,7 @@
 		mincpubw-cpufreq {
 			target-dev = <&mincpubw>;
 			cpu-to-dev-map =
-				<  307200 1611 >,
+				<  652800 1611 >,
 				< 1401600 3221 >,
 				< 2208000 5859 >;
 		};
