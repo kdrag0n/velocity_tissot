@@ -397,8 +397,7 @@ CFLAGS_KCOV	= -fsanitize-coverage=trace-pc
 
 ifeq ($(cc-name),clang)
 ifneq ($(CROSS_COMPILE),)
-CLANG_TRIPLE	?= $(CROSS_COMPILE)
-CLANG_TARGET	:= -target $(notdir $(CLANG_TRIPLE:%-=%))
+CLANG_TARGET	:= --target=$(notdir $(CLANG_TRIPLE:%-=%))
 GCC_TOOLCHAIN	:= $(realpath $(dir $(shell which $(LD)))/..)
 endif
 ifneq ($(GCC_TOOLCHAIN),)
@@ -408,31 +407,6 @@ ifneq ($(CLANG_ENABLE_IA),1)
 CLANG_IA_FLAG	= -no-integrated-as
 endif
 CLANG_FLAGS	:= $(CLANG_TARGET) $(CLANG_GCC_TC) $(CLANG_IA_FLAG) -meabi gnu
-endif
-
-ifeq ($(cc-name),clang)
-ifneq ($(CROSS_COMPILE),)
-CLANG_TARGET	:= -target $(notdir $(CROSS_COMPILE:%-=%))
-GCC_TOOLCHAIN	:= $(dir $(CROSS_COMPILE))
-endif
-ifneq ($(GCC_TOOLCHAIN),)
-CLANG_GCC_TC	:= -gcc-toolchain $(GCC_TOOLCHAIN)
-endif
-ifneq ($(CLANG_ENABLE_IA),1)
-CLANG_IA_FLAG	= -no-integrated-as
-endif
-CLANG_FLAGS	:= $(CLANG_TARGET) $(CLANG_GCC_TC) $(CLANG_IA_FLAG)
-endif
-
-ifeq ($(cc-name),clang)
-ifneq ($(CROSS_COMPILE),)
-CLANG_TARGET	:= -target $(notdir $(CROSS_COMPILE:%-=%))
-GCC_TOOLCHAIN	:= $(dir $(CROSS_COMPILE))
-endif
-ifneq ($(GCC_TOOLCHAIN),)
-CLANG_GCC_TC	:= -gcc-toolchain $(GCC_TOOLCHAIN)
-endif
-CLANG_FLAGS	:= $(CLANG_TARGET) $(CLANG_GCC_TC)
 endif
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
@@ -464,9 +438,9 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   $(call cc-disable-warning,shift-overflow,) \
            -Werror-implicit-function-declaration \
            -Wno-format-security \
-		   -mcpu=cortex-a53 \
-		   -std=gnu89 $(CLANG_FLAGS)
+		   -std=gnu11 $(CLANG_FLAGS)
 
+# TODO: remove me b/62057517
 ifeq ($(cc-name),clang)
 KBUILD_CFLAGS += -Wno-gcc-compat
 endif
@@ -676,6 +650,7 @@ all: vmlinux
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
+KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
 KBUILD_CFLAGS	+= $(call cc-disable-warning,frame-address,)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, format-truncation)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, format-overflow)
@@ -769,7 +744,6 @@ endif
 KBUILD_CFLAGS += $(stackp-flag)
 
 <<<<<<< HEAD
-<<<<<<< HEAD
 ifdef CONFIG_KCOV
   ifeq ($(call cc-option, $(CFLAGS_KCOV)),)
     $(warning Cannot use CONFIG_KCOV: \
@@ -780,8 +754,6 @@ endif
 
 =======
 >>>>>>> a211c50ce9ac... BACKPORT: kbuild: Fix clang detection
-=======
->>>>>>> 2fccf2765fde62f831fb03bc69e0f01dc65e12c7
 ifeq ($(cc-name),clang)
 KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-variable)
