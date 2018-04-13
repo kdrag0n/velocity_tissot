@@ -61,6 +61,7 @@
 			qcom,limits-info = <&mitigation_profile0>;
 			qcom,ea = <&ea0>;
 			efficiency = <1024>;
+			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_0>;
 			L2_0: l2-cache {
 			      compatible = "arm,arch-cache";
@@ -88,6 +89,7 @@
 			qcom,limits-info = <&mitigation_profile1>;
 			qcom,ea = <&ea1>;
 			efficiency = <1024>;
+			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_0>;
 			L1_I_1: l1-icache {
 			      compatible = "arm,arch-cache";
@@ -108,6 +110,7 @@
 			qcom,limits-info = <&mitigation_profile2>;
 			qcom,ea = <&ea2>;
 			efficiency = <1024>;
+			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_0>;
 			L1_I_2: l1-icache {
 			      compatible = "arm,arch-cache";
@@ -128,6 +131,7 @@
 			qcom,limits-info = <&mitigation_profile3>;
 			qcom,ea = <&ea3>;
 			efficiency = <1024>;
+			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_0>;
 			L1_I_3: l1-icache {
 			      compatible = "arm,arch-cache";
@@ -148,6 +152,7 @@
 			qcom,limits-info = <&mitigation_profile4>;
 			qcom,ea = <&ea4>;
 			efficiency = <1126>;
+		        sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_1>;
 			L2_1: l2-cache {
 			      compatible = "arm,arch-cache";
@@ -175,6 +180,7 @@
 			qcom,limits-info = <&mitigation_profile5>;
 			qcom,ea = <&ea5>;
 			efficiency = <1126>;
+		        sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_1>;
 			L1_I_101: l1-icache {
 			      compatible = "arm,arch-cache";
@@ -195,6 +201,7 @@
 			qcom,limits-info = <&mitigation_profile6>;
 			qcom,ea = <&ea6>;
 			efficiency = <1126>;
+		        sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_1>;
 			L1_I_102: l1-icache {
 			      compatible = "arm,arch-cache";
@@ -215,6 +222,7 @@
 			qcom,limits-info = <&mitigation_profile7>;
 			qcom,ea = <&ea7>;
 			efficiency = <1126>;
+			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_1>;
 			L1_I_103: l1-icache {
 			      compatible = "arm,arch-cache";
@@ -224,6 +232,33 @@
 			      compatible = "arm,arch-cache";
 			      qcom,dump-size = <0x9000>;
 			};
+		};
+	};
+        energy-costs {
+		CPU_COST_0: core-cost0 {
+			busy-cost-data = <
+		                528  248
+				767  565
+		                903  889
+		                938  1024
+		                1024 1138
+			>;
+			idle-cost-data = <
+				10 10 0 0
+			>;
+		};
+		CLUSTER_COST_0: cluster-cost0 {
+			busy-cost-data = <
+		                323  35
+		                528  46
+		                767  80
+		                903  120
+		                938  130
+		                1024 203
+			>;
+			idle-cost-data = <
+				50 50 50 0
+			>;
 		};
 	};
 };

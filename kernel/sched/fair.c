@@ -82,7 +82,7 @@ unsigned int normalized_sysctl_sched_min_granularity	= 750000ULL;
  * is kept at sysctl_sched_latency / sysctl_sched_min_granularity
  */
 #ifdef CONFIG_ZEN_INTERACTIVE
-static unsigned int sched_nr_latency = 10;
+static unsigned int sched_nr_latency = 6;
 #else
 static unsigned int sched_nr_latency = 8;
 #endif
@@ -140,7 +140,7 @@ unsigned int __read_mostly sysctl_sched_shares_window = 10000000UL;
  * (default: 5 msec, units: microseconds)
  */
 #ifdef CONFIG_ZEN_INTERACTIVE
-unsigned int sysctl_sched_cfs_bandwidth_slice		= 3000UL;
+unsigned int sysctl_sched_cfs_bandwidth_slice = 3000UL;
 #else
 unsigned int sysctl_sched_cfs_bandwidth_slice		= 5000UL;
 #endif
