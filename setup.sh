@@ -38,3 +38,11 @@ mkzip() {
     cd ..
     echo 'Done. Output is enlight_kernel.zip'
 }
+
+cleanbuild() {
+    make clean && make -j && mkzip
+}
+
+incbuild() {
+    make -j && mkzip
+}
