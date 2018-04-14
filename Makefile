@@ -675,12 +675,22 @@ KBUILD_CFLAGS	+= $(call cc-option,-Oz,-Os)
 KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
 else
 ifeq ($(cc-name),clang)
-KBUILD_CFLAGS   += -Ofast -mno-unaligned-access -mstrict-align
+KBUILD_CFLAGS   += -O3 -ffast-math -mno-unaligned-access -mstrict-align
 # CPU optimization
 KBUILD_CFLAGS   += -mcpu=cortex-a53+crypto -march=armv8-a+crypto -Wa,-march=armv8-a+crypto
+
+ifeq ($(DRAGONTC),true)
+# Polly
+KBUILD_CFLAGS += \
+  -mllvm -polly \
+  -mllvm -polly-ast-use-context \
+  -mllvm -polly-vectorizer=polly \
+  -mllvm -polly-opt-fusion=max \
+  -mllvm -polly-opt-maximize-bands=yes \
+  -mllvm -polly-run-dce
+endif
 else
 KBUILD_CFLAGS	+= -Ofast -ffast-math -funsafe-math-optimizations -march=armv8-a+crypto+fp16+rcpc+dotprod+crc -mtune=cortex-a53 -mcpu=cortex-a53+crypto+fp16+rcpc+dotprod+crc
-
 endif
 endif
 
