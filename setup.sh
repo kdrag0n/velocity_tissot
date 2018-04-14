@@ -14,6 +14,11 @@ dragontc=true
 # Do not add /bin/... or anything.
 tc_gcc=$HOME/code/android/linaro731
 
+# Number of parallel jobs to run
+# This should be set to the number of CPU cores on your system.
+# Do not remove, set to 1 for no parallelism.
+jobs=10
+
 # Do not edit below this point
 # -----------------------------
 
@@ -53,9 +58,9 @@ mkzip() {
 }
 
 cleanbuild() {
-    make clean && make -j && mkzip
+    make clean && make -j$jobs && mkzip
 }
 
 incbuild() {
-    make -j && mkzip
+    make -j$jobs && mkzip
 }
