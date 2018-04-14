@@ -693,7 +693,11 @@ KBUILD_CFLAGS += \
   -mllvm -polly-position=after-loopopt \
   -mllvm -polly-run-inliner \
   -mllvm -polly-detect-keep-going \
-  -mllvm -polly-rtc-max-arrays-per-group=40
+  -mllvm -polly-rtc-max-arrays-per-group=40 \
+  -mllvm -polly-enable-optree \
+  -mllvm -polly-code-generation=full \
+  -mllvm -polly-enable-simplify \
+  -mllvm -polly-enable-delicm
 endif
 else
 KBUILD_CFLAGS	+= -Ofast -ffast-math -funsafe-math-optimizations -march=armv8-a+crypto+fp16+rcpc+dotprod+crc -mtune=cortex-a53 -mcpu=cortex-a53+crypto+fp16+rcpc+dotprod+crc
