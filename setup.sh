@@ -31,7 +31,7 @@ export KBUILD_BUILD_USER=enlight
 export KBUILD_BUILD_HOST=universe
 export TOOL_CHAIN_PATH=$tc_gcc/bin/aarch64-linux-gnu-
 export CLANG_TCHAIN=$CLANG_PREBUILT_BIN/clang
-export CLANG_VERSION="$(${CLANG_TCHAIN} --version|head -n1|cut -d'(' -f1,4)"
+export CLANG_VERSION="$(${CLANG_TCHAIN} --version|head -n1|cut -d'(' -f1,4|sed -e 's/^\s*//' -e 's/\s*$//')"
 export REAL_COMPILER=clang
 export DRAGONTC=$dragontc
 
