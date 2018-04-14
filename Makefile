@@ -687,7 +687,13 @@ KBUILD_CFLAGS += \
   -mllvm -polly-vectorizer=polly \
   -mllvm -polly-opt-fusion=max \
   -mllvm -polly-opt-maximize-bands=yes \
-  -mllvm -polly-run-dce
+  -mllvm -polly-run-dce \
+  -mllvm -polly-dependences-computeout=0 \
+  -mllvm -polly-dependences-analysis-type=value-based \
+  -mllvm -polly-position=after-loopopt \
+  -mllvm -polly-run-inliner \
+  -mllvm -polly-detect-keep-going \
+  -mllvm -polly-rtc-max-arrays-per-group=40
 endif
 else
 KBUILD_CFLAGS	+= -Ofast -ffast-math -funsafe-math-optimizations -march=armv8-a+crypto+fp16+rcpc+dotprod+crc -mtune=cortex-a53 -mcpu=cortex-a53+crypto+fp16+rcpc+dotprod+crc

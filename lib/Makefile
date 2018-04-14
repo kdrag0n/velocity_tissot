@@ -218,3 +218,8 @@ obj-$(CONFIG_QMI_ENCDEC) += qmi_encdec.o
 obj-$(CONFIG_UBSAN) += ubsan.o
 
 UBSAN_SANITIZE_ubsan.o := n
+
+# Polly segfaults with -polly-position=after-loopopt, so disable it for bitmap.c
+ifeq ($(DRAGONTC),true)
+CFLAGS_bitmap.o += -mllvm -polly-position=before-vectorizer
+endif

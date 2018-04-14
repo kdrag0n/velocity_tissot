@@ -98,3 +98,8 @@ obj-$(CONFIG_MEMORY_BALLOON) += balloon_compaction.o
 obj-$(CONFIG_PROCESS_RECLAIM)	+= process_reclaim.o
 obj-$(CONFIG_CMA_DEBUGFS) += cma_debug.o
 obj-$(CONFIG_HARDENED_USERCOPY) += usercopy.o
+
+# Polly segfaults with -polly-position=after-loopopt, so disable it for page_alloc.c
+ifeq ($(DRAGONTC),true)
+CFLAGS_page_alloc.o += -mllvm -polly-position=before-vectorizer
+endif
