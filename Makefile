@@ -675,7 +675,7 @@ KBUILD_CFLAGS	+= $(call cc-option,-Oz,-Os)
 KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
 else
 ifeq ($(cc-name),clang)
-KBUILD_CFLAGS   += -O3 -ffast-math -mno-unaligned-access -mstrict-align
+KBUILD_CFLAGS   += -O3 -ffast-math -fno-signed-zeros -freciprocal-math -ffp-contract=fast -mno-unaligned-access -mstrict-align
 # CPU optimization
 KBUILD_CFLAGS   += -mcpu=cortex-a53+crypto -march=armv8-a+crypto -Wa,-march=armv8-a+crypto
 
