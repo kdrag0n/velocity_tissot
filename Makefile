@@ -676,9 +676,10 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
 else
 ifeq ($(cc-name),clang)
 # CPU optimization
-KBUILD_CFLAGS   += -O3
+KBUILD_CFLAGS   += -O3 -mno-unaligned-access -mstrict-align
 else
 KBUILD_CFLAGS	+= -Ofast -ffast-math -funsafe-math-optimizations -march=armv8-a+crypto+fp16+rcpc+dotprod+crc -mtune=cortex-a53 -mcpu=cortex-a53+crypto+fp16+rcpc+dotprod+crc
+
 endif
 endif
 
