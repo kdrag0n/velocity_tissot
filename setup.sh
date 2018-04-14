@@ -1,5 +1,17 @@
 # Toolchain paths
+
+# Path to the root of the clang toolchain
+# Do not add /bin/... or anything.
 tc_clang=$HOME/code/android/dtc/out/7.0
+
+# Whether the given clang toolchain is DragonTC.
+# Controls use of optimizations.
+# Value: true or false
+dragontc=true
+
+# Path to the root of the gcc toolchain.
+# Must be recent, or you may encounter problems.
+# Do not add /bin/... or anything.
 tc_gcc=$HOME/code/android/linaro731
 
 # Do not edit below this point
@@ -21,6 +33,7 @@ export TOOL_CHAIN_PATH=$tc_gcc/bin/aarch64-linux-gnu-
 export CLANG_TCHAIN=$CLANG_PREBUILT_BIN/clang
 export CLANG_VERSION="$(${CLANG_TCHAIN} --version|head -n1|cut -d'(' -f1,4)"
 export REAL_COMPILER=clang
+export DRAGONTC=$dragontc
 
 export CFLAGS=""
 export CXXFLAGS=""
