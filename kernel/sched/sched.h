@@ -1230,9 +1230,9 @@ static const u32 prio_to_wmult[40] = {
 
 #define ENQUEUE_HEAD		0x08
 #ifdef CONFIG_SMP
-#define ENQUEUE_MIGRATED	0x20
+#define ENQUEUE_WAKING		0x20
 #else
-#define ENQUEUE_MIGRATED	0x00
+#define ENQUEUE_WAKING		0x00
 #endif
 #define ENQUEUE_REPLENISH	0x08
 #define ENQUEUE_RESTORE		0x10
