@@ -294,33 +294,6 @@
 			};
 		};
 	};
-        energy-costs {
-		CPU_COST_0: core-cost0 {
-			busy-cost-data = <
-		                528  248
-				767  565
-		                903  889
-		                938  1024
-		                1024 1138
-			>;
-			idle-cost-data = <
-				10 10 0 0
-			>;
-		};
-		CLUSTER_COST_0: cluster-cost0 {
-			busy-cost-data = <
-		                323  35
-		                528  46
-		                767  80
-		                903  120
-		                938  130
-		                1024 203
-			>;
-			idle-cost-data = <
-				50 50 50 0
-			>;
-		};
-	};
 };
 
 &soc {
