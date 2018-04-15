@@ -1588,41 +1588,6 @@ static void schedtune_dequeue_rt(struct rq *rq, struct task_struct *p)
 	cpufreq_update_this_cpu(rq, SCHED_CPUFREQ_RT);
 }
 
-/*
- * Determine if destination CPU explicity disable softirqs,
- * this is different from CPUs which are running softirqs.
- * pc is the preempt count to check.
- */
-static bool softirq_masked(int pc)
-{
-	return !!((pc & SOFTIRQ_MASK)>= SOFTIRQ_DISABLE_OFFSET);
-}
-
-/*
- * Return whether the task on the given cpu is currently non-preemptible
- * while handling a potentially long softint, or if the task is likely
- * to block preemptions soon because it is a ksoftirq thread that is
- * handling slow softints.
- */
-bool
-task_may_not_preempt(struct task_struct *task, int cpu)
-{
-	__u32 softirqs = per_cpu(active_softirqs, cpu) |
-			 __IRQ_STAT(cpu, __softirq_pending);
-	struct task_struct *cpu_ksoftirqd = per_cpu(ksoftirqd, cpu);
-	int task_pc = 0;
-
-	if (task)
-		task_pc = task_preempt_count(task);
-
-	if (softirq_masked(task_pc))
-		return true;
-
-	return ((softirqs & LONG_SOFTIRQ_MASK) &&
-		(task == cpu_ksoftirqd ||
-		 task_pc & SOFTIRQ_MASK));
-}
-
 static int
 select_task_rq_rt(struct task_struct *p, int cpu, int sd_flag, int flags,
 		  int sibling_count_hint)
