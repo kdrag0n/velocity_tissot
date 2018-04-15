@@ -640,8 +640,6 @@ struct rq {
 
 	struct callback_head *balance_callback;
 
-	struct callback_head *balance_callback;
-
 	unsigned char idle_balance;
 	/* For active balancing */
 	int active_balance;
