@@ -2,7 +2,12 @@
  *
  * Android IPC Subsystem
  *
+ * Binder_rt with rt_mutexes for locks; 
+ *
  * Copyright (C) 2007-2008 Google, Inc.
+ * Copyright (c) 2017 Jordan Johnston
+ *
+ * jordan Johnston <johnstonljordan@gmail.com>
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -71,16 +76,20 @@
 #include <linux/security.h>
 #include <linux/spinlock.h>
 
-#include "binder.h"
+#ifdef CONFIG_ANDROID_BINDER_IPC_32BIT
+#define BINDER_IPC_32BIT 1
+#endif
+
+#include <uapi/linux/android/binder.h>
 #include "binder_alloc.h"
 #include "binder_trace.h"
 
 static HLIST_HEAD(binder_deferred_list);
-static DEFINE_MUTEX(binder_deferred_lock);
+static DEFINE_RT_MUTEX(binder_deferred_lock);
 
 static HLIST_HEAD(binder_devices);
 static HLIST_HEAD(binder_procs);
-static DEFINE_MUTEX(binder_procs_lock);
+static DEFINE_RT_MUTEX(binder_procs_lock);
 
 static HLIST_HEAD(binder_dead_nodes);
 static DEFINE_SPINLOCK(binder_dead_nodes_lock);
@@ -262,7 +271,7 @@ static struct binder_transaction_log_entry *binder_transaction_log_add(
 
 struct binder_context {
 	struct binder_node *binder_context_mgr_node;
-	struct mutex context_mgr_node_lock;
+	struct rt_mutex context_mgr_node_lock;
 
 	kuid_t binder_context_mgr_uid;
 	const char *name;
@@ -509,6 +518,8 @@ struct binder_priority {
  *                        (protected by @inner_lock)
  * @todo:                 list of work for this process
  *                        (protected by @inner_lock)
+ * @wait:                 wait queue head to wait for proc work
+ *                        (invariant after initialized)
  * @stats:                per-process binder statistics
  *                        (atomics, no lock needed)
  * @delivered_death:      list of delivered death notification
@@ -549,6 +560,7 @@ struct binder_proc {
 	bool is_dead;
 
 	struct list_head todo;
+	wait_queue_head_t wait;
 	struct binder_stats stats;
 	struct list_head delivered_death;
 	int max_threads;
@@ -826,7 +838,7 @@ binder_enqueue_work_ilocked(struct binder_work *work,
 }
 
 /**
- * binder_enqueue_deferred_thread_work_ilocked() - Add deferred thread work
+ * binder_enqueue_thread_work_ilocked_nowake() - Add thread work
  * @thread:       thread to queue work to
  * @work:         struct binder_work to add to list
  *
@@ -837,8 +849,8 @@ binder_enqueue_work_ilocked(struct binder_work *work,
  * Requires the proc->inner_lock to be held.
  */
 static void
-binder_enqueue_deferred_thread_work_ilocked(struct binder_thread *thread,
-					    struct binder_work *work)
+binder_enqueue_thread_work_ilocked_nowake(struct binder_thread *thread,
+					  struct binder_work *work)
 {
 	binder_enqueue_work_ilocked(work, &thread->todo);
 }
@@ -2112,6 +2124,111 @@ static struct binder_thread *binder_get_txn_from_and_acq_inner(
 	return NULL;
 }
 
+/**
+ * binder_thread_dec_tmpref() - decrement thread->tmp_ref
+ * @thread:	thread to decrement
+ *
+ * A thread needs to be kept alive while being used to create or
+ * handle a transaction. binder_get_txn_from() is used to safely
+ * extract t->from from a binder_transaction and keep the thread
+ * indicated by t->from from being freed. When done with that
+ * binder_thread, this function is called to decrement the
+ * tmp_ref and free if appropriate (thread has been released
+ * and no transaction being processed by the driver)
+ */
+static void binder_thread_dec_tmpref(struct binder_thread *thread)
+{
+	/*
+	 * atomic is used to protect the counter value while
+	 * it cannot reach zero or thread->is_dead is false
+	 */
+	binder_inner_proc_lock(thread->proc);
+	atomic_dec(&thread->tmp_ref);
+	if (thread->is_dead && !atomic_read(&thread->tmp_ref)) {
+		binder_inner_proc_unlock(thread->proc);
+		binder_free_thread(thread);
+		return;
+	}
+	binder_inner_proc_unlock(thread->proc);
+}
+
+/**
+ * binder_proc_dec_tmpref() - decrement proc->tmp_ref
+ * @proc:	proc to decrement
+ *
+ * A binder_proc needs to be kept alive while being used to create or
+ * handle a transaction. proc->tmp_ref is incremented when
+ * creating a new transaction or the binder_proc is currently in-use
+ * by threads that are being released. When done with the binder_proc,
+ * this function is called to decrement the counter and free the
+ * proc if appropriate (proc has been released, all threads have
+ * been released and not currenly in-use to process a transaction).
+ */
+static void binder_proc_dec_tmpref(struct binder_proc *proc)
+{
+	binder_inner_proc_lock(proc);
+	proc->tmp_ref--;
+	if (proc->is_dead && RB_EMPTY_ROOT(&proc->threads) &&
+			!proc->tmp_ref) {
+		binder_inner_proc_unlock(proc);
+		binder_free_proc(proc);
+		return;
+	}
+	binder_inner_proc_unlock(proc);
+}
+
+/**
+ * binder_get_txn_from() - safely extract the "from" thread in transaction
+ * @t:	binder transaction for t->from
+ *
+ * Atomically return the "from" thread and increment the tmp_ref
+ * count for the thread to ensure it stays alive until
+ * binder_thread_dec_tmpref() is called.
+ *
+ * Return: the value of t->from
+ */
+static struct binder_thread *binder_get_txn_from(
+		struct binder_transaction *t)
+{
+	struct binder_thread *from;
+
+	spin_lock(&t->lock);
+	from = t->from;
+	if (from)
+		atomic_inc(&from->tmp_ref);
+	spin_unlock(&t->lock);
+	return from;
+}
+
+/**
+ * binder_get_txn_from_and_acq_inner() - get t->from and acquire inner lock
+ * @t:	binder transaction for t->from
+ *
+ * Same as binder_get_txn_from() except it also acquires the proc->inner_lock
+ * to guarantee that the thread cannot be released while operating on it.
+ * The caller must call binder_inner_proc_unlock() to release the inner lock
+ * as well as call binder_dec_thread_txn() to release the reference.
+ *
+ * Return: the value of t->from
+ */
+static struct binder_thread *binder_get_txn_from_and_acq_inner(
+		struct binder_transaction *t)
+{
+	struct binder_thread *from;
+
+	from = binder_get_txn_from(t);
+	if (!from)
+		return NULL;
+	binder_inner_proc_lock(from->proc);
+	if (t->from) {
+		BUG_ON(from != t->from);
+		return from;
+	}
+	binder_inner_proc_unlock(from->proc);
+	binder_thread_dec_tmpref(from);
+	return NULL;
+}
+
 static void binder_free_transaction(struct binder_transaction *t)
 {
 	if (t->buffer)
@@ -2983,7 +3100,7 @@ static void binder_transaction(struct binder_proc *proc,
 			}
 			binder_proc_unlock(proc);
 		} else {
-			mutex_lock(&context->context_mgr_node_lock);
+			rt_mutex_lock(&context->context_mgr_node_lock);
 			target_node = context->binder_context_mgr_node;
 			if (target_node)
 				target_node = binder_get_node_refs_for_txn(
@@ -2991,7 +3108,7 @@ static void binder_transaction(struct binder_proc *proc,
 						&return_error);
 			else
 				return_error = BR_DEAD_REPLY;
-			mutex_unlock(&context->context_mgr_node_lock);
+			rt_mutex_unlock(&context->context_mgr_node_lock);
 		}
 		if (!target_node) {
 			/*
@@ -3340,7 +3457,6 @@ static void binder_transaction(struct binder_proc *proc,
 		binder_free_transaction(in_reply_to);
 	} else if (!(t->flags & TF_ONE_WAY)) {
 		BUG_ON(t->buffer->async_transaction != 0);
-		binder_inner_proc_lock(proc);
 		/*
 		 * Defer the TRANSACTION_COMPLETE, so we don't return to
 		 * userspace immediately; this allows the target process to
@@ -3348,7 +3464,8 @@ static void binder_transaction(struct binder_proc *proc,
 		 * latency. We will then return the TRANSACTION_COMPLETE when
 		 * the target replies (or there is an error).
 		 */
-		binder_enqueue_deferred_thread_work_ilocked(thread, tcomplete);
+		binder_inner_proc_lock(proc);
+		binder_enqueue_thread_work_ilocked_nowake(thread, tcomplete);
 		t->need_reply = 1;
 		t->from_parent = thread->transaction_stack;
 		thread->transaction_stack = t;
@@ -3491,13 +3608,13 @@ static int binder_thread_write(struct binder_proc *proc,
 			ret = -1;
 			if (increment && !target) {
 				struct binder_node *ctx_mgr_node;
-				mutex_lock(&context->context_mgr_node_lock);
+				rt_mutex_lock(&context->context_mgr_node_lock);
 				ctx_mgr_node = context->binder_context_mgr_node;
 				if (ctx_mgr_node)
 					ret = binder_inc_ref_for_node(
 							proc, ctx_mgr_node,
 							strong, NULL, &rdata);
-				mutex_unlock(&context->context_mgr_node_lock);
+				rt_mutex_unlock(&context->context_mgr_node_lock);
 			}
 			if (ret)
 				ret = binder_update_ref_for_handle(
@@ -4532,28 +4649,7 @@ static int binder_thread_release(struct binder_proc *proc,
 		if (t)
 			spin_lock(&t->lock);
 	}
-
-	/*
-	 * If this thread used poll, make sure we remove the waitqueue
-	 * from any epoll data structures holding it with POLLFREE.
-	 * waitqueue_active() is safe to use here because we're holding
-	 * the inner lock.
-	 */
-	if ((thread->looper & BINDER_LOOPER_STATE_POLL) &&
-	    waitqueue_active(&thread->wait)) {
-		wake_up_poll(&thread->wait, POLLHUP | POLLFREE);
-	}
-
 	binder_inner_proc_unlock(thread->proc);
-
-	/*
-	 * This is needed to avoid races between wake_up_poll() above and
-	 * and ep_remove_waitqueue() called for other reasons (eg the epoll file
-	 * descriptor being closed); ep_remove_waitqueue() holds an RCU read
-	 * lock, so we can be sure it's done after calling synchronize_rcu().
-	 */
-	if (thread->looper & BINDER_LOOPER_STATE_POLL)
-		synchronize_rcu();
 
 	if (send_reply)
 		binder_send_failed_reply(send_reply, BR_DEAD_REPLY);
@@ -4659,7 +4755,7 @@ static int binder_ioctl_set_ctx_mgr(struct file *filp)
 	struct binder_node *new_node;
 	kuid_t curr_euid = current_euid();
 
-	mutex_lock(&context->context_mgr_node_lock);
+	rt_mutex_lock(&context->context_mgr_node_lock);
 	if (context->binder_context_mgr_node) {
 		pr_err("BINDER_SET_CONTEXT_MGR already set\n");
 		ret = -EBUSY;
@@ -4694,7 +4790,7 @@ static int binder_ioctl_set_ctx_mgr(struct file *filp)
 	binder_node_unlock(new_node);
 	binder_put_node(new_node);
 out:
-	mutex_unlock(&context->context_mgr_node_lock);
+	rt_mutex_unlock(&context->context_mgr_node_lock);
 	return ret;
 }
 
@@ -4853,7 +4949,7 @@ static int binder_vm_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 	return VM_FAULT_SIGBUS;
 }
 
-static struct vm_operations_struct binder_vm_ops = {
+static const struct vm_operations_struct binder_vm_ops = {
 	.open = binder_vma_open,
 	.close = binder_vma_close,
 	.fault = binder_vm_fault,
@@ -4931,9 +5027,9 @@ static int binder_open(struct inode *nodp, struct file *filp)
 	INIT_LIST_HEAD(&proc->waiting_threads);
 	filp->private_data = proc;
 
-	mutex_lock(&binder_procs_lock);
+	rt_mutex_lock(&binder_procs_lock);
 	hlist_add_head(&proc->proc_node, &binder_procs);
-	mutex_unlock(&binder_procs_lock);
+	rt_mutex_unlock(&binder_procs_lock);
 
 	if (binder_debugfs_dir_entry_proc) {
 		char strbuf[11];
@@ -5067,11 +5163,11 @@ static void binder_deferred_release(struct binder_proc *proc)
 	struct rb_node *n;
 	int threads, nodes, incoming_refs, outgoing_refs, active_transactions;
 
-	mutex_lock(&binder_procs_lock);
+	rt_mutex_lock(&binder_procs_lock);
 	hlist_del(&proc->proc_node);
-	mutex_unlock(&binder_procs_lock);
+	rt_mutex_unlock(&binder_procs_lock);
 
-	mutex_lock(&context->context_mgr_node_lock);
+	rt_mutex_lock(&context->context_mgr_node_lock);
 	if (context->binder_context_mgr_node &&
 	    context->binder_context_mgr_node->proc == proc) {
 		binder_debug(BINDER_DEBUG_DEAD_BINDER,
@@ -5079,15 +5175,10 @@ static void binder_deferred_release(struct binder_proc *proc)
 			     __func__, proc->pid);
 		context->binder_context_mgr_node = NULL;
 	}
-	mutex_unlock(&context->context_mgr_node_lock);
+	rt_mutex_unlock(&context->context_mgr_node_lock);
 	binder_inner_proc_lock(proc);
 	/*
 	 * Make sure proc stays alive after we
-	 * remove all the threads
-	 */
-	proc->tmp_ref++;
-
-	proc->is_dead = true;
 	threads = 0;
 	active_transactions = 0;
 	while ((n = rb_first(&proc->threads))) {
@@ -5151,7 +5242,7 @@ static void binder_deferred_func(struct work_struct *work)
 	int defer;
 
 	do {
-		mutex_lock(&binder_deferred_lock);
+		rt_mutex_lock(&binder_deferred_lock);
 		if (!hlist_empty(&binder_deferred_list)) {
 			proc = hlist_entry(binder_deferred_list.first,
 					struct binder_proc, deferred_work_node);
@@ -5162,7 +5253,7 @@ static void binder_deferred_func(struct work_struct *work)
 			proc = NULL;
 			defer = 0;
 		}
-		mutex_unlock(&binder_deferred_lock);
+		rt_mutex_unlock(&binder_deferred_lock);
 
 		if (defer & BINDER_DEFERRED_FLUSH)
 			binder_deferred_flush(proc);
@@ -5176,14 +5267,14 @@ static DECLARE_WORK(binder_deferred_work, binder_deferred_func);
 static void
 binder_defer_work(struct binder_proc *proc, enum binder_deferred_state defer)
 {
-	mutex_lock(&binder_deferred_lock);
+	rt_mutex_lock(&binder_deferred_lock);
 	proc->deferred_work |= defer;
 	if (hlist_unhashed(&proc->deferred_work_node)) {
 		hlist_add_head(&proc->deferred_work_node,
 				&binder_deferred_list);
 		queue_work(binder_deferred_workqueue, &binder_deferred_work);
 	}
-	mutex_unlock(&binder_deferred_lock);
+	rt_mutex_unlock(&binder_deferred_lock);
 }
 
 static void print_binder_transaction_ilocked(struct seq_file *m,
@@ -5609,10 +5700,10 @@ static int binder_state_show(struct seq_file *m, void *unused)
 	if (last_node)
 		binder_put_node(last_node);
 
-	mutex_lock(&binder_procs_lock);
+	rt_mutex_lock(&binder_procs_lock);
 	hlist_for_each_entry(proc, &binder_procs, proc_node)
 		print_binder_proc(m, proc, 1);
-	mutex_unlock(&binder_procs_lock);
+	rt_mutex_unlock(&binder_procs_lock);
 
 	return 0;
 }
@@ -5625,10 +5716,10 @@ static int binder_stats_show(struct seq_file *m, void *unused)
 
 	print_binder_stats(m, "", &binder_stats);
 
-	mutex_lock(&binder_procs_lock);
+	rt_mutex_lock(&binder_procs_lock);
 	hlist_for_each_entry(proc, &binder_procs, proc_node)
 		print_binder_proc_stats(m, proc);
-	mutex_unlock(&binder_procs_lock);
+	rt_mutex_unlock(&binder_procs_lock);
 
 	return 0;
 }
@@ -5638,10 +5729,10 @@ static int binder_transactions_show(struct seq_file *m, void *unused)
 	struct binder_proc *proc;
 
 	seq_puts(m, "binder transactions:\n");
-	mutex_lock(&binder_procs_lock);
+	rt_mutex_lock(&binder_procs_lock);
 	hlist_for_each_entry(proc, &binder_procs, proc_node)
 		print_binder_proc(m, proc, 0);
-	mutex_unlock(&binder_procs_lock);
+	rt_mutex_unlock(&binder_procs_lock);
 
 	return 0;
 }
@@ -5651,14 +5742,14 @@ static int binder_proc_show(struct seq_file *m, void *unused)
 	struct binder_proc *itr;
 	int pid = (unsigned long)m->private;
 
-	mutex_lock(&binder_procs_lock);
+	rt_mutex_lock(&binder_procs_lock);
 	hlist_for_each_entry(itr, &binder_procs, proc_node) {
 		if (itr->pid == pid) {
 			seq_puts(m, "binder proc state:\n");
 			print_binder_proc(m, itr, 1);
 		}
 	}
-	mutex_unlock(&binder_procs_lock);
+	rt_mutex_unlock(&binder_procs_lock);
 
 	return 0;
 }
@@ -5741,7 +5832,7 @@ static int __init init_binder_device(const char *name)
 
 	binder_device->context.binder_context_mgr_uid = INVALID_UID;
 	binder_device->context.name = name;
-	mutex_init(&binder_device->context.context_mgr_node_lock);
+	rt_mutex_init(&binder_device->context.context_mgr_node_lock);
 
 	ret = misc_register(&binder_device->miscdev);
 	if (ret < 0) {

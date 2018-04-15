@@ -1,5 +1,11 @@
 /*
+ *
+ * binder_alloc with rt_mutexes for locks; (for Binder_rt) 
+ *
  * Copyright (C) 2017 Google, Inc.
+ * Copyright (c) 2017 Jordan Johnston
+ *
+ * jordan Johnston <johnstonljordan@gmail.com>
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -100,7 +106,8 @@ struct binder_lru_page {
  * struct binder_buffer objects used to track the user buffers
  */
 struct binder_alloc {
-	struct mutex mutex;
+	struct rt_mutex mutex;
+	struct task_struct *tsk;
 	struct vm_area_struct *vma;
 	struct mm_struct *vma_vm_mm;
 	void *buffer;
@@ -156,9 +163,9 @@ binder_alloc_get_free_async_space(struct binder_alloc *alloc)
 {
 	size_t free_async_space;
 
-	mutex_lock(&alloc->mutex);
+	rt_mutex_lock(&alloc->mutex);
 	free_async_space = alloc->free_async_space;
-	mutex_unlock(&alloc->mutex);
+	rt_mutex_unlock(&alloc->mutex);
 	return free_async_space;
 }
 
