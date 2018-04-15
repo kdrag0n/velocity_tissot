@@ -129,12 +129,7 @@ extern void __init_kthread_worker(struct kthread_worker *worker,
  * It happens when it is already pending in a worker list.
  */
 static inline bool queuing_blocked(struct kthread_worker *worker,
-				   struct kthread_work *work)
-{
-	lockdep_assert_held(&worker->lock);
-
-	return !list_empty(&work->node);
-}
+				   struct kthread_work *work);
 
 int kthread_worker_fn(void *worker_ptr);
 
