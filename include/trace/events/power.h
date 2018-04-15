@@ -205,7 +205,6 @@ TRACE_EVENT(cpu_frequency_limits,
 		__entry->max_freq = max_freq;
 		__entry->cpu_id = cpu_id;
 	),
-
 	TP_printk("min=%lu max=%lu cpu_id=%lu",
 		  (unsigned long)__entry->min_freq,
 		  (unsigned long)__entry->max_freq,

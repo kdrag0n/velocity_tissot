@@ -1497,7 +1497,7 @@ static int ft5435_ts_suspend(struct device *dev)
 	}
 #endif
 
-	disable_irq(data->client->irq);
+    disable_irq(data->client->irq);
 
 	if (gpio_is_valid(data->pdata->reset_gpio)) {
 		gpio_set_value_cansleep(data->pdata->reset_gpio, 1);
@@ -1540,6 +1540,9 @@ static int ft5435_ts_resume(struct device *dev)
 	input_mt_report_slot_state(data->input_dev, MT_TOOL_FINGER, 0);
 	__set_bit(BTN_TOUCH, data->input_dev->keybit);
 	input_sync(data->input_dev);
+	
+	if (gesture_func_on)
+                 disable_irq_wake(data->client->irq);
 
 	if (gesture_func_on)
                  disable_irq_wake(data->client->irq);

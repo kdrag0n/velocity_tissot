@@ -43,6 +43,7 @@
 #include <linux/syscore_ops.h>
 #include <linux/msm_rtb.h>
 #include <linux/wakeup_reason.h>
+
 #include <asm/cputype.h>
 #include <asm/irq.h>
 #include <asm/exception.h>
@@ -288,9 +289,7 @@ static void gic_show_resume_irq(struct gic_chip_data *gic)
 		else if (desc->action && desc->action->name)
 			name = desc->action->name;
 
-		pr_warning("%s: %d triggered %s\n", __func__,
-					i + gic->irq_offset, name);
-		log_base_wakeup_reason(i + gic->irq_offset);
+		log_wakeup_reason(irq);
 	}
 }
 
@@ -470,13 +469,12 @@ static void __exception_irq_entry gic_handle_irq(struct pt_regs *regs)
 	} while (1);
 }
 
-static bool gic_handle_cascade_irq(unsigned int irq, struct irq_desc *desc)
+static void gic_handle_cascade_irq(unsigned int irq, struct irq_desc *desc)
 {
 	struct gic_chip_data *chip_data = irq_get_handler_data(irq);
 	struct irq_chip *chip = irq_get_chip(irq);
 	unsigned int cascade_irq, gic_irq;
 	unsigned long status;
-	int handled = false;
 
 	chained_irq_enter(chip, desc);
 
@@ -492,12 +490,10 @@ static bool gic_handle_cascade_irq(unsigned int irq, struct irq_desc *desc)
 	if (unlikely(gic_irq < 32 || gic_irq > 1020))
 		handle_bad_irq(cascade_irq, desc);
 	else
-		handled = generic_handle_irq(cascade_irq);
-
+		generic_handle_irq(cascade_irq);
 
  out:
 	chained_irq_exit(chip, desc);
-	return handled == true;
 }
 
 static struct irq_chip gic_chip = {
