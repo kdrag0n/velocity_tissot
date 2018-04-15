@@ -76,8 +76,9 @@ int sched_proc_update_handler(struct ctl_table *table, int write,
 extern int sched_window_update_handler(struct ctl_table *table,
 		 int write, void __user *buffer, size_t *lenp, loff_t *ppos);
 
-#ifdef CONFIG_SCHED_DEBUG
+#endif
 
+#ifdef CONFIG_SCHED_DEBUG
 static inline unsigned int get_sysctl_timer_migration(void)
 {
 	return sysctl_timer_migration;
