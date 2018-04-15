@@ -1,0 +1,53 @@
+--- kernel/sched/core.c
++++ kernel/sched/core.c
+@@ -490,11 +490,6 @@ static __init void init_hrtick(void)
+  */
+ void hrtick_start(struct rq *rq, u64 delay)
+ {
+-	/*
+-	 * Don't schedule slices shorter than 10000ns, that just
+-	 * doesn't make sense. Rely on vruntime for fairness.
+-	 */
+-	delay = max_t(u64, delay, 10000LL);
+ 	__hrtimer_start_range_ns(&rq->hrtick_timer, ns_to_ktime(delay), 0,
+ 			HRTIMER_MODE_REL_PINNED, 0);
+ }
+@@ -1083,7 +1078,7 @@ void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
+ 		if (p->sched_class->migrate_task_rq)
+ 			p->sched_class->migrate_task_rq(p, new_cpu);
+ 		p->se.nr_migrations++;
+-		perf_sw_event_sched(PERF_COUNT_SW_CPU_MIGRATIONS, 1, 0);
++		perf_sw_event(PERF_COUNT_SW_CPU_MIGRATIONS, 1, NULL, 0);
+ 	}
+ 
+ 	__set_task_cpu(p, new_cpu);
+@@ -2675,8 +2636,7 @@ static noinline void __schedule_bug(struct task_struct *prev)
+ static inline void schedule_debug(struct task_struct *prev)
+ {
+ #ifdef CONFIG_SCHED_STACK_END_CHECK
+-	if (task_stack_end_corrupted(prev))
+-		panic("corrupted stack end detected inside scheduler\n");
++	BUG_ON(unlikely(task_stack_end_corrupted(prev)));
+ #endif
+ 	/*
+ 	 * Test if we are atomic. Since do_exit() needs to call into
+@@ -3597,14 +3552,15 @@ change:
+ 	oldprio = p->prio;
+ 
+ 	/*
+-	 * Take priority boosted tasks into account. If the new
+-	 * effective priority is unchanged, we just store the new
++	 * Special case for priority boosted tasks.
++	 *
++	 * If the new priority is lower or equal (user space view)
++	 * than the current (boosted) priority, we just store the new
+ 	 * normal parameters and do not touch the scheduler class and
+ 	 * the runqueue. This will be done when the task deboost
+ 	 * itself.
+ 	 */
+-	new_effective_prio = rt_mutex_get_effective_prio(p, newprio);
+-	if (new_effective_prio == oldprio) {
++	if (rt_mutex_check_prio(p, newprio)) {
+ 		__setscheduler_params(p, attr);
+ 		task_rq_unlock(rq, p, &flags);
+ 		return 0;

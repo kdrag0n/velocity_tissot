@@ -1,0 +1,89 @@
+--- drivers/net/usb/cdc_ncm.c
++++ drivers/net/usb/cdc_ncm.c
+@@ -815,11 +815,7 @@ advance:
+ 
+ 	iface_no = ctx->data->cur_altsetting->desc.bInterfaceNumber;
+ 
+-	/* Reset data interface. Some devices will not reset properly
+-	 * unless they are configured first.  Toggle the altsetting to
+-	 * force a reset
+-	 */
+-	usb_set_interface(dev->udev, iface_no, data_altsetting);
++	/* reset data interface */
+ 	temp = usb_set_interface(dev->udev, iface_no, 0);
+ 	if (temp) {
+ 		dev_dbg(&intf->dev, "set interface failed\n");
+@@ -952,12 +948,23 @@ EXPORT_SYMBOL_GPL(cdc_ncm_select_altsetting);
+ 
+ static int cdc_ncm_bind(struct usbnet *dev, struct usb_interface *intf)
+ {
++	int ret;
++
+ 	/* MBIM backwards compatible function? */
+ 	if (cdc_ncm_select_altsetting(intf) != CDC_NCM_COMM_ALTSETTING_NCM)
+ 		return -ENODEV;
+ 
+ 	/* The NCM data altsetting is fixed */
+-	return cdc_ncm_bind_common(dev, intf, CDC_NCM_DATA_ALTSETTING_NCM);
++	ret = cdc_ncm_bind_common(dev, intf, CDC_NCM_DATA_ALTSETTING_NCM);
++
++	/*
++	 * We should get an event when network connection is "connected" or
++	 * "disconnected". Set network connection in "disconnected" state
++	 * (carrier is OFF) during attach, so the IP network stack does not
++	 * start IPv6 negotiation and more.
++	 */
++	usbnet_link_change(dev, 0, 0);
++	return ret;
+ }
+ 
+ static void cdc_ncm_align_tail(struct sk_buff *skb, size_t modulus, size_t remainder, size_t max)
+@@ -1165,17 +1172,17 @@ cdc_ncm_fill_tx_frame(struct usbnet *dev, struct sk_buff *skb, __le32 sign)
+ 
+ 	/* return skb */
+ 	ctx->tx_curr_skb = NULL;
++	dev->net->stats.tx_packets += ctx->tx_curr_frame_num;
+ 
+ 	/* keep private stats: framing overhead and number of NTBs */
+ 	ctx->tx_overhead += skb_out->len - ctx->tx_curr_frame_payload;
+ 	ctx->tx_ntbs++;
+ 
+-	/* usbnet will count all the framing overhead by default.
++	/* usbnet has already counted all the framing overhead.
+ 	 * Adjust the stats so that the tx_bytes counter show real
+ 	 * payload data instead.
+ 	 */
+-	usbnet_set_skb_tx_stats(skb_out, n,
+-				(long)ctx->tx_curr_frame_payload - skb_out->len);
++	dev->net->stats.tx_bytes -= skb_out->len - ctx->tx_curr_frame_payload;
+ 
+ 	return skb_out;
+ 
+@@ -1499,8 +1506,7 @@ static void cdc_ncm_status(struct usbnet *dev, struct urb *urb)
+ 
+ static const struct driver_info cdc_ncm_info = {
+ 	.description = "CDC NCM",
+-	.flags = FLAG_POINTTOPOINT | FLAG_NO_SETINT | FLAG_MULTI_PACKET
+-			| FLAG_LINK_INTR,
++	.flags = FLAG_POINTTOPOINT | FLAG_NO_SETINT | FLAG_MULTI_PACKET,
+ 	.bind = cdc_ncm_bind,
+ 	.unbind = cdc_ncm_unbind,
+ 	.manage_power = usbnet_manage_power,
+@@ -1513,7 +1519,7 @@ static const struct driver_info cdc_ncm_info = {
+ static const struct driver_info wwan_info = {
+ 	.description = "Mobile Broadband Network Device",
+ 	.flags = FLAG_POINTTOPOINT | FLAG_NO_SETINT | FLAG_MULTI_PACKET
+-			| FLAG_LINK_INTR | FLAG_WWAN,
++			| FLAG_WWAN,
+ 	.bind = cdc_ncm_bind,
+ 	.unbind = cdc_ncm_unbind,
+ 	.manage_power = usbnet_manage_power,
+@@ -1526,7 +1532,7 @@ static const struct driver_info wwan_info = {
+ static const struct driver_info wwan_noarp_info = {
+ 	.description = "Mobile Broadband Network Device (NO ARP)",
+ 	.flags = FLAG_POINTTOPOINT | FLAG_NO_SETINT | FLAG_MULTI_PACKET
+-			| FLAG_LINK_INTR | FLAG_WWAN | FLAG_NOARP,
++			| FLAG_WWAN | FLAG_NOARP,
+ 	.bind = cdc_ncm_bind,
+ 	.unbind = cdc_ncm_unbind,
+ 	.manage_power = usbnet_manage_power,

@@ -1,0 +1,24 @@
+--- net/ipv4/tcp_ipv4.c
++++ net/ipv4/tcp_ipv4.c
+@@ -681,9 +676,9 @@ static void tcp_v4_send_reset(struct sock *sk, struct sk_buff *skb)
+ 	if (sk)
+ 		arg.bound_dev_if = sk->sk_bound_dev_if;
+ 
++	net = dev_net(skb_dst(skb)->dev);
+ 	arg.tos = ip_hdr(skb)->tos;
+-	ip_send_unicast_reply(*this_cpu_ptr(net->ipv4.tcp_sk),
+-			      skb, &TCP_SKB_CB(skb)->header.h4.opt,
++	ip_send_unicast_reply(net, skb, &TCP_SKB_CB(skb)->header.h4.opt,
+ 			      ip_hdr(skb)->saddr, ip_hdr(skb)->daddr,
+ 			      &arg, arg.iov[0].iov_len);
+ 
+@@ -767,8 +762,7 @@ static void tcp_v4_send_ack(struct sk_buff *skb, u32 seq, u32 ack,
+ 	if (oif)
+ 		arg.bound_dev_if = oif;
+ 	arg.tos = tos;
+-	ip_send_unicast_reply(*this_cpu_ptr(net->ipv4.tcp_sk),
+-			      skb, &TCP_SKB_CB(skb)->header.h4.opt,
++	ip_send_unicast_reply(net, skb, &TCP_SKB_CB(skb)->header.h4.opt,
+ 			      ip_hdr(skb)->saddr, ip_hdr(skb)->daddr,
+ 			      &arg, arg.iov[0].iov_len);
+ 

@@ -1,0 +1,31 @@
+--- net/ipv4/netfilter/arp_tables.c
++++ net/ipv4/netfilter/arp_tables.c
+@@ -580,14 +591,6 @@ static inline int check_entry_size_and_hooks(struct arpt_entry *e,
+ 		return -EINVAL;
+ 	}
+ 
+-	if (!arp_checkentry(&e->arp))
+-		return -EINVAL;
+-
+-	err = xt_check_entry_offsets(e, e->elems, e->target_offset,
+-				     e->next_offset);
+-	if (err)
+-		return err;
+-
+ 	/* Check hooks & underflows */
+ 	for (h = 0; h < NF_ARP_NUMHOOKS; h++) {
+ 		if (!(valid_hooks & (1 << h)))
+@@ -1244,11 +1265,8 @@ check_compat_entry_size_and_hooks(struct compat_arpt_entry *e,
+ 		return -EINVAL;
+ 	}
+ 
+-	if (!arp_checkentry(&e->arp))
+-		return -EINVAL;
+-
+-	ret = xt_compat_check_entry_offsets(e, e->elems, e->target_offset,
+-					    e->next_offset);
++	/* For purposes of check_entry casting the compat entry is fine */
++	ret = check_entry((struct arpt_entry *)e, name);
+ 	if (ret)
+ 		return ret;
+ 

@@ -1,0 +1,86 @@
+--- mm/page_alloc.c
++++ mm/page_alloc.c
+@@ -598,32 +603,6 @@ static inline void __free_one_page(struct page *page,
+ 		page_idx = combined_idx;
+ 		order++;
+ 	}
+-	if (max_order < MAX_ORDER) {
+-		/* If we are here, it means order is >= pageblock_order.
+-		 * We want to prevent merge between freepages on isolate
+-		 * pageblock and normal pageblock. Without this, pageblock
+-		 * isolation could cause incorrect freepage or CMA accounting.
+-		 *
+-		 * We don't want to hit this code for the more frequent
+-		 * low-order merging.
+-		 */
+-		if (unlikely(has_isolate_pageblock(zone))) {
+-			int buddy_mt;
+-
+-			buddy_idx = __find_buddy_index(page_idx, order);
+-			buddy = page + (buddy_idx - page_idx);
+-			buddy_mt = get_pageblock_migratetype(buddy);
+-
+-			if (migratetype != buddy_mt
+-					&& (is_migrate_isolate(migratetype) ||
+-						is_migrate_isolate(buddy_mt)))
+-				goto done_merging;
+-		}
+-		max_order++;
+-		goto continue_merging;
+-	}
+-
+-done_merging:
+ 	set_page_order(page, order);
+ 
+ 	/*
+@@ -806,8 +785,7 @@ static void __free_pages_ok(struct page *page, unsigned int order)
+ 	local_irq_restore(flags);
+ }
+ 
+-void __init __free_pages_bootmem(struct page *page, unsigned long pfn,
+-							unsigned int order)
++void __init __free_pages_bootmem(struct page *page, unsigned int order)
+ {
+ 	unsigned int nr_pages = 1 << order;
+ 	struct page *p = page;
+@@ -1100,13 +1078,13 @@ static void change_pageblock_range(struct page *pageblock_page,
+  * nor move CMA pages to different free lists. We don't want unmovable pages
+  * to be allocated from MIGRATE_CMA areas.
+  *
+- * Returns the allocation migratetype if free pages were stolen, or the
+- * fallback migratetype if it was decided not to steal.
++ * Returns the new migratetype of the pageblock (or the same old migratetype
++ * if it was unchanged).
+  */
+ static int try_to_steal_freepages(struct zone *zone, struct page *page,
+ 				  int start_type, int fallback_type)
+ {
+-	unsigned int current_order = page_order(page);
++	int current_order = page_order(page);
+ 
+ 	/*
+ 	 * When borrowing from MIGRATE_CMA, we need to release the excess
+@@ -1132,10 +1110,12 @@ static int try_to_steal_freepages(struct zone *zone, struct page *page,
+ 
+ 		/* Claim the whole block if over half of it is free */
+ 		if (pages >= (1 << (pageblock_order-1)) ||
+-				page_group_by_mobility_disabled)
++				page_group_by_mobility_disabled) {
++
+ 			set_pageblock_migratetype(page, start_type);
++			return start_type;
++		}
+ 
+-		return start_type;
+ 	}
+ 
+ 	return fallback_type;
+@@ -1187,7 +1167,7 @@ __rmqueue_fallback(struct zone *zone, unsigned int order, int start_migratetype)
+ 			set_freepage_migratetype(page, new_type);
+ 
+ 			trace_mm_page_alloc_extfrag(page, order, current_order,
+-				start_migratetype, migratetype);
++				start_migratetype, migratetype, new_type);
+ 
+ 			return page;
+ 		}

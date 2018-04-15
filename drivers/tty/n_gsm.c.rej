@@ -1,0 +1,78 @@
+--- drivers/tty/n_gsm.c
++++ drivers/tty/n_gsm.c
+@@ -1467,10 +1467,6 @@ static void gsm_dlci_open(struct gsm_dlci *dlci)
+  *	in which case an opening port goes back to closed and a closing port
+  *	is simply put into closed state (any further frames from the other
+  *	end will get a DM response)
+- *
+- *	Some control dlci can stay in ADM mode with other dlci working just
+- *	fine. In that case we can just keep the control dlci open after the
+- *	DLCI_OPENING retries time out.
+  */
+ 
+ static void gsm_dlci_t1(unsigned long data)
+@@ -1484,15 +1480,8 @@ static void gsm_dlci_t1(unsigned long data)
+ 		if (dlci->retries) {
+ 			gsm_command(dlci->gsm, dlci->addr, SABM|PF);
+ 			mod_timer(&dlci->t1, jiffies + gsm->t1 * HZ / 100);
+-		} else if (!dlci->addr && gsm->control == (DM | PF)) {
+-			if (debug & 8)
+-				pr_info("DLCI %d opening in ADM mode.\n",
+-					dlci->addr);
+-			gsm_dlci_open(dlci);
+-		} else {
++		} else
+ 			gsm_dlci_close(dlci);
+-		}
+-
+ 		break;
+ 	case DLCI_CLOSING:
+ 		dlci->retries--;
+@@ -1510,8 +1499,8 @@ static void gsm_dlci_t1(unsigned long data)
+  *	@dlci: DLCI to open
+  *
+  *	Commence opening a DLCI from the Linux side. We issue SABM messages
+- *	to the modem which should then reply with a UA or ADM, at which point
+- *	we will move into open state. Opening is done asynchronously with retry
++ *	to the modem which should then reply with a UA, at which point we
++ *	will move into open state. Opening is done asynchronously with retry
+  *	running off timers and the responses.
+  */
+ 
+@@ -2056,9 +2045,7 @@ static void gsm_cleanup_mux(struct gsm_mux *gsm)
+ 		}
+ 	}
+ 	spin_unlock(&gsm_mux_lock);
+-	/* open failed before registering => nothing to do */
+-	if (i == MAX_MUX)
+-		return;
++	WARN_ON(i == MAX_MUX);
+ 
+ 	/* In theory disconnecting DLCI 0 is sufficient but for some
+ 	   modems this is apparently not the case. */
+@@ -3183,7 +3170,7 @@ static int gsmtty_break_ctl(struct tty_struct *tty, int state)
+ 	return gsmtty_modem_update(dlci, encode);
+ }
+ 
+-static void gsmtty_cleanup(struct tty_struct *tty)
++static void gsmtty_remove(struct tty_driver *driver, struct tty_struct *tty)
+ {
+ 	struct gsm_dlci *dlci = tty->driver_data;
+ 	struct gsm_mux *gsm = dlci->gsm;
+@@ -3191,6 +3178,7 @@ static void gsmtty_remove(struct tty_driver *driver, struct tty_struct *tty)
+ 	dlci_put(dlci);
+ 	dlci_put(gsm->dlci[0]);
+ 	mux_put(gsm);
++	driver->ttys[tty->index] = NULL;
+ }
+ 
+ /* Virtual ttys for the demux */
+@@ -3211,7 +3199,7 @@ static const struct tty_operations gsmtty_ops = {
+ 	.tiocmget		= gsmtty_tiocmget,
+ 	.tiocmset		= gsmtty_tiocmset,
+ 	.break_ctl		= gsmtty_break_ctl,
+-	.cleanup		= gsmtty_cleanup,
++	.remove			= gsmtty_remove,
+ };
+ 
+ 

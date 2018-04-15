@@ -1,0 +1,12 @@
+--- kernel/sched/auto_group.c
++++ kernel/sched/auto_group.c
+@@ -115,6 +116,9 @@ bool task_wants_autogroup(struct task_struct *p, struct task_group *tg)
+ 	if (tg != &root_task_group)
+ 		return false;
+ 
++	if (p->sched_class != &fair_sched_class)
++		return false;
++
+ 	/*
+ 	 * We can only assume the task group can't go away on us if
+ 	 * autogroup_move_group() can see us on ->thread_group list.

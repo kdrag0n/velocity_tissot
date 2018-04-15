@@ -1,0 +1,14 @@
+--- drivers/gpu/drm/i915/i915_gem_stolen.c
++++ drivers/gpu/drm/i915/i915_gem_stolen.c
+@@ -481,7 +477,10 @@ i915_gem_object_create_stolen_for_preallocated(struct drm_device *dev,
+ 			stolen_offset, gtt_offset, size);
+ 
+ 	/* KISS and expect everything to be page-aligned */
+-	if (WARN_ON(size == 0 || stolen_offset & 4095 || size & 4095))
++	BUG_ON(stolen_offset & 4095);
++	BUG_ON(size & 4095);
++
++	if (WARN_ON(size == 0))
+ 		return NULL;
+ 
+ 	stolen = kzalloc(sizeof(*stolen), GFP_KERNEL);

@@ -1,0 +1,13 @@
+--- drivers/of/of_pci.c
++++ drivers/of/of_pci.c
+@@ -225,10 +224,7 @@ int of_pci_get_host_bridge_resources(struct device_node *dev,
+ conversion_failed:
+ 	kfree(res);
+ parse_failed:
+-	list_for_each_entry(window, resources, list)
+-		kfree(window->res);
+ 	pci_free_resource_list(resources);
+-	kfree(bus_range);
+ 	return err;
+ }
+ EXPORT_SYMBOL_GPL(of_pci_get_host_bridge_resources);

@@ -1,0 +1,10 @@
+--- include/linux/dcache.h
++++ include/linux/dcache.h
+@@ -160,7 +160,6 @@ struct dentry_operations {
+ 	char *(*d_dname)(struct dentry *, char *, int);
+ 	struct vfsmount *(*d_automount)(struct path *);
+ 	int (*d_manage)(struct dentry *, bool);
+-	struct inode *(*d_select_inode)(struct dentry *, unsigned);
+ } ____cacheline_aligned;
+ 
+ /*

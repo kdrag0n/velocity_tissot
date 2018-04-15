@@ -1,0 +1,20 @@
+--- net/packet/af_packet.c
++++ net/packet/af_packet.c
+@@ -1444,6 +1451,9 @@ static int fanout_add(struct sock *sk, u16 id, u16 type_flags)
+ 		return -EINVAL;
+ 	}
+ 
++	if (!po->running)
++		return -EINVAL;
++
+ 	if (po->fanout)
+ 		return -EALREADY;
+ 
+@@ -3537,7 +3491,6 @@ static int packet_notifier(struct notifier_block *this,
+ 				}
+ 				if (msg == NETDEV_UNREGISTER) {
+ 					packet_cached_dev_reset(po);
+-					fanout_release(sk);
+ 					po->ifindex = -1;
+ 					if (po->prot_hook.dev)
+ 						dev_put(po->prot_hook.dev);

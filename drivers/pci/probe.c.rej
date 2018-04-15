@@ -1,0 +1,43 @@
+--- drivers/pci/probe.c
++++ drivers/pci/probe.c
+@@ -216,17 +216,14 @@ int __pci_read_base(struct pci_dev *dev, enum pci_bar_type type,
+ 		res->flags |= IORESOURCE_SIZEALIGN;
+ 		if (res->flags & IORESOURCE_IO) {
+ 			l &= PCI_BASE_ADDRESS_IO_MASK;
+-			sz &= PCI_BASE_ADDRESS_IO_MASK;
+ 			mask = PCI_BASE_ADDRESS_IO_MASK & (u32) IO_SPACE_LIMIT;
+ 		} else {
+ 			l &= PCI_BASE_ADDRESS_MEM_MASK;
+-			sz &= PCI_BASE_ADDRESS_MEM_MASK;
+ 			mask = (u32)PCI_BASE_ADDRESS_MEM_MASK;
+ 		}
+ 	} else {
+ 		res->flags |= (l & IORESOURCE_ROM_ENABLE);
+ 		l &= PCI_ROM_ADDRESS_MASK;
+-		sz &= PCI_ROM_ADDRESS_MASK;
+ 		mask = (u32)PCI_ROM_ADDRESS_MASK;
+ 	}
+ 
+@@ -994,22 +986,6 @@ void set_pcie_port_type(struct pci_dev *pdev)
+ 	pdev->pcie_flags_reg = reg16;
+ 	pci_read_config_word(pdev, pos + PCI_EXP_DEVCAP, &reg16);
+ 	pdev->pcie_mpss = reg16 & PCI_EXP_DEVCAP_PAYLOAD;
+-
+-	/*
+-	 * A Root Port is always the upstream end of a Link.  No PCIe
+-	 * component has two Links.  Two Links are connected by a Switch
+-	 * that has a Port on each Link and internal logic to connect the
+-	 * two Ports.
+-	 */
+-	type = pci_pcie_type(pdev);
+-	if (type == PCI_EXP_TYPE_ROOT_PORT)
+-		pdev->has_secondary_link = 1;
+-	else if (type == PCI_EXP_TYPE_UPSTREAM ||
+-		 type == PCI_EXP_TYPE_DOWNSTREAM) {
+-		parent = pci_upstream_bridge(pdev);
+-		if (!parent->has_secondary_link)
+-			pdev->has_secondary_link = 1;
+-	}
+ }
+ 
+ void set_pcie_hotplug_bridge(struct pci_dev *pdev)

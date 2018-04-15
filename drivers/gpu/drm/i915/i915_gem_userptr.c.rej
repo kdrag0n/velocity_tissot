@@ -1,0 +1,36 @@
+--- drivers/gpu/drm/i915/i915_gem_userptr.c
++++ drivers/gpu/drm/i915/i915_gem_userptr.c
+@@ -113,10 +113,7 @@ restart:
+ 			continue;
+ 
+ 		obj = mo->obj;
+-
+-		if (!kref_get_unless_zero(&obj->base.refcount))
+-			continue;
+-
++		drm_gem_object_reference(&obj->base);
+ 		spin_unlock(&mn->lock);
+ 
+ 		cancel_userptr(obj);
+@@ -152,20 +149,7 @@ static void i915_gem_userptr_mn_invalidate_range_start(struct mmu_notifier *_mn,
+ 			it = interval_tree_iter_first(&mn->objects, start, end);
+ 		if (it != NULL) {
+ 			obj = container_of(it, struct i915_mmu_object, it)->obj;
+-
+-			/* The mmu_object is released late when destroying the
+-			 * GEM object so it is entirely possible to gain a
+-			 * reference on an object in the process of being freed
+-			 * since our serialisation is via the spinlock and not
+-			 * the struct_mutex - and consequently use it after it
+-			 * is freed and then double free it.
+-			 */
+-			if (!kref_get_unless_zero(&obj->base.refcount)) {
+-				spin_unlock(&mn->lock);
+-				serial = 0;
+-				continue;
+-			}
+-
++			drm_gem_object_reference(&obj->base);
+ 			serial = mn->serial;
+ 		}
+ 		spin_unlock(&mn->lock);

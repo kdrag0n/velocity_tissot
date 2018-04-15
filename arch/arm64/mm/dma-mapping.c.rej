@@ -1,0 +1,31 @@
+--- arch/arm64/mm/dma-mapping.c
++++ arch/arm64/mm/dma-mapping.c
+@@ -51,7 +51,7 @@ static int __init early_coherent_pool(char *p)
+ }
+ early_param("coherent_pool", early_coherent_pool);
+ 
+-static void *__alloc_from_pool(size_t size, struct page **ret_page, gfp_t flags)
++static void *__alloc_from_pool(size_t size, struct page **ret_page)
+ {
+ 	unsigned long val;
+ 	void *ptr = NULL;
+@@ -109,9 +107,7 @@ static void *__dma_alloc_coherent(struct device *dev, size_t size,
+ 			return NULL;
+ 
+ 		*dma_handle = phys_to_dma(dev, page_to_phys(page));
+-		addr = page_address(page);
+-		memset(addr, 0, size);
+-		return addr;
++		return page_address(page);
+ 	} else {
+ 		return swiotlb_alloc_coherent(dev, size, dma_handle, flags);
+ 	}
+@@ -147,7 +143,7 @@ static void *__dma_alloc_noncoherent(struct device *dev, size_t size,
+ 
+ 	if (!(flags & __GFP_WAIT)) {
+ 		struct page *page = NULL;
+-		void *addr = __alloc_from_pool(size, &page, flags);
++		void *addr = __alloc_from_pool(size, &page);
+ 
+ 		if (addr)
+ 			*dma_handle = phys_to_dma(dev, page_to_phys(page));

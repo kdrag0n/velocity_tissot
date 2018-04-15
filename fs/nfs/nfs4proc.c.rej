@@ -1,0 +1,15 @@
+--- fs/nfs/nfs4proc.c
++++ fs/nfs/nfs4proc.c
+@@ -7428,12 +7427,6 @@ static int nfs41_reclaim_complete_handle_errors(struct rpc_task *task, struct nf
+ 		/* fall through */
+ 	case -NFS4ERR_RETRY_UNCACHED_REP:
+ 		return -EAGAIN;
+-	case -NFS4ERR_BADSESSION:
+-	case -NFS4ERR_DEADSESSION:
+-	case -NFS4ERR_CONN_NOT_BOUND_TO_SESSION:
+-		nfs4_schedule_session_recovery(clp->cl_session,
+-				task->tk_status);
+-		break;
+ 	default:
+ 		nfs4_schedule_lease_recovery(clp);
+ 	}

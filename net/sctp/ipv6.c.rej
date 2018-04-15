@@ -1,0 +1,14 @@
+--- net/sctp/ipv6.c
++++ net/sctp/ipv6.c
+@@ -685,10 +648,8 @@ static int sctp_v6_addr_to_user(struct sctp_sock *sp, union sctp_addr *addr)
+ 			sctp_v6_map_v4(addr);
+ 	}
+ 
+-	if (addr->sa.sa_family == AF_INET) {
+-		memset(addr->v4.sin_zero, 0, sizeof(addr->v4.sin_zero));
++	if (addr->sa.sa_family == AF_INET)
+ 		return sizeof(struct sockaddr_in);
+-	}
+ 	return sizeof(struct sockaddr_in6);
+ }
+ 

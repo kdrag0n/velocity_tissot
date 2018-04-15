@@ -1,0 +1,10 @@
+--- include/linux/of.h
++++ include/linux/of.h
+@@ -23,7 +23,6 @@
+ #include <linux/spinlock.h>
+ #include <linux/topology.h>
+ #include <linux/notifier.h>
+-#include <linux/property.h>
+ 
+ #include <asm/byteorder.h>
+ #include <asm/errno.h>

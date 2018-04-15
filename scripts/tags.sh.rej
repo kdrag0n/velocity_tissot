@@ -1,0 +1,10 @@
+--- scripts/tags.sh
++++ scripts/tags.sh
+@@ -106,7 +106,6 @@ all_compiled_sources()
+ 		case "$i" in
+ 			*.[cS])
+ 				j=${i/\.[cS]/\.o}
+-				j="${j#$tree}"
+ 				if [ -e $j ]; then
+ 					echo $i
+ 				fi

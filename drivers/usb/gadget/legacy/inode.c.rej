@@ -1,0 +1,19 @@
+--- drivers/usb/gadget/legacy/inode.c
++++ drivers/usb/gadget/legacy/inode.c
+@@ -647,15 +644,7 @@ fail:
+ 	}
+ 	iocb->private = priv;
+ 	priv->iocb = iocb;
+-	if (iv) {
+-		priv->iv = kmemdup(iv, nr_segs * sizeof(struct iovec),
+-				   GFP_KERNEL);
+-		if (!priv->iv) {
+-			kfree(priv);
+-			value = -ENOMEM;
+-			goto fail;
+-		}
+-	}
++	priv->iv = iv;
+ 	priv->nr_segs = nr_segs;
+ 	INIT_WORK(&priv->work, ep_user_copy_worker);
+ 

@@ -1,0 +1,11 @@
+--- drivers/usb/serial/mos7720.c
++++ drivers/usb/serial/mos7720.c
+@@ -1239,7 +1234,7 @@ static int mos7720_write(struct tty_struct *tty, struct usb_serial_port *port,
+ 
+ 	if (urb->transfer_buffer == NULL) {
+ 		urb->transfer_buffer = kmalloc(URB_TRANSFER_BUFFER_SIZE,
+-					       GFP_ATOMIC);
++					       GFP_KERNEL);
+ 		if (!urb->transfer_buffer)
+ 			goto exit;
+ 	}

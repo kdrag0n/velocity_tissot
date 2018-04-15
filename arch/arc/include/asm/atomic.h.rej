@@ -1,0 +1,39 @@
+--- arch/arc/include/asm/atomic.h
++++ arch/arc/include/asm/atomic.h
+@@ -107,12 +115,15 @@ static inline void atomic_##op(int i, atomic_t *v)			\
+ 	atomic_ops_unlock(flags);					\
+ }
+ 
+-#define ATOMIC_OP_RETURN(op, c_op)					\
++#define ATOMIC_OP_RETURN(op, c_op, asm_op)				\
+ static inline int atomic_##op##_return(int i, atomic_t *v)		\
+ {									\
+ 	unsigned long flags;						\
+ 	unsigned long temp;						\
+ 									\
++	/*								\
++	 * spin lock/unlock provides the needed smp_mb() before/after	\
++	 */								\
+ 	atomic_ops_lock(flags);						\
+ 	temp = v->counter;						\
+ 	temp c_op i;							\
+@@ -150,9 +161,19 @@ ATOMIC_OP(and, &=, and)
+ #define __atomic_add_unless(v, a, u)					\
+ ({									\
+ 	int c, old;							\
++									\
++	/*								\
++	 * Explicit full memory barrier needed before/after as		\
++	 * LLOCK/SCOND thmeselves don't provide any such semantics	\
++	 */								\
++	smp_mb();							\
++									\
+ 	c = atomic_read(v);						\
+ 	while (c != (u) && (old = atomic_cmpxchg((v), c, c + (a))) != c)\
+ 		c = old;						\
++									\
++	smp_mb();							\
++									\
+ 	c;								\
+ })
+ 

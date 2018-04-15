@@ -1,0 +1,24 @@
+--- drivers/gpu/drm/vmwgfx/vmwgfx_drv.h
++++ drivers/gpu/drm/vmwgfx/vmwgfx_drv.h
+@@ -399,8 +399,7 @@ struct vmw_private {
+ 	uint32_t memory_size;
+ 	bool has_gmr;
+ 	bool has_mob;
+-	spinlock_t hw_lock;
+-	spinlock_t cap_lock;
++	struct mutex hw_mutex;
+ 
+ 	/*
+ 	 * VGA registers.
+@@ -450,9 +449,8 @@ struct vmw_private {
+ 	atomic_t marker_seq;
+ 	wait_queue_head_t fence_queue;
+ 	wait_queue_head_t fifo_queue;
+-	spinlock_t waiter_lock;
+-	int fence_queue_waiters; /* Protected by waiter_lock */
+-	int goal_queue_waiters; /* Protected by waiter_lock */
++	int fence_queue_waiters; /* Protected by hw_mutex */
++	int goal_queue_waiters; /* Protected by hw_mutex */
+ 	atomic_t fifo_queue_waiters;
+ 	uint32_t last_read_seqno;
+ 	spinlock_t irq_lock;

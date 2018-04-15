@@ -1,0 +1,22 @@
+--- net/bluetooth/cmtp/core.c
++++ net/bluetooth/cmtp/core.c
+@@ -280,16 +280,16 @@ static int cmtp_session(void *arg)
+ 	struct cmtp_session *session = arg;
+ 	struct sock *sk = session->sock->sk;
+ 	struct sk_buff *skb;
+-	DEFINE_WAIT_FUNC(wait, woken_wake_function);
++	wait_queue_t wait;
+ 
+ 	BT_DBG("session %p", session);
+ 
+ 	set_user_nice(current, -15);
+ 
++	init_waitqueue_entry(&wait, current);
+ 	add_wait_queue(sk_sleep(sk), &wait);
+ 	while (1) {
+-		/* Ensure session->terminate is updated */
+-		smp_mb__before_atomic();
++		set_current_state(TASK_INTERRUPTIBLE);
+ 
+ 		if (atomic_read(&session->terminate))
+ 			break;
