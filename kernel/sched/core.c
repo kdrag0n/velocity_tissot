@@ -1909,15 +1909,9 @@ void sched_ttwu_pending(void)
 	raw_spin_lock_irqsave(&rq->lock, flags);
 
 	while (llist) {
-		int wake_flags = 0;
-
 		p = llist_entry(llist, struct task_struct, wake_entry);
 		llist = llist_next(llist);
-
-		if (p->sched_remote_wakeup)
-			wake_flags = WF_MIGRATED;
-
-		ttwu_do_activate(rq, p, wake_flags);
+		ttwu_do_activate(rq, p, 0);
 	}
 
 	raw_spin_unlock_irqrestore(&rq->lock, flags);
@@ -1961,11 +1955,9 @@ void scheduler_ipi(void)
 	irq_exit();
 }
 
-static void ttwu_queue_remote(struct task_struct *p, int cpu, int wake_flags)
+static void ttwu_queue_remote(struct task_struct *p, int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);
-
-	p->sched_remote_wakeup = !!(wake_flags & WF_MIGRATED);
 
 	if (llist_add(&p->wake_entry, &cpu_rq(cpu)->wake_list)) {
 		if (!set_nr_if_polling(rq->idle))
@@ -2005,20 +1997,20 @@ bool cpus_share_cache(int this_cpu, int that_cpu)
 }
 #endif /* CONFIG_SMP */
 
-static void ttwu_queue(struct task_struct *p, int cpu, int wake_flags)
+static void ttwu_queue(struct task_struct *p, int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);
 
 #if defined(CONFIG_SMP)
 	if (sched_feat(TTWU_QUEUE) && !cpus_share_cache(smp_processor_id(), cpu)) {
 		sched_clock_cpu(cpu); /* sync clocks x-cpu */
-		ttwu_queue_remote(p, cpu, wake_flags);
+		ttwu_queue_remote(p, cpu);
 		return;
 	}
 #endif
 
 	raw_spin_lock(&rq->lock);
-	ttwu_do_activate(rq, p, wake_flags);
+	ttwu_do_activate(rq, p, 0);
 	raw_spin_unlock(&rq->lock);
 }
 
