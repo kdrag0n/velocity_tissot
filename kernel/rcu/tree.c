@@ -200,10 +200,6 @@ static const int gp_cleanup_delay;
  */
 #define PER_RCU_NODE_PERIOD 3	/* Number of grace periods between delays. */
 
-/* rcuc/rcub kthread realtime priority */
-static int kthread_prio = CONFIG_RCU_KTHREAD_PRIO;
-module_param(kthread_prio, int, 0644);
-
 /*
  * Track the rcutorture test sequence number and the update version
  * number within a given test.  The rcutorture_testseq is incremented
