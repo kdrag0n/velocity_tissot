@@ -1480,8 +1480,6 @@ static inline void sub_nr_running(struct rq *rq, unsigned count)
 	struct nr_stats_s *nr_stats = &per_cpu(runqueue_stats, rq->cpu);
 #endif
 
-	sched_update_nr_prod(cpu_of(rq), count, false);
-
 #if defined(CONFIG_INTELLI_HOTPLUG) || defined(CONFIG_LAZYPLUG)
 	write_seqcount_begin(&nr_stats->ave_seqcnt);
 	nr_stats->ave_nr_running = do_avg_nr_running(rq);
