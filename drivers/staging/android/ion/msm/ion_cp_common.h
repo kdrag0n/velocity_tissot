@@ -1,8 +1,5 @@
 /*
- * Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
- * Copyright (c) 2017 Jordan Johnston
- *
- * jordan Johnston <johnstonljordan@gmail.com>
+ * Copyright (c) 2012-2014, 2016, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -38,7 +35,7 @@ struct ion_cp_buffer {
 	/*
 	 * protects secure_cnt for securing.
 	 */
-	struct rt_mutex lock;
+	struct mutex lock;
 	int version;
 	void *data;
 	/*

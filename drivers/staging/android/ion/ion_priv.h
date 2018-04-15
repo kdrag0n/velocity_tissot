@@ -2,10 +2,7 @@
  * drivers/staging/android/ion/ion_priv.h
  *
  * Copyright (C) 2011 Google, Inc.
- * Copyright (c) 2011-2016, The Linux Foundation. All rights reserved.
- * Copyright (c) 2017 Jordan Johnston
- *
- * jordan Johnston <johnstonljordan@gmail.com>
+ * Copyright (c) 2011-2017, The Linux Foundation. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -87,7 +84,7 @@ struct ion_buffer {
 		void *priv_virt;
 		ion_phys_addr_t priv_phys;
 	};
-	struct rt_mutex lock;
+	struct mutex lock;
 	int kmap_cnt;
 	void *vaddr;
 	struct sg_table *sg_table;
@@ -436,7 +433,7 @@ struct ion_page_pool {
 	int nr_unreserved;
 	struct list_head high_items;
 	struct list_head low_items;
-	struct rt_mutex mutex;
+	struct mutex mutex;
 	gfp_t gfp_mask;
 	unsigned int order;
 	struct plist_node list;
