@@ -40,17 +40,6 @@ struct uid_entry {
 	struct hlist_node hash;
 };
 
-static DEFINE_RT_MUTEX(uid_lock); /* uid_hash_table */
-
-struct uid_entry {
-	uid_t uid;
-	unsigned int dead_max_states;
-	unsigned int alive_max_states;
-	u64 *dead_time_in_state;
-	u64 *alive_time_in_state;
-	struct hlist_node hash;
-};
-
 struct cpufreq_stats {
 	unsigned int cpu;
 	unsigned int total_trans;
