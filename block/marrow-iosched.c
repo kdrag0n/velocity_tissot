@@ -31,6 +31,8 @@ static const int async_write_expire = 450;	/* ditto for write async, these limit
 static const int fifo_batch = 16;		/* # of sequential requests treated as one by the above parameters. */
 static const int writes_starved = 4;		/* max times reads can starve a write */
 static const int sleep_latency_multiple = 10;	/* multple for expire time when device is asleep */
+
+/* Globalize display_on to save memory */
 static bool display_on = true;
 
 /* Elevator data */
@@ -46,7 +48,7 @@ struct marrow_data {
 	int fifo_expire[2][2];
 	int fifo_batch;
 	int writes_starved;
-  int sleep_latency_multiple;
+	int sleep_latency_multiple;
 };
 
 static inline struct marrow_data *
@@ -62,11 +64,9 @@ marrow_merged_requests(struct request_queue *q, struct request *rq,
 	 * If next expires before rq, assign its expire time to rq
 	 * and move into next position (next will be deleted) in fifo.
 	 */
-	if (!list_empty(&rq->queuelist) && !list_empty(&next->queuelist)) {
-		if (time_before(next->fifo_time, rq->fifo_time)) {
-			list_move(&rq->queuelist, &next->queuelist);
-			rq->fifo_time = next->fifo_time;
-		}
+	if (!list_empty(&rq->queuelist) && !list_empty(&next->queuelist) && time_before(next->fifo_time, rq->fifo_time)) {
+		list_move(&rq->queuelist, &next->queuelist);
+		rq->fifo_time = next->fifo_time;
 	}
 
 	/* Delete next request */
@@ -133,23 +133,21 @@ marrow_choose_expired_request(struct marrow_data *mdata)
 	 * Read requests have priority over write.
 	 */
 
-   if (rq_async_read && rq_sync_read) {
-      if (time_after(rq_sync_read->fifo_time, rq_async_read->fifo_time))
-             return rq_async_read;
-   } else if (rq_async_read) {
-           return rq_async_read;
-   } else if (rq_sync_read) {
-           return rq_sync_read;
-   }
+	if (rq_async_read && rq_sync_read && time_after(rq_sync_read->fifo_time, rq_async_read->fifo_time)) {
+		return rq_async_read;
+	} else if (rq_async_read) {
+		return rq_async_read;
+	} else if (rq_sync_read) {
+		return rq_sync_read;
+	}
 
-   if (rq_async_write && rq_sync_write) {
-     if (time_after(rq_sync_write->fifo_time, rq_async_write->fifo_time))
-             return rq_async_write;
-   } else if (rq_async_write) {
-           return rq_async_write;
-   } else if (rq_sync_write) {
-           return rq_sync_write;
-   }
+	if (rq_async_write && rq_sync_write && time_after(rq_sync_write->fifo_time, rq_async_write->fifo_time)) {
+		return rq_async_write;
+	} else if (rq_async_write) {
+		return rq_async_write;
+	} else if (rq_sync_write) {
+		return rq_sync_write;
+	}
 
 	return NULL;
 }
@@ -181,15 +179,15 @@ marrow_choose_request(struct marrow_data *mdata, int data_dir)
 		if (!list_empty(&async[!data_dir]))
 			return rq_entry_fifo(async[!data_dir].next);
 	} else {
-		if (!list_empty(&async[data_dir]))
-			return rq_entry_fifo(async[data_dir].next);
-		if (!list_empty(&sync[data_dir]))
-			return rq_entry_fifo(sync[data_dir].next);
-
 		if (!list_empty(&async[!data_dir]))
 			return rq_entry_fifo(async[!data_dir].next);
 		if (!list_empty(&sync[!data_dir]))
 			return rq_entry_fifo(sync[!data_dir].next);
+
+		if (!list_empty(&async[data_dir]))
+			return rq_entry_fifo(async[data_dir].next);
+		if (!list_empty(&sync[data_dir]))
+			return rq_entry_fifo(sync[data_dir].next);
 	}
 	
 
@@ -208,10 +206,8 @@ marrow_dispatch_request(struct marrow_data *mdata, struct request *rq)
 
 	if (rq_data_dir(rq)) {
 		mdata->starved = 0;
-	} else {
-		if (!list_empty(&mdata->fifo_list[SYNC][WRITE]) ||
-				!list_empty(&mdata->fifo_list[ASYNC][WRITE]))
-			mdata->starved++;
+	} else if (!list_empty(&mdata->fifo_list[SYNC][WRITE]) || !list_empty(&mdata->fifo_list[ASYNC][WRITE])) {
+		mdata->starved++;
 	}
 }
 
