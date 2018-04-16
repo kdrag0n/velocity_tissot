@@ -2,15 +2,17 @@
  * Marrow I/O Scheduler
  * Based on Maple.
  *
- * Copyright (C) 2018 Draco <tylernij@gmail.com>
+ * Copyright (C) 2018 Draco <tylernij@gmail.com> and Khronodragon <dev@khronodragon.com>
  * 	     (C) 2016 Joe Marrows <joe@frap129.org>
  *
- * Marrow is based on Maple, a first-in-first-out algorith scheduler which is bias towards read requests.
- * Marrow prioritizes read speed during screen-on time, but write speeds during screen-off time. This
- * allows background tasks such as app updates and data saving to execute with higher performance, since 
- * touch latency is not an issue while the screen is off. Additionally, read requests are biased towards 
- * sync rather than async. This allows more intensive requests such as app launching and benchmarking to 
- * eliminate latency.
+ * Marrow is a dual FIFO scheduler which is contextually biased towards read or write requests.
+ * Synchronous requests are executed before asynchronous ones and expire faster because
+ * they block the requesting thread, while asynchronous ones can wait.
+ *
+ * When the screen is on, read requests are preferred for faster app loading and reduced latency.
+ * When the screen is off, write requests are preferred because latency doesn't matter, and processes may commit their data to disk. App and system update speeds are also improved.
+ *
+ * Benchmark scores are also naturally boosted because they are generally synchronous.
  */
 #include <linux/blkdev.h>
 #include <linux/elevator.h>
@@ -25,18 +27,14 @@
 enum { ASYNC, SYNC };
 
 /* Tunables */
-static const int sync_read_expire = 200;	/* max time before a read sync is submitted. */
+static const int sync_read_expire = 180;	/* max time before a read sync is submitted. */
 static const int sync_write_expire = 450;	/* max time before a write sync is submitted. */
-static const int async_read_expire = 350;	/* ditto for read async, these limits are SOFT! */
+static const int async_read_expire = 300;	/* ditto for read async, these limits are SOFT! */
 static const int async_write_expire = 550;	/* ditto for write async, these limits are SOFT! */
-static const int fifo_batch = 8;		/* # of sequential requests treated as one by the above parameters. */
-static const int writes_starved = 4;		/* max times reads can starve a write */
+static const int fifo_batch = 10;		/* # of sequential requests treated as one by the above parameters. */
+static const int writes_starved = 6;		/* max times reads can starve a write */
 static const int sleep_latency_multiple = 10;	/* multple for expire time when device is asleep */
 
-/* 
- * Globalize display_on to save memory 
- * Additionally, assume likely() for is_display_on(), since it will just optimize speeds
- */
 static bool display_on = true;
 struct marrow_data *mdata;
 static int sync;
@@ -93,7 +91,7 @@ marrow_add_request(struct request_queue *q, struct request *rq)
 	 * expire time.
 	 */
 
-   	/* inrease expiration when device is asleep */
+   	/* increase expiration when device is asleep */
    	unsigned int fifo_expire_suspended = mdata->fifo_expire[sync][dir] * sleep_latency_multiple;
    	if (likely(display_on && mdata->fifo_expire[sync][dir])) {
    		rq->fifo_time = jiffies + mdata->fifo_expire[sync][dir];
@@ -110,14 +108,14 @@ marrow_expired_request(struct marrow_data *mdata, int sync, int data_dir)
 	struct list_head *list = &mdata->fifo_list[sync][data_dir];
 	struct request *rq;
 
-	if (list_empty(list))
+	if (unlikely(list_empty(list)))
 		return NULL;
 
 	/* Retrieve request */
 	rq = rq_entry_fifo(list->next);
 
 	/* Request has expired */
-        if (time_after(jiffies, rq->fifo_time))
+    if (unlikely(time_after(jiffies, rq->fifo_time)))
 		return rq;
 
 	return NULL;
@@ -136,24 +134,24 @@ marrow_choose_expired_request(struct marrow_data *mdata)
 
 	/*
 	 * Check expired requests.
-	 * Asynchronous requests have priority over synchronous.
+	 * Synchronous requests have priority over asynchronous.
 	 * Read requests have priority over write.
 	 */
 
-	if (rq_async_read && rq_sync_read && time_after(rq_sync_read->fifo_time, rq_async_read->fifo_time)) {
-		return rq_async_read;
-	} else if (rq_async_read) {
-		return rq_async_read;
+	if (rq_async_read && rq_sync_read) {
+		return rq_sync_read;
 	} else if (rq_sync_read) {
 		return rq_sync_read;
+	} else if (rq_async_read) {
+		return rq_async_read;
 	}
 
-	if (rq_async_write && rq_sync_write && time_after(rq_sync_write->fifo_time, rq_async_write->fifo_time)) {
-		return rq_async_write;
-	} else if (rq_async_write) {
-		return rq_async_write;
+	if (rq_async_write && rq_sync_write) {
+		return rq_sync_write;
 	} else if (rq_sync_write) {
 		return rq_sync_write;
+	} else if (rq_async_write) {
+		return rq_async_write;
 	}
 
 	return NULL;
@@ -180,7 +178,7 @@ marrow_choose_request(struct marrow_data *mdata, int data_dir)
 			return rq_entry_fifo(sync[data_dir].next);
 		if (!list_empty(&async[data_dir]))
 			return rq_entry_fifo(async[data_dir].next);
-		
+
 		if (!list_empty(&sync[!data_dir]))
 			return rq_entry_fifo(sync[!data_dir].next);
 		if (!list_empty(&async[!data_dir]))
@@ -196,7 +194,7 @@ marrow_choose_request(struct marrow_data *mdata, int data_dir)
 		if (!list_empty(&sync[data_dir]))
 			return rq_entry_fifo(sync[data_dir].next);
 	}
-	
+
 
 	return NULL;
 }
@@ -229,18 +227,18 @@ marrow_dispatch_requests(struct request_queue *q, int force)
 	 * Retrieve any expired request after a batch of
 	 * sequential requests.
 	 */
-	if (mdata->batched >= mdata->fifo_batch)
+	if (likely(mdata->batched >= mdata->fifo_batch))
 		rq = marrow_choose_expired_request(mdata);
 
 	/* Retrieve request */
-	if (!rq) {
+	if (likely(!rq)) {
 		display_on = is_display_on();
 		/* Treat writes fairly while suspended, otherwise allow them to be starved */
 		if (likely(display_on && mdata->starved >= mdata->writes_starved || !display_on && mdata->starved >= 1))
 			data_dir = WRITE;
 
 		rq = marrow_choose_request(mdata, data_dir);
-		if (!rq) return 0;
+		if (unlikely(!rq)) return 0;
 	}
 
 	/* Dispatch request */
@@ -282,12 +280,12 @@ static int marrow_init_queue(struct request_queue *q, struct elevator_type *e)
 	struct elevator_queue *eq;
 
 	eq = elevator_alloc(q, e);
-	if (!eq)
+	if (unlikely(!eq))
 		return -ENOMEM;
 
 	/* Allocate structure */
 	mdata = kmalloc_node(sizeof(*mdata), GFP_KERNEL, q->node);
-	if (!mdata) {
+	if (unlikely(!mdata)) {
 		kobject_put(&eq->kobj);
 		return -ENOMEM;
 	}
@@ -434,7 +432,7 @@ static void __exit marrow_exit(void)
 module_init(marrow_init);
 module_exit(marrow_exit);
 
-MODULE_AUTHOR("Draco");
+MODULE_AUTHOR("Draco & kdragon");
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Marrow I/O Scheduler");
 MODULE_VERSION("1.0");
