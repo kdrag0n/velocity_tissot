@@ -63,7 +63,7 @@ marrow_get_data(struct request_queue *q) {
 	return q->elevator->elevator_data;
 }
 
-static void
+static inline void
 marrow_merged_requests(struct request_queue *q, struct request *rq,
 		    struct request *next)
 {
@@ -80,7 +80,7 @@ marrow_merged_requests(struct request_queue *q, struct request *rq,
 	rq_fifo_clear(next);
 }
 
-static void
+static inline void
 marrow_add_request(struct request_queue *q, struct request *rq)
 {
 	mdata = marrow_get_data(q);
@@ -104,7 +104,7 @@ marrow_add_request(struct request_queue *q, struct request *rq)
    	}
 }
 
-static struct request *
+static inline struct request *
 marrow_expired_request(struct marrow_data *mdata, int sync, int data_dir)
 {
 	struct list_head *list = &mdata->fifo_list[sync][data_dir];
@@ -218,7 +218,7 @@ marrow_dispatch_request(struct marrow_data *mdata, struct request *rq)
 	}
 }
 
-static int
+static inline int
 marrow_dispatch_requests(struct request_queue *q, int force)
 {
 	mdata = marrow_get_data(q);
@@ -249,7 +249,7 @@ marrow_dispatch_requests(struct request_queue *q, int force)
 	return 1;
 }
 
-static struct request *
+static inline struct request *
 marrow_former_request(struct request_queue *q, struct request *rq)
 {
 	mdata = marrow_get_data(q);
@@ -263,7 +263,7 @@ marrow_former_request(struct request_queue *q, struct request *rq)
 	return list_entry(rq->queuelist.prev, struct request, queuelist);
 }
 
-static struct request *
+static inline struct request *
 marrow_latter_request(struct request_queue *q, struct request *rq)
 {
 	mdata = marrow_get_data(q);
@@ -315,7 +315,7 @@ static int marrow_init_queue(struct request_queue *q, struct elevator_type *e)
 	return 0;
 }
 
-static void
+static inline void
 marrow_exit_queue(struct elevator_queue *e)
 {
 	mdata = e->elevator_data;
@@ -328,13 +328,13 @@ marrow_exit_queue(struct elevator_queue *e)
  * sysfs code
  */
 
-static ssize_t
+static inline ssize_t
 marrow_var_show(int var, char *page)
 {
 	return sprintf(page, "%d\n", var);
 }
 
-static ssize_t
+static inline ssize_t
 marrow_var_store(int *var, const char *page, size_t count)
 {
 	char *p = (char *) page;
@@ -344,7 +344,7 @@ marrow_var_store(int *var, const char *page, size_t count)
 }
 
 #define SHOW_FUNCTION(__FUNC, __VAR, __CONV)				\
-static ssize_t __FUNC(struct elevator_queue *e, char *page)		\
+static inline ssize_t __FUNC(struct elevator_queue *e, char *page)		\
 {									\
 	mdata = e->elevator_data;			\
 	int __data = __VAR;						\
@@ -362,7 +362,7 @@ SHOW_FUNCTION(marrow_sleep_latency_multiple_show, mdata->sleep_latency_multiple,
 #undef SHOW_FUNCTION
 
 #define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
-static ssize_t __FUNC(struct elevator_queue *e, const char *page, size_t count)	\
+static inline ssize_t __FUNC(struct elevator_queue *e, const char *page, size_t count)	\
 {									\
 	mdata = e->elevator_data;			\
 	int __data;							\
@@ -417,7 +417,7 @@ static struct elevator_type iosched_marrow = {
 	.elevator_owner = THIS_MODULE,
 };
 
-static int __init marrow_init(void)
+static inline int __init marrow_init(void)
 {
 	/* Register elevator */
 	elv_register(&iosched_marrow);
@@ -425,7 +425,7 @@ static int __init marrow_init(void)
 	return 0;
 }
 
-static void __exit marrow_exit(void)
+static inline void __exit marrow_exit(void)
 {
 	/* Unregister elevator */
 	elv_unregister(&iosched_marrow);
