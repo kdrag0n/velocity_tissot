@@ -29,12 +29,18 @@ static const int sync_read_expire = 200;	/* max time before a read sync is submi
 static const int sync_write_expire = 450;	/* max time before a write sync is submitted. */
 static const int async_read_expire = 350;	/* ditto for read async, these limits are SOFT! */
 static const int async_write_expire = 550;	/* ditto for write async, these limits are SOFT! */
-static const int fifo_batch = 16;		/* # of sequential requests treated as one by the above parameters. */
+static const int fifo_batch = 8;		/* # of sequential requests treated as one by the above parameters. */
 static const int writes_starved = 4;		/* max times reads can starve a write */
 static const int sleep_latency_multiple = 10;	/* multple for expire time when device is asleep */
 
-/* Globalize display_on to save memory */
+/* 
+ * Globalize display_on to save memory 
+ * Additionally, assume likely() for is_display_on(), since it will just optimize speeds
+ */
 static bool display_on = true;
+struct marrow_data *mdata;
+static int sync;
+static int data_dir;
 
 /* Elevator data */
 struct marrow_data {
@@ -77,8 +83,8 @@ marrow_merged_requests(struct request_queue *q, struct request *rq,
 static void
 marrow_add_request(struct request_queue *q, struct request *rq)
 {
-	struct marrow_data *mdata = marrow_get_data(q);
-	const int sync = rq_is_sync(rq);
+	mdata = marrow_get_data(q);
+	sync = rq_is_sync(rq);
 	const int dir = rq_data_dir(rq);
 	display_on = is_display_on();
 
@@ -89,7 +95,7 @@ marrow_add_request(struct request_queue *q, struct request *rq)
 
    	/* inrease expiration when device is asleep */
    	unsigned int fifo_expire_suspended = mdata->fifo_expire[sync][dir] * sleep_latency_multiple;
-   	if (display_on && mdata->fifo_expire[sync][dir]) {
+   	if (likely(display_on && mdata->fifo_expire[sync][dir])) {
    		rq->fifo_time = jiffies + mdata->fifo_expire[sync][dir];
    		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
    	} else if (!display_on && fifo_expire_suspended) {
@@ -169,7 +175,7 @@ marrow_choose_request(struct marrow_data *mdata, int data_dir)
 	 * Asynchronous requests have priority over synchronous.
 	 * Read requests have priority over write.
 	 */
-	if (display_on) {
+	if (likely(display_on)) {
 		if (!list_empty(&sync[data_dir]))
 			return rq_entry_fifo(sync[data_dir].next);
 		if (!list_empty(&async[data_dir]))
@@ -215,10 +221,9 @@ marrow_dispatch_request(struct marrow_data *mdata, struct request *rq)
 static int
 marrow_dispatch_requests(struct request_queue *q, int force)
 {
-	struct marrow_data *mdata = marrow_get_data(q);
+	mdata = marrow_get_data(q);
 	struct request *rq = NULL;
 	int data_dir = READ;
-	display_on = is_display_on();
 
 	/*
 	 * Retrieve any expired request after a batch of
@@ -229,15 +234,13 @@ marrow_dispatch_requests(struct request_queue *q, int force)
 
 	/* Retrieve request */
 	if (!rq) {
+		display_on = is_display_on();
 		/* Treat writes fairly while suspended, otherwise allow them to be starved */
-		if (display_on && mdata->starved >= mdata->writes_starved)
-			data_dir = WRITE;
-		else if (!display_on && mdata->starved >= 1)
+		if (likely(display_on && mdata->starved >= mdata->writes_starved || !display_on && mdata->starved >= 1))
 			data_dir = WRITE;
 
 		rq = marrow_choose_request(mdata, data_dir);
-		if (!rq)
-			return 0;
+		if (!rq) return 0;
 	}
 
 	/* Dispatch request */
@@ -249,9 +252,9 @@ marrow_dispatch_requests(struct request_queue *q, int force)
 static struct request *
 marrow_former_request(struct request_queue *q, struct request *rq)
 {
-	struct marrow_data *mdata = marrow_get_data(q);
-	const int sync = rq_is_sync(rq);
-	const int data_dir = rq_data_dir(rq);
+	mdata = marrow_get_data(q);
+	sync = rq_is_sync(rq);
+	data_dir = rq_data_dir(rq);
 
 	if (rq->queuelist.prev == &mdata->fifo_list[sync][data_dir])
 		return NULL;
@@ -263,9 +266,9 @@ marrow_former_request(struct request_queue *q, struct request *rq)
 static struct request *
 marrow_latter_request(struct request_queue *q, struct request *rq)
 {
-	struct marrow_data *mdata = marrow_get_data(q);
-	const int sync = rq_is_sync(rq);
-	const int data_dir = rq_data_dir(rq);
+	mdata = marrow_get_data(q);
+	sync = rq_is_sync(rq);
+	data_dir = rq_data_dir(rq);
 
 	if (rq->queuelist.next == &mdata->fifo_list[sync][data_dir])
 		return NULL;
@@ -276,7 +279,6 @@ marrow_latter_request(struct request_queue *q, struct request *rq)
 
 static int marrow_init_queue(struct request_queue *q, struct elevator_type *e)
 {
-	struct marrow_data *mdata;
 	struct elevator_queue *eq;
 
 	eq = elevator_alloc(q, e);
@@ -316,7 +318,7 @@ static int marrow_init_queue(struct request_queue *q, struct elevator_type *e)
 static void
 marrow_exit_queue(struct elevator_queue *e)
 {
-	struct marrow_data *mdata = e->elevator_data;
+	mdata = e->elevator_data;
 
 	/* Free structure */
 	kfree(mdata);
@@ -344,7 +346,7 @@ marrow_var_store(int *var, const char *page, size_t count)
 #define SHOW_FUNCTION(__FUNC, __VAR, __CONV)				\
 static ssize_t __FUNC(struct elevator_queue *e, char *page)		\
 {									\
-	struct marrow_data *mdata = e->elevator_data;			\
+	mdata = e->elevator_data;			\
 	int __data = __VAR;						\
 	if (__CONV)							\
 		__data = jiffies_to_msecs(__data);			\
@@ -362,7 +364,7 @@ SHOW_FUNCTION(marrow_sleep_latency_multiple_show, mdata->sleep_latency_multiple,
 #define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
 static ssize_t __FUNC(struct elevator_queue *e, const char *page, size_t count)	\
 {									\
-	struct marrow_data *mdata = e->elevator_data;			\
+	mdata = e->elevator_data;			\
 	int __data;							\
 	int ret = marrow_var_store(&__data, (page), count);		\
 	if (__data < (MIN))						\
@@ -395,7 +397,7 @@ static struct elv_fs_entry marrow_attrs[] = {
 	DD_ATTR(async_write_expire),
 	DD_ATTR(fifo_batch),
 	DD_ATTR(writes_starved),
-  DD_ATTR(sleep_latency_multiple),
+  	DD_ATTR(sleep_latency_multiple),
 	__ATTR_NULL
 };
 
