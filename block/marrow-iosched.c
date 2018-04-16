@@ -1,15 +1,16 @@
 /*
  * Marrow I/O Scheduler
- * Based on Zen and SIO.
+ * Based on Maple.
  *
- * Copyright (C) 2016 Joe Marrows <joe@frap129.org>
- *           (C) 2012 Brandon Berhent <bbedward@gmail.com
- *           (C) 2012 Miguel Boton <mboton@gmail.com>
+ * Copyright (C) 2018 Draco <tylernij@gmail.com>
+ * 	     (C) 2016 Joe Marrows <joe@frap129.org>
  *
- * Marrow uses a first come first serve style algorithm with seperated read/write
- * handling to allow for read biases. By prioritizing reads, simple tasks should improve
- * in performance. Marrow also uses hooks for the powersuspend driver to increase
- * expirations when power is suspended to decrease workload.
+ * Marrow is based on Maple, a first-in-first-out algorith scheduler which is bias towards read requests.
+ * Marrow prioritizes read speed during screen-on time, but write speeds during screen-off time. This
+ * allows background tasks such as app updates and data saving to execute with higher performance, since 
+ * touch latency is not an issue while the screen is off. Additionally, read requests are biased towards 
+ * sync rather than async. This allows more intensive requests such as app launching and benchmarking to 
+ * eliminate latency.
  */
 #include <linux/blkdev.h>
 #include <linux/elevator.h>
@@ -19,15 +20,15 @@
 #include <linux/slab.h>
 #include <linux/display_state.h>
 
-#define MARROW_IOSCHED_PATCHLEVEL	(8)
+#define MARROW_IOSCHED_PATCHLEVEL	(1)
 
 enum { ASYNC, SYNC };
 
 /* Tunables */
-static const int sync_read_expire = 350;	/* max time before a read sync is submitted. */
-static const int sync_write_expire = 550;	/* max time before a write sync is submitted. */
-static const int async_read_expire = 250;	/* ditto for read async, these limits are SOFT! */
-static const int async_write_expire = 450;	/* ditto for write async, these limits are SOFT! */
+static const int sync_read_expire = 200;	/* max time before a read sync is submitted. */
+static const int sync_write_expire = 450;	/* max time before a write sync is submitted. */
+static const int async_read_expire = 350;	/* ditto for read async, these limits are SOFT! */
+static const int async_write_expire = 550;	/* ditto for write async, these limits are SOFT! */
 static const int fifo_batch = 16;		/* # of sequential requests treated as one by the above parameters. */
 static const int writes_starved = 4;		/* max times reads can starve a write */
 static const int sleep_latency_multiple = 10;	/* multple for expire time when device is asleep */
