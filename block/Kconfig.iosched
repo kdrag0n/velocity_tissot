@@ -110,6 +110,10 @@ config IOSCHED_ROW
 	tristate "ROW I/O scheduler"
 	default n
 
+config IOSCHED_MARROW
+	tristate "Marrow I/O scheduler"
+	default n
+
 config CGROUP_BFQIO
 	bool "BFQ hierarchical scheduling support"
 	depends on CGROUPS && IOSCHED_BFQ=y
@@ -160,6 +164,8 @@ choice
 	config DEFAULT_ROW
 		bool "ROW" if IOSCHED_ROW=y
 
+	config DEFAULT_MARROW
+		bool "Marrow" if IOSCHED_MARROW=y
 endchoice
 
 config DEFAULT_IOSCHED
@@ -173,6 +179,7 @@ config DEFAULT_IOSCHED
 	default "sio" if DEFAULT_SIO
 	default "maple" if DEFAULT_MAPLE
 	default "row" if DEFAULT_ROW
+	default "marrow" if DEFAULT_MARROW
 endmenu
 
 endif
