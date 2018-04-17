@@ -55,6 +55,8 @@
 
 #define FTS_VENDOR_1    0x3b
 #define FTS_VENDOR_2    0x51
+#define FOCALTECH_AUTO_UPGRADE 1
+
 #if defined(FOCALTECH_AUTO_UPGRADE)
 static unsigned char firmware_data_vendor1[] = {
 	#include "HQ_AL1512_C6_FT5435_Biel0x3b_Ver0a_20170119_app.i"
