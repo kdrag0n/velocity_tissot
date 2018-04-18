@@ -660,7 +660,7 @@ static inline void do_partner_resume_event(struct work_struct *work)
 
 
 static struct devfreq_governor msm_adreno_tz = {
-	.name = "msm-adreno-tz",
+	.name = "microfreq",
 	.get_target_freq = tz_get_target_freq,
 	.event_handler = tz_handler,
 };
