@@ -31,7 +31,7 @@ static DEFINE_SPINLOCK(suspend_lock);
  * FLOOR is 5msec to capture up to 3 re-draws
  * per frame for 60fps content.
  */
-#define FLOOR		        2000
+#define FLOOR		        5000
 /*
  * MIN_BUSY is 1 msec for the sample to be sent
  */
@@ -42,7 +42,7 @@ static DEFINE_SPINLOCK(suspend_lock);
  * CEILING is 50msec, larger than any standard
  * frame length, but less than the idle timer.
  */
-#define CEILING			20000
+#define CEILING			10000
 #define TZ_RESET_ID		0x3
 #define TZ_UPDATE_ID		0x4
 #define TZ_INIT_ID		0x6
@@ -659,25 +659,25 @@ static inline void do_partner_resume_event(struct work_struct *work)
 }
 
 
-static struct devfreq_governor msm_adreno_tz = {
-	.name = "msm-adreno-tz",
+static struct devfreq_governor microfreq = {
+	.name = "microfreq",
 	.get_target_freq = tz_get_target_freq,
 	.event_handler = tz_handler,
 };
 
-static inline int __init msm_adreno_tz_init(void)
+static inline int __init microfreq_init(void)
 {
-	workqueue = create_freezable_workqueue("governor_msm_adreno_tz_wq");
+	workqueue = create_freezable_workqueue("governor_microfreq_wq");
 	if (workqueue == NULL)
 		return -ENOMEM;
 
-	return devfreq_add_governor(&msm_adreno_tz);
+	return devfreq_add_governor(&microfreq);
 }
-subsys_initcall(msm_adreno_tz_init);
+subsys_initcall(microfreq_init);
 
-static inline void __exit msm_adreno_tz_exit(void)
+static inline void __exit microfreq_exit(void)
 {
-	int ret = devfreq_remove_governor(&msm_adreno_tz);
+	int ret = devfreq_remove_governor(&microfreq);
 	if (ret)
 		pr_err(TAG "failed to remove governor %d\n", ret);
 
@@ -685,6 +685,6 @@ static inline void __exit msm_adreno_tz_exit(void)
 		destroy_workqueue(workqueue);
 }
 
-module_exit(msm_adreno_tz_exit);
+module_exit(microfreq_exit);
 
 MODULE_LICENSE("GPLv2");
