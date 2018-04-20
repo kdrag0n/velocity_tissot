@@ -1,18 +1,18 @@
 /*
  * Marrow I/O Scheduler
- * Based on Maple.
  *
  * Copyright (C) 2018 Draco <tylernij@gmail.com> and Khronodragon <dev@khronodragon.com>
- * 	     (C) 2016 Joe Marrows <joe@frap129.org>
- *
- * Marrow is a dual FIFO scheduler which is contextually biased towards read or write requests.
- * Synchronous requests are executed before asynchronous ones and expire faster because
- * they block the requesting thread, while asynchronous ones can wait.
+ * 
+ * Marrow is a duel FIFO scheduler that uses a seesaw algorithm to satisfy read / write equalibrium.
+ * When the number of write requests overpower read requests, execute enough write requests to allow read speeds to overtake writes again.
+ * 
+ * EXAMPLE:
+ * {r, w, r, w, w, w, w} <r = 2, w = 5>
+ * Here, the write requests are overtaking the read requests, so they must be executed until they are equal.
+ * {r ,w, r, w} <r = 2, w = 2>
  *
  * When the screen is on, read requests are preferred for faster app loading and reduced latency.
  * When the screen is off, write requests are preferred because latency doesn't matter, and processes may commit their data to disk. App and system update speeds are also improved.
- *
- * Benchmark scores are also naturally boosted because they are generally synchronous.
  */
 #include <linux/blkdev.h>
 #include <linux/elevator.h>
@@ -27,10 +27,6 @@
 enum { ASYNC, SYNC };
 
 /* Tunables */
-static const int sync_read_expire = 25;		/* max time before a read sync is submitted. */
-static const int sync_write_expire = 800;	/* max time before a write sync is submitted. */
-static const int async_read_expire = 50;	/* ditto for read async, these limits are SOFT! */
-static const int async_write_expire = 1000;	/* ditto for write async, these limits are SOFT! */
 static const int fifo_batch = 4;		/* # of sequential requests treated as one by the above parameters. */
 static const int fifo_batch_screen_off = 40;	/* ditto for the fifo_batch for screen off */
 static const int sleep_latency_multiple = 50;	/* multple for expire time when device is asleep */
@@ -44,11 +40,7 @@ struct marrow_data {
 	/* Request queues */
 	struct list_head fifo_list[2][2];
 
-	/* Attributes */
-	unsigned int batched;
-
 	/* Settings */
-	int fifo_expire[2][2];
 	int fifo_batch;
 	int sleep_latency_multiple;
 };
@@ -86,87 +78,7 @@ marrow_add_request(struct request_queue *q, struct request *rq)
 	 * expire time.
 	 */
 
-   	/* increase expiration when device is asleep */
-   	unsigned int fifo_expire_suspended = mdata->fifo_expire[sync][dir] * sleep_latency_multiple;
-   	if (likely(is_display_on() && mdata->fifo_expire[sync][dir])) {
-   		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
-   	} else if (!is_display_on() && fifo_expire_suspended) {
-   		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
-   	}
-}
-
-static struct request *
-marrow_expired_request(struct marrow_data *mdata, int sync, int io_type)
-{
-	struct list_head *list = &mdata->fifo_list[sync][io_type];
-	struct request *rq;
-
-	if (unlikely(list_empty(list)))
-		return NULL;
-
-	/* Retrieve request */
-	rq = rq_entry_fifo(list->next);
-
-	/* Request has expired */
-	if (unlikely(sizeof(&mdata->fifo_list[SYNC][WRITE]) >= sizeof(&mdata->fifo_list[SYNC][READ])))
-		return rq;
-
-	return NULL;
-}
-
-static struct request *
-marrow_choose_expired_request(struct marrow_data *mdata)
-{
-	struct request *rq_sync_read = marrow_expired_request(mdata, SYNC, READ);
-	struct request *rq_sync_write = marrow_expired_request(mdata, SYNC, WRITE);
-	struct request *rq_async_read = marrow_expired_request(mdata, ASYNC, READ);
-	struct request *rq_async_write = marrow_expired_request(mdata, ASYNC, WRITE);
-
-	/* Reset (non-expired-)batch-counter */
-	mdata->batched = 0;
-
-	/*
-	 * Check expired requests.
-	 * Synchronous requests have priority over asynchronous.
-	 * Read requests have priority over write.
-	 * Do not moderate write speeds because we only care about UI latency.
-	 */
-
-	if (likely(is_display_on())) {
-		if (rq_async_read && rq_sync_read) {
-			return rq_sync_read;
-		} else if (rq_sync_read) {
-			return rq_sync_read;
-		} else if (rq_async_read) {
-			return rq_async_read;
-		}
-
-		if (rq_async_write && rq_sync_write) {
-			return rq_sync_write;
-		} else if (rq_sync_write) {
-			return rq_sync_write;
-		} else if (rq_async_write) {
-			return rq_async_write;
-		}
-	} else {
-		if (rq_async_write && rq_sync_write) {
-			return rq_async_write;
-		} else if (rq_async_write) {
-			return rq_async_write;
-		} else if (rq_sync_write) {
-			return rq_sync_write;
-		}
-
-		if (rq_async_read && rq_sync_read) {
-			return rq_async_read;
-		} else if (rq_async_read) {
-			return rq_async_read;
-		} else if (rq_sync_read) {
-			return rq_sync_read;
-		}
-	}
-
-	return NULL;
+   	list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
 }
 
 static struct request *
@@ -174,9 +86,6 @@ marrow_choose_request(struct marrow_data *mdata, int io_type)
 {
 	struct list_head *sync = mdata->fifo_list[SYNC];
 	struct list_head *async = mdata->fifo_list[ASYNC];
-
-	/* Increase (non-expired-)batch-counter */
-	mdata->batched++;
 
 	/*
 	 * Retrieve request from available fifo list.
@@ -227,18 +136,9 @@ marrow_dispatch_requests(struct request_queue *q, int force)
 	struct request *rq = NULL;
 	int io_type = READ;
 
-	/*
-	 * Retrieve any expired request after a batch of
-	 * sequential requests.
-	 * Assume unlikely to accelerate current read requests (less latency).
-	 */
-	if (unlikely(is_display_on() && mdata->batched >= mdata->fifo_batch))
-		rq = marrow_choose_expired_request(mdata);
-
 	/* Retrieve request */
 	if (likely(!rq)) {
-		/* Treat writes fairly while suspended, otherwise pick write only when read feed is empty */
-		if (unlikely(!is_display_on() || (list_empty(&mdata->fifo_list[SYNC][READ]) && list_empty(&mdata->fifo_list[ASYNC][READ]))))
+		if (unlikely(!is_display_on() || sizeof(&mdata->fifo_list[SYNC][WRITE]) > sizeof(&mdata->fifo_list[SYNC][READ]))) // If screen off or writes tip seesaw, allow writes through
 			io_type = WRITE;
 
 		rq = marrow_choose_request(mdata, io_type);
@@ -300,11 +200,6 @@ static inline int marrow_init_queue(struct request_queue *q, struct elevator_typ
 	INIT_LIST_HEAD(&mdata->fifo_list[ASYNC][WRITE]);
 
 	/* Initialize data */
-	mdata->batched = 0;
-	mdata->fifo_expire[SYNC][READ] = sync_read_expire;
-	mdata->fifo_expire[SYNC][WRITE] = sync_write_expire;
-	mdata->fifo_expire[ASYNC][READ] = async_read_expire;
-	mdata->fifo_expire[ASYNC][WRITE] = async_write_expire;
 	mdata->fifo_batch = (is_display_on() ? fifo_batch : fifo_batch_screen_off);
 	mdata->sleep_latency_multiple = sleep_latency_multiple;
 
@@ -334,10 +229,6 @@ static ssize_t __FUNC(struct elevator_queue *e, char *page)		\
 		__data = jiffies_to_msecs(__data);			\
 	return sprintf((page), "%d\n", __data);			\
 }
-SHOW_FUNCTION(marrow_sync_read_expire_show, mdata->fifo_expire[SYNC][READ], 1);
-SHOW_FUNCTION(marrow_sync_write_expire_show, mdata->fifo_expire[SYNC][WRITE], 1);
-SHOW_FUNCTION(marrow_async_read_expire_show, mdata->fifo_expire[ASYNC][READ], 1);
-SHOW_FUNCTION(marrow_async_write_expire_show, mdata->fifo_expire[ASYNC][WRITE], 1);
 SHOW_FUNCTION(marrow_fifo_batch_show, mdata->fifo_batch, 0);
 SHOW_FUNCTION(marrow_sleep_latency_multiple_show, mdata->sleep_latency_multiple, 0);
 #undef SHOW_FUNCTION
@@ -360,10 +251,6 @@ static ssize_t __FUNC(struct elevator_queue *e, const char *page, size_t count)	
 		*(__PTR) = __data;					\
 	return ret;							\
 }
-STORE_FUNCTION(marrow_sync_read_expire_store, &mdata->fifo_expire[SYNC][READ], 0, INT_MAX, 1);
-STORE_FUNCTION(marrow_sync_write_expire_store, &mdata->fifo_expire[SYNC][WRITE], 0, INT_MAX, 1);
-STORE_FUNCTION(marrow_async_read_expire_store, &mdata->fifo_expire[ASYNC][READ], 0, INT_MAX, 1);
-STORE_FUNCTION(marrow_async_write_expire_store, &mdata->fifo_expire[ASYNC][WRITE], 0, INT_MAX, 1);
 STORE_FUNCTION(marrow_fifo_batch_store, &mdata->fifo_batch, 1, INT_MAX, 0);
 STORE_FUNCTION(marrow_sleep_latency_multiple_store, &mdata->sleep_latency_multiple, 1, INT_MAX, 0);
 #undef STORE_FUNCTION
@@ -373,10 +260,6 @@ STORE_FUNCTION(marrow_sleep_latency_multiple_store, &mdata->sleep_latency_multip
 				      marrow_##name##_store)
 
 static struct elv_fs_entry marrow_attrs[] = {
-	DD_ATTR(sync_read_expire),
-	DD_ATTR(sync_write_expire),
-	DD_ATTR(async_read_expire),
-	DD_ATTR(async_write_expire),
 	DD_ATTR(fifo_batch),
   	DD_ATTR(sleep_latency_multiple),
 	__ATTR_NULL
