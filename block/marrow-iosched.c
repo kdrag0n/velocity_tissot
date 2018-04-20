@@ -27,17 +27,17 @@
 enum { ASYNC, SYNC };
 
 /* Tunables */
-static const int sync_read_expire = 100;	/* max time before a read sync is submitted. */
+static const int sync_read_expire = 25;		/* max time before a read sync is submitted. */
 static const int sync_write_expire = 500;	/* max time before a write sync is submitted. */
-static const int async_read_expire = 200;	/* ditto for read async, these limits are SOFT! */
+static const int async_read_expire = 100;	/* ditto for read async, these limits are SOFT! */
 static const int async_write_expire = 600;	/* ditto for write async, these limits are SOFT! */
-static const int fifo_batch = 20;		/* # of sequential requests treated as one by the above parameters. */
-static const int sleep_latency_multiple = 20;	/* multple for expire time when device is asleep */
+static const int fifo_batch = 2;		/* # of sequential requests treated as one by the above parameters. */
+static const int fifo_batch_screen_off = 20;	/* ditto for the fifo_batch for screen off */
+static const int sleep_latency_multiple = 50;	/* multple for expire time when device is asleep */
 
-static bool display_on = true;
 struct marrow_data *mdata;
 static int sync;
-static int data_dir;
+static int io_type;
 
 /* Elevator data */
 struct marrow_data {
@@ -81,7 +81,6 @@ marrow_add_request(struct request_queue *q, struct request *rq)
 	mdata = marrow_get_data(q);
 	sync = rq_is_sync(rq);
 	const int dir = rq_data_dir(rq);
-	display_on = is_display_on();
 
 	/*
 	 * Add request to the proper fifo list and set its
@@ -90,19 +89,19 @@ marrow_add_request(struct request_queue *q, struct request *rq)
 
    	/* increase expiration when device is asleep */
    	unsigned int fifo_expire_suspended = mdata->fifo_expire[sync][dir] * sleep_latency_multiple;
-   	if (likely(display_on && mdata->fifo_expire[sync][dir])) {
+   	if (likely(is_display_on() && mdata->fifo_expire[sync][dir])) {
    		rq->fifo_time = jiffies + mdata->fifo_expire[sync][dir];
    		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
-   	} else if (!display_on && fifo_expire_suspended) {
+   	} else if (!is_display_on() && fifo_expire_suspended) {
 		rq->fifo_time = jiffies + mdata->fifo_expire[sync][dir];
    		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
    	}
 }
 
 static struct request *
-marrow_expired_request(struct marrow_data *mdata, int sync, int data_dir)
+marrow_expired_request(struct marrow_data *mdata, int sync, int io_type)
 {
-	struct list_head *list = &mdata->fifo_list[sync][data_dir];
+	struct list_head *list = &mdata->fifo_list[sync][io_type];
 	struct request *rq;
 
 	if (unlikely(list_empty(list)))
@@ -112,7 +111,7 @@ marrow_expired_request(struct marrow_data *mdata, int sync, int data_dir)
 	rq = rq_entry_fifo(list->next);
 
 	/* Request has expired */
-    if (unlikely(time_after(jiffies, rq->fifo_time)))
+    	if (unlikely(time_after(jiffies, rq->fifo_time)))
 		return rq;
 
 	return NULL;
@@ -133,63 +132,80 @@ marrow_choose_expired_request(struct marrow_data *mdata)
 	 * Check expired requests.
 	 * Synchronous requests have priority over asynchronous.
 	 * Read requests have priority over write.
+	 * Do not moderate write speeds because we only care about UI latency.
 	 */
 
-	if (rq_async_read && rq_sync_read) {
-		return rq_sync_read;
-	} else if (rq_sync_read) {
-		return rq_sync_read;
-	} else if (rq_async_read) {
-		return rq_async_read;
-	}
+	if (likely(is_display_on())) {
+		if (rq_async_read && rq_sync_read) {
+			return rq_sync_read;
+		} else if (rq_sync_read) {
+			return rq_sync_read;
+		} else if (rq_async_read) {
+			return rq_async_read;
+		}
 
-	if (rq_async_write && rq_sync_write) {
-		return rq_sync_write;
-	} else if (rq_sync_write) {
-		return rq_sync_write;
-	} else if (rq_async_write) {
-		return rq_async_write;
+		if (rq_async_write && rq_sync_write) {
+			return rq_sync_write;
+		} else if (rq_sync_write) {
+			return rq_sync_write;
+		} else if (rq_async_write) {
+			return rq_async_write;
+		}
+	} else {
+		if (rq_async_write && rq_sync_write) {
+			return rq_async_write;
+		} else if (rq_async_write) {
+			return rq_async_write;
+		} else if (rq_sync_write) {
+			return rq_sync_write;
+		}
+
+		if (rq_async_read && rq_sync_read) {
+			return rq_async_read;
+		} else if (rq_async_read) {
+			return rq_async_read;
+		} else if (rq_sync_read) {
+			return rq_sync_read;
+		}
 	}
 
 	return NULL;
 }
 
 static struct request *
-marrow_choose_request(struct marrow_data *mdata, int data_dir)
+marrow_choose_request(struct marrow_data *mdata, int io_type)
 {
 	struct list_head *sync = mdata->fifo_list[SYNC];
 	struct list_head *async = mdata->fifo_list[ASYNC];
-	display_on = is_display_on();
 
 	/* Increase (non-expired-)batch-counter */
 	mdata->batched++;
 
-
 	/*
 	 * Retrieve request from available fifo list.
-	 * Asynchronous requests have priority over synchronous.
+	 * Synchronous requests have priority over asynchronous.
 	 * Read requests have priority over write.
 	 */
-	if (likely(display_on)) {
-		if (!list_empty(&sync[data_dir]))
-			return rq_entry_fifo(sync[data_dir].next);
-		if (!list_empty(&async[data_dir]))
-			return rq_entry_fifo(async[data_dir].next);
+	if (likely(is_display_on())) {
+		if (!list_empty(&sync[io_type]))
+			return rq_entry_fifo(sync[io_type].next);
+		if (!list_empty(&async[io_type]))
+			return rq_entry_fifo(async[io_type].next);
 
-		if (!list_empty(&sync[!data_dir]))
-			return rq_entry_fifo(sync[!data_dir].next);
-		if (!list_empty(&async[!data_dir]))
-			return rq_entry_fifo(async[!data_dir].next);
+		if (!list_empty(&sync[!io_type]))
+			return rq_entry_fifo(sync[!io_type].next);
+		if (!list_empty(&async[!io_type]))
+			return rq_entry_fifo(async[!io_type].next);
 	} else {
-		if (!list_empty(&async[!data_dir]))
-			return rq_entry_fifo(async[!data_dir].next);
-		if (!list_empty(&sync[!data_dir]))
-			return rq_entry_fifo(sync[!data_dir].next);
+		if (!list_empty(&async[!io_type]))
+			return rq_entry_fifo(async[!io_type].next);
+		if (!list_empty(&sync[!io_type]))
+			return rq_entry_fifo(sync[!io_type].next);
 
-		if (!list_empty(&async[data_dir]))
-			return rq_entry_fifo(async[data_dir].next);
-		if (!list_empty(&sync[data_dir]))
-			return rq_entry_fifo(sync[data_dir].next);
+		if (!list_empty(&async[io_type]))
+			return rq_entry_fifo(async[io_type].next);
+		if (!list_empty(&sync[io_type]))
+			return rq_entry_fifo(sync[io_type].next);
 	}
 
 
@@ -212,23 +228,23 @@ marrow_dispatch_requests(struct request_queue *q, int force)
 {
 	mdata = marrow_get_data(q);
 	struct request *rq = NULL;
-	int data_dir = READ;
+	int io_type = READ;
 
 	/*
 	 * Retrieve any expired request after a batch of
 	 * sequential requests.
+	 * Assume unlikely to accelerate current read requests (less latency).
 	 */
-	if (unlikely(mdata->batched >= mdata->fifo_batch))
+	if (unlikely(is_display_on() && mdata->batched >= mdata->fifo_batch))
 		rq = marrow_choose_expired_request(mdata);
 
 	/* Retrieve request */
 	if (likely(!rq)) {
-		display_on = is_display_on();
-		/* Treat writes fairly while suspended, otherwise starve */
-		if (unlikely(!display_on || (list_empty(&mdata->fifo_list[SYNC][READ]) && list_empty(&mdata->fifo_list[ASYNC][READ]))))
-			data_dir = WRITE;
+		/* Treat writes fairly while suspended, otherwise pick when read feed is empty */
+		if (unlikely(!is_display_on() || (list_empty(&mdata->fifo_list[SYNC][READ]) && list_empty(&mdata->fifo_list[ASYNC][READ]))))
+			io_type = WRITE;
 
-		rq = marrow_choose_request(mdata, data_dir);
+		rq = marrow_choose_request(mdata, io_type);
 		if (unlikely(!rq)) return 0;
 	}
 
@@ -243,9 +259,9 @@ marrow_former_request(struct request_queue *q, struct request *rq)
 {
 	mdata = marrow_get_data(q);
 	sync = rq_is_sync(rq);
-	data_dir = rq_data_dir(rq);
+	io_type = rq_data_dir(rq);
 
-	if (unlikely(rq->queuelist.prev == &mdata->fifo_list[sync][data_dir]))
+	if (unlikely(rq->queuelist.prev == &mdata->fifo_list[sync][io_type]))
 		return NULL;
 
 	/* Return former request */
@@ -257,9 +273,9 @@ marrow_latter_request(struct request_queue *q, struct request *rq)
 {
 	mdata = marrow_get_data(q);
 	sync = rq_is_sync(rq);
-	data_dir = rq_data_dir(rq);
+	io_type = rq_data_dir(rq);
 
-	if (unlikely(rq->queuelist.next == &mdata->fifo_list[sync][data_dir]))
+	if (unlikely(rq->queuelist.next == &mdata->fifo_list[sync][io_type]))
 		return NULL;
 
 	/* Return latter request */
@@ -268,9 +284,7 @@ marrow_latter_request(struct request_queue *q, struct request *rq)
 
 static inline int marrow_init_queue(struct request_queue *q, struct elevator_type *e)
 {
-	struct elevator_queue *eq;
-
-	eq = elevator_alloc(q, e);
+	struct elevator_queue *eq = elevator_alloc(q, e);
 	if (unlikely(!eq))
 		return -ENOMEM;
 
@@ -294,7 +308,7 @@ static inline int marrow_init_queue(struct request_queue *q, struct elevator_typ
 	mdata->fifo_expire[SYNC][WRITE] = sync_write_expire;
 	mdata->fifo_expire[ASYNC][READ] = async_read_expire;
 	mdata->fifo_expire[ASYNC][WRITE] = async_write_expire;
-	mdata->fifo_batch = fifo_batch;
+	mdata->fifo_batch = (is_display_on() ? fifo_batch : fifo_batch_screen_off);
 	mdata->sleep_latency_multiple = sleep_latency_multiple;
 
 	spin_lock_irq(q->queue_lock);
@@ -307,29 +321,12 @@ static inline void
 marrow_exit_queue(struct elevator_queue *e)
 {
 	mdata = e->elevator_data;
-
-	/* Free structure */
 	kfree(mdata);
 }
 
 /*
  * sysfs code
  */
-
-static inline ssize_t
-marrow_var_show(int var, char *page)
-{
-	return sprintf(page, "%d\n", var);
-}
-
-static inline ssize_t
-marrow_var_store(int *var, const char *page, size_t count)
-{
-	char *p = (char *) page;
-
-	*var = simple_strtol(p, &p, 10);
-	return count;
-}
 
 #define SHOW_FUNCTION(__FUNC, __VAR, __CONV)				\
 static ssize_t __FUNC(struct elevator_queue *e, char *page)		\
@@ -338,7 +335,7 @@ static ssize_t __FUNC(struct elevator_queue *e, char *page)		\
 	int __data = __VAR;						\
 	if (__CONV)							\
 		__data = jiffies_to_msecs(__data);			\
-	return marrow_var_show(__data, (page));			\
+	return sprintf((page), "%d\n", __data);			\
 }
 SHOW_FUNCTION(marrow_sync_read_expire_show, mdata->fifo_expire[SYNC][READ], 1);
 SHOW_FUNCTION(marrow_sync_write_expire_show, mdata->fifo_expire[SYNC][WRITE], 1);
@@ -352,8 +349,10 @@ SHOW_FUNCTION(marrow_sleep_latency_multiple_show, mdata->sleep_latency_multiple,
 static ssize_t __FUNC(struct elevator_queue *e, const char *page, size_t count)	\
 {									\
 	mdata = e->elevator_data;			\
-	int __data;							\
-	int ret = marrow_var_store(&__data, (page), count);		\
+	int __data;					\
+	char *p = (char *) page;			\
+	__data = simple_strtol(p, &p, 10);			\
+	int ret = count;					\
 	if (__data < (MIN))						\
 		__data = (MIN);						\
 	else if (__data > (MAX))					\
@@ -404,15 +403,12 @@ static struct elevator_type iosched_marrow = {
 
 static inline int __init marrow_init(void)
 {
-	/* Register elevator */
 	elv_register(&iosched_marrow);
-
 	return 0;
 }
 
 static inline void __exit marrow_exit(void)
 {
-	/* Unregister elevator */
 	elv_unregister(&iosched_marrow);
 }
 
