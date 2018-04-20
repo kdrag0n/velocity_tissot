@@ -28,11 +28,11 @@ enum { ASYNC, SYNC };
 
 /* Tunables */
 static const int sync_read_expire = 25;		/* max time before a read sync is submitted. */
-static const int sync_write_expire = 500;	/* max time before a write sync is submitted. */
-static const int async_read_expire = 100;	/* ditto for read async, these limits are SOFT! */
-static const int async_write_expire = 600;	/* ditto for write async, these limits are SOFT! */
-static const int fifo_batch = 2;		/* # of sequential requests treated as one by the above parameters. */
-static const int fifo_batch_screen_off = 20;	/* ditto for the fifo_batch for screen off */
+static const int sync_write_expire = 800;	/* max time before a write sync is submitted. */
+static const int async_read_expire = 50;	/* ditto for read async, these limits are SOFT! */
+static const int async_write_expire = 1000;	/* ditto for write async, these limits are SOFT! */
+static const int fifo_batch = 4;		/* # of sequential requests treated as one by the above parameters. */
+static const int fifo_batch_screen_off = 40;	/* ditto for the fifo_batch for screen off */
 static const int sleep_latency_multiple = 50;	/* multple for expire time when device is asleep */
 
 struct marrow_data *mdata;
@@ -66,9 +66,8 @@ marrow_merged_requests(struct request_queue *q, struct request *rq,
 	 * If next expires before rq, assign its expire time to rq
 	 * and move into next position (next will be deleted) in fifo.
 	 */
-	if (!list_empty(&rq->queuelist) && !list_empty(&next->queuelist) && time_before(next->fifo_time, rq->fifo_time)) {
+	if (!list_empty(&rq->queuelist) && !list_empty(&next->queuelist)) {
 		list_move(&rq->queuelist, &next->queuelist);
-		rq->fifo_time = next->fifo_time;
 	}
 
 	/* Delete next request */
@@ -90,10 +89,8 @@ marrow_add_request(struct request_queue *q, struct request *rq)
    	/* increase expiration when device is asleep */
    	unsigned int fifo_expire_suspended = mdata->fifo_expire[sync][dir] * sleep_latency_multiple;
    	if (likely(is_display_on() && mdata->fifo_expire[sync][dir])) {
-   		rq->fifo_time = jiffies + mdata->fifo_expire[sync][dir];
    		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
    	} else if (!is_display_on() && fifo_expire_suspended) {
-		rq->fifo_time = jiffies + mdata->fifo_expire[sync][dir];
    		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
    	}
 }
@@ -111,7 +108,7 @@ marrow_expired_request(struct marrow_data *mdata, int sync, int io_type)
 	rq = rq_entry_fifo(list->next);
 
 	/* Request has expired */
-    	if (unlikely(time_after(jiffies, rq->fifo_time)))
+	if (unlikely(sizeof(&mdata->fifo_list[SYNC][WRITE]) >= sizeof(&mdata->fifo_list[SYNC][READ])))
 		return rq;
 
 	return NULL;
@@ -240,7 +237,7 @@ marrow_dispatch_requests(struct request_queue *q, int force)
 
 	/* Retrieve request */
 	if (likely(!rq)) {
-		/* Treat writes fairly while suspended, otherwise pick when read feed is empty */
+		/* Treat writes fairly while suspended, otherwise pick write only when read feed is empty */
 		if (unlikely(!is_display_on() || (list_empty(&mdata->fifo_list[SYNC][READ]) && list_empty(&mdata->fifo_list[ASYNC][READ]))))
 			io_type = WRITE;
 
