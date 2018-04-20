@@ -428,17 +428,6 @@ struct wcd_mbhc {
 	struct mutex hphr_pa_lock;
 
 	unsigned long intr_status;
-	bool force_linein;
-//HTC_AUD_START
-	/* Add attribute on sysfs for debugging */
-	struct class *htc_accessory_class;
-	struct device *headset_dev;
-	struct device *debug_dev;
-	u16 debug_reg[50];
-	int debug_reg_count;
-	int pcb_id; //WA for semi device due to mbhc is not ready
-	int bom_id; //WA for semi device due to mbhc is not ready
-//HTC_AUD_END
 };
 #define WCD_MBHC_CAL_SIZE(buttons, rload) ( \
 	sizeof(struct wcd_mbhc_general_cfg) + \
