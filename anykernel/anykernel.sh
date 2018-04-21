@@ -1,10 +1,20 @@
 # AnyKernel2 Ramdisk Mod Script
 # osm0sis @ xda-developers
 
+cat <<EOF
+__     __   _            _ _
+\ \   / /__| | ___   ___(_) |_ _   _
+ \ \ / / _ \ |/ _ \ / __| | __| | | |
+  \ V /  __/ | (_) | (__| | |_| |_| |
+   \_/ \___|_|\___/ \___|_|\__|\__, |
+                               |___/
+
+-------------------------------------
+EOF
 ## AnyKernel setup
 # begin properties
 properties() {
-kernel.string=Enlight Kernel by kdragon and tytydraco
+kernel.string=Velocity Kernel by kdragon and tytydraco
 do.devicecheck=1
 do.modules=0
 do.cleanup=1

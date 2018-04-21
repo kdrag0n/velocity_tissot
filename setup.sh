@@ -32,8 +32,8 @@ export LD_LIBRARY_PATH=$tc_clang/lib64:$LD_LIBRARY_PATH
 export PATH=$CLANG_PREBUILT_BIN:$GCC_TOOLCHAIN/bin:$PATH
 export REAL_COMPILER=clang
 export SUBARCH=arm64
-export KBUILD_BUILD_USER=enlight
-export KBUILD_BUILD_HOST=universe
+export KBUILD_BUILD_USER=velocity
+export KBUILD_BUILD_HOST=kernel
 export TOOL_CHAIN_PATH=$tc_gcc/bin/aarch64-linux-gnu-
 export CLANG_TCHAIN=$CLANG_PREBUILT_BIN/clang
 export CLANG_VERSION="$(${CLANG_TCHAIN} --version|head -n1|cut -d'(' -f1,4|sed -e 's/^\s*//' -e 's/\s*$//')"
@@ -49,12 +49,12 @@ alias make="make CC=$CLANG_TCHAIN CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=
 # helpers
 mkzip() {
     rm anykernel/Image.gz-dtb
-    rm enlight_kernel.zip
+    rm velocity_kernel.zip
     cat arch/arm64/boot/Image.gz arch/arm/boot/dts/qcom/msm8953-qrd-sku3.dtb > anykernel/Image.gz-dtb
     cd anykernel
-    zip -r ../enlight_kernel.zip *
+    zip -r ../velocity_kernel.zip *
     cd ..
-    echo 'Done. Output is enlight_kernel.zip'
+    echo 'Done. Output is velocity_kernel.zip'
 }
 
 cleanbuild() {
