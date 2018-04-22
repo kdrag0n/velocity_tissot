@@ -28,10 +28,10 @@ static DEFINE_SPINLOCK(tz_lock);
 static DEFINE_SPINLOCK(sample_lock);
 static DEFINE_SPINLOCK(suspend_lock);
 /*
- * FLOOR is 5msec to capture up to 3 re-draws
+ * FLOOR is 10msec to capture up to 6 re-draws
  * per frame for 60fps content.
  */
-#define FLOOR		        5000
+#define FLOOR		        10000
 /*
  * MIN_BUSY is 1 msec for the sample to be sent
  */
@@ -39,7 +39,7 @@ static DEFINE_SPINLOCK(suspend_lock);
 #define MAX_TZ_VERSION		0
 
 /*
- * CEILING is 50msec, larger than any standard
+ * CEILING is 10msec, larger than any standard
  * frame length, but less than the idle timer.
  */
 #define CEILING			10000
@@ -56,7 +56,7 @@ static DEFINE_SPINLOCK(suspend_lock);
 #define TZ_V2_INIT_CA_ID_64        0xC
 #define TZ_V2_UPDATE_WITH_CA_ID_64 0xD
 
-#define TAG "microactive: "
+#define TAG "microfreq: "
 
 static u64 suspend_time;
 static u64 suspend_start;
@@ -687,4 +687,5 @@ static inline void __exit microfreq_exit(void)
 
 module_exit(microfreq_exit);
 
+MODULE_AUTHOR("Draco");
 MODULE_LICENSE("GPLv2");
