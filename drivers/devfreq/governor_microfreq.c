@@ -30,13 +30,19 @@ static DEFINE_SPINLOCK(sample_lock);
 static DEFINE_SPINLOCK(suspend_lock);
 
 /*
+ * FLOOR is 5msec to capture up to 3 re-draws
+ * per frame for 60fps content.
+ */
+#define FLOOR		        5000
+
+/*
  * MIN_BUSY is 0.1 msec for the sample to be sent
  */
-#define MIN_BUSY		100
+#define MIN_BUSY		1000
 #define MAX_TZ_VERSION		0
 
 // Minimum work time to bump frequency
-#define CEILING			1000
+#define CEILING			50000
 #define TZ_RESET_ID		0x3
 #define TZ_UPDATE_ID		0x4
 #define TZ_INIT_ID		0x6
@@ -50,7 +56,7 @@ static DEFINE_SPINLOCK(suspend_lock);
 #define TZ_V2_INIT_CA_ID_64        0xC
 #define TZ_V2_UPDATE_WITH_CA_ID_64 0xD
 
-#define MIN_GPU_BOOST_TIME 200000 /* Min time between GPU freq increases */
+#define MIN_GPU_BOOST_TIME 5000000 /* Min time between GPU freq increases */
 #define TAG "microfreq: "
 
 
@@ -67,9 +73,14 @@ static void do_partner_resume_event(struct work_struct *work);
 static struct workqueue_struct *workqueue;
 
 static bool gpu_boost_pending = false;
-static u64 next_gpu_boost_time;
+static u64 next_gpu_boost_time = 0;
+
 static void gpu_boost() {
-	gpu_boost_pending = true;
+	if (next_gpu_boost_time == 0) {
+		printk(TAG "BOOST TRIGGERED #1");
+		gpu_boost_pending = true;
+		next_gpu_boost_time = jiffies + usecs_to_jiffies(MIN_GPU_BOOST_TIME);
+	}
 }
 
 static void mf_input_event(struct input_handle *handle,
@@ -456,6 +467,18 @@ static inline int tz_get_target_freq(struct devfreq *devfreq, unsigned long *fre
 	/* Update the GPU load statistics */
 	compute_work_load(&stats, priv, devfreq);
 
+	/*
+	 * Do not waste CPU cycles running this algorithm if
+	 * the GPU just started, or if less than FLOOR time
+	 * has passed since the last run or the gpu hasn't been
+	 * busier than MIN_BUSY.
+	 */
+	if ((stats.total_time == 0) ||
+		(priv->bin.total_time < FLOOR) ||
+		(unsigned int) priv->bin.busy_time < MIN_BUSY) {
+		return 0;
+	}
+
 	level = devfreq_get_freq_level(devfreq, stats.current_frequency);
 	if (level < 0) {
 		pr_err(TAG "bad freq %ld\n", stats.current_frequency);
@@ -466,12 +489,13 @@ static inline int tz_get_target_freq(struct devfreq *devfreq, unsigned long *fre
 		priv->bin.last_level = level;
 	}
 
-	if (gpu_boost_pending && jiffies >= next_gpu_boost_time) {
+	/* GPU boost in input */
+	if (gpu_boost_pending && jiffies >= next_gpu_boost_time && next_gpu_boost_time != 0) {
 		val = -level;
 		gpu_boost_pending = false;
-		next_gpu_boost_time = (jiffies + usecs_to_jiffies(MIN_GPU_BOOST_TIME));
-	} else if (!priv->disable_busy_time_burst &&
-			priv->bin.busy_time > CEILING) {
+		next_gpu_boost_time = 0;
+		printk(TAG "BOOST TRIGGERED #2");	
+	} else if (!priv->disable_busy_time_burst && priv->bin.busy_time > CEILING) {
 		val = -level;
 	} else {
 #ifdef CONFIG_SIMPLE_GPU_ALGORITHM
