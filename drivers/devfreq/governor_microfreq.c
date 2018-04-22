@@ -22,27 +22,21 @@
 #include <linux/msm_adreno_devfreq.h>
 #include <asm/cacheflush.h>
 #include <soc/qcom/scm.h>
+#include <linux/input.h>
 #include "governor.h"
 
 static DEFINE_SPINLOCK(tz_lock);
 static DEFINE_SPINLOCK(sample_lock);
 static DEFINE_SPINLOCK(suspend_lock);
-/*
- * FLOOR is 10msec to capture up to 6 re-draws
- * per frame for 60fps content.
- */
-#define FLOOR		        10000
-/*
- * MIN_BUSY is 1 msec for the sample to be sent
- */
-#define MIN_BUSY		1000
-#define MAX_TZ_VERSION		0
 
 /*
- * CEILING is 10msec, larger than any standard
- * frame length, but less than the idle timer.
+ * MIN_BUSY is 0.1 msec for the sample to be sent
  */
-#define CEILING			10000
+#define MIN_BUSY		100
+#define MAX_TZ_VERSION		0
+
+// Minimum work time to bump frequency
+#define CEILING			1000
 #define TZ_RESET_ID		0x3
 #define TZ_UPDATE_ID		0x4
 #define TZ_INIT_ID		0x6
@@ -56,7 +50,9 @@ static DEFINE_SPINLOCK(suspend_lock);
 #define TZ_V2_INIT_CA_ID_64        0xC
 #define TZ_V2_UPDATE_WITH_CA_ID_64 0xD
 
+#define MIN_GPU_BOOST_TIME 200000 /* Min time between GPU freq increases */
 #define TAG "microfreq: "
+
 
 static u64 suspend_time;
 static u64 suspend_start;
@@ -69,6 +65,84 @@ static void do_partner_suspend_event(struct work_struct *work);
 static void do_partner_resume_event(struct work_struct *work);
 
 static struct workqueue_struct *workqueue;
+
+static bool gpu_boost_pending = false;
+static u64 next_gpu_boost_time;
+static void gpu_boost() {
+	gpu_boost_pending = true;
+}
+
+static void mf_input_event(struct input_handle *handle,
+		unsigned int type,
+		unsigned int code, int value)
+{
+	if (type == EV_SYN && code == SYN_REPORT) {
+		gpu_boost();
+	}
+}
+
+static int mf_input_connect(struct input_handler *handler,
+		struct input_dev *dev, const struct input_device_id *id)
+{
+	struct input_handle *handle;
+	int error;
+
+	handle = kzalloc(sizeof(struct input_handle), GFP_KERNEL);
+	if (!handle)
+		return -ENOMEM;
+
+	handle->dev = dev;
+	handle->handler = handler;
+	handle->name = "cpufreq";
+
+	error = input_register_handle(handle);
+	if (error)
+		goto err2;
+
+	error = input_open_device(handle);
+	if (error)
+		goto err1;
+
+	return 0;
+err1:
+	input_unregister_handle(handle);
+err2:
+	kfree(handle);
+	return error;
+}
+
+static void mf_input_disconnect(struct input_handle *handle)
+{
+	input_close_device(handle);
+	input_unregister_handle(handle);
+	kfree(handle);
+}
+
+static const struct input_device_id mf_ids[] = {
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
+			 INPUT_DEVICE_ID_MATCH_ABSBIT,
+		.evbit = { BIT_MASK(EV_ABS) },
+		.absbit = { [BIT_WORD(ABS_MT_POSITION_X)] =
+			    BIT_MASK(ABS_MT_POSITION_X) |
+			    BIT_MASK(ABS_MT_POSITION_Y) },
+	}, /* multi-touch touchscreen */
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_KEYBIT |
+			 INPUT_DEVICE_ID_MATCH_ABSBIT,
+		.keybit = { [BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH) },
+		.absbit = { [BIT_WORD(ABS_X)] =
+			    BIT_MASK(ABS_X) | BIT_MASK(ABS_Y) },
+	}, /* touchpad */
+};
+
+static struct input_handler mf_input_handler = {
+	.event		= mf_input_event,
+	.connect	= mf_input_connect,
+	.disconnect	= mf_input_disconnect,
+	.name		= "microfreq",
+	.id_table	= mf_ids,
+};
 
 /*
  * Returns GPU suspend time in millisecond.
@@ -381,17 +455,6 @@ static inline int tz_get_target_freq(struct devfreq *devfreq, unsigned long *fre
 
 	/* Update the GPU load statistics */
 	compute_work_load(&stats, priv, devfreq);
-	/*
-	 * Do not waste CPU cycles running this algorithm if
-	 * the GPU just started, or if less than FLOOR time
-	 * has passed since the last run or the gpu hasn't been
-	 * busier than MIN_BUSY.
-	 */
-	if ((stats.total_time == 0) ||
-		(priv->bin.total_time < FLOOR) ||
-		(unsigned int) priv->bin.busy_time < MIN_BUSY) {
-		return 0;
-	}
 
 	level = devfreq_get_freq_level(devfreq, stats.current_frequency);
 	if (level < 0) {
@@ -403,13 +466,13 @@ static inline int tz_get_target_freq(struct devfreq *devfreq, unsigned long *fre
 		priv->bin.last_level = level;
 	}
 
-	/*
-	 * If there is an extended block of busy processing,
-	 * increase frequency.  Otherwise run the normal algorithm.
-	 */
-	if (!priv->disable_busy_time_burst &&
+	if (gpu_boost_pending && jiffies >= next_gpu_boost_time) {
+		val = -level;
+		gpu_boost_pending = false;
+		next_gpu_boost_time = (jiffies + usecs_to_jiffies(MIN_GPU_BOOST_TIME));
+	} else if (!priv->disable_busy_time_burst &&
 			priv->bin.busy_time > CEILING) {
-		val = -1 * level;
+		val = -level;
 	} else {
 #ifdef CONFIG_SIMPLE_GPU_ALGORITHM
 		if (simple_gpu_active) {
@@ -478,6 +541,8 @@ static inline int tz_start(struct devfreq *devfreq)
 	unsigned int tz_pwrlevels[MSM_ADRENO_MAX_PWRLEVELS + 1];
 	unsigned int version;
 
+	input_register_handler(&mf_input_handler);
+
 	struct msm_adreno_extended_profile *gpu_profile = container_of(
 					(devfreq->profile),
 					struct msm_adreno_extended_profile,
@@ -531,6 +596,8 @@ static inline int tz_start(struct devfreq *devfreq)
 static inline int tz_stop(struct devfreq *devfreq)
 {
 	struct devfreq_msm_adreno_tz_data *priv = devfreq->data;
+
+	input_unregister_handler(&mf_input_handler);
 
 	kgsl_devfreq_del_notifier(devfreq->dev.parent, &priv->nb);
 
