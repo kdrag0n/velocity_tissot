@@ -18,10 +18,10 @@ export CXXFLAGS="-Ofast"
 # helpers
 mkzip() {
     rm anykernel/Image.gz-dtb
-    rm enlight_kernel.zip
+    rm velocity_kernel.zip
     cp arch/arm64/boot/Image.gz-dtb anykernel/
     cd anykernel
-    zip -r ../enlight_kernel.zip *
+    zip -r ../velocity_kernel.zip *
     cd ..
-    echo 'Done. Output is enlight_kernel.zip'
+    echo 'Done. Output is velocity_kernel.zip'
 }
