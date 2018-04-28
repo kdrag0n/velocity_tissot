@@ -12,8 +12,10 @@
  * {r ,w, r, w} <r = 2, w = 2>
  *
  * When the screen is on, read requests are preferred for faster app loading and reduced latency.
- * When the screen is off, write requests are preferred because latency doesn't matter, and processes may commit their data to disk. App and system update speeds are also improved.
+ * When the screen is off, write requests are preferred because latency doesn't matter, and processes may commit their data to disk.
+ * App and system update speeds are also improved.
  */
+
 #include <linux/blkdev.h>
 #include <linux/elevator.h>
 #include <linux/bio.h>
@@ -27,30 +29,24 @@
 enum { ASYNC, SYNC };
 
 /* Tunables */
-static const int fifo_batch = 4;		/* # of sequential requests treated as one by the above parameters. */
-static const int fifo_batch_screen_off = 40;	/* ditto for the fifo_batch for screen off */
-static const int sleep_latency_multiple = 50;	/* multple for expire time when device is asleep */
+#define FIFO_BATCH 4			/* # of sequential requests treated as one by the above parameters. */
+#define FIFO_BATCH_SCREEN_OFF 40	/* ditto for the fifo_batch for screen off */
 
 struct marrow_data *mdata;
 static int sync;
-static int io_type;
+static int data_dir;
 
-/* Elevator data */
 struct marrow_data {
-	/* Request queues */
 	struct list_head fifo_list[2][2];
-
-	/* Settings */
 	int fifo_batch;
-	int sleep_latency_multiple;
 };
 
-static inline struct marrow_data *
+static __always_inline struct marrow_data *
 marrow_get_data(struct request_queue *q) {
 	return q->elevator->elevator_data;
 }
 
-static inline void
+static __always_inline void
 marrow_merged_requests(struct request_queue *q, struct request *rq,
 		    struct request *next)
 {
@@ -74,15 +70,14 @@ marrow_add_request(struct request_queue *q, struct request *rq)
 	const int dir = rq_data_dir(rq);
 
 	/*
-	 * Add request to the proper fifo list and set its
-	 * expire time.
+	 * Add request to the proper fifo list
 	 */
 
    	list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
 }
 
 static struct request *
-marrow_choose_request(struct marrow_data *mdata, int io_type)
+marrow_choose_request(struct marrow_data *mdata, int data_dir)
 {
 	struct list_head *sync = mdata->fifo_list[SYNC];
 	struct list_head *async = mdata->fifo_list[ASYNC];
@@ -93,59 +88,55 @@ marrow_choose_request(struct marrow_data *mdata, int io_type)
 	 * Read requests have priority over write.
 	 */
 	if (likely(is_display_on())) {
-		if (!list_empty(&sync[io_type]))
-			return rq_entry_fifo(sync[io_type].next);
-		if (!list_empty(&async[io_type]))
-			return rq_entry_fifo(async[io_type].next);
+		if (!list_empty(&sync[data_dir]))
+			return rq_entry_fifo(sync[data_dir].next);
+		if (!list_empty(&async[data_dir]))
+			return rq_entry_fifo(async[data_dir].next);
 
-		if (!list_empty(&sync[!io_type]))
-			return rq_entry_fifo(sync[!io_type].next);
-		if (!list_empty(&async[!io_type]))
-			return rq_entry_fifo(async[!io_type].next);
+		if (!list_empty(&sync[!data_dir]))
+			return rq_entry_fifo(sync[!data_dir].next);
+		if (!list_empty(&async[!data_dir]))
+			return rq_entry_fifo(async[!data_dir].next);
 	} else {
-		if (!list_empty(&async[!io_type]))
-			return rq_entry_fifo(async[!io_type].next);
-		if (!list_empty(&sync[!io_type]))
-			return rq_entry_fifo(sync[!io_type].next);
+		if (!list_empty(&async[!data_dir]))
+			return rq_entry_fifo(async[!data_dir].next);
+		if (!list_empty(&sync[!data_dir]))
+			return rq_entry_fifo(sync[!data_dir].next);
 
-		if (!list_empty(&async[io_type]))
-			return rq_entry_fifo(async[io_type].next);
-		if (!list_empty(&sync[io_type]))
-			return rq_entry_fifo(sync[io_type].next);
+		if (!list_empty(&async[data_dir]))
+			return rq_entry_fifo(async[data_dir].next);
+		if (!list_empty(&sync[data_dir]))
+			return rq_entry_fifo(sync[data_dir].next);
 	}
 
 
 	return NULL;
 }
 
-static inline void
+static __always_inline void
 marrow_dispatch_request(struct marrow_data *mdata, struct request *rq)
 {
-	/*
-	 * Remove the request from the fifo list
-	 * and dispatch it.
-	 */
 	rq_fifo_clear(rq);
 	elv_dispatch_add_tail(rq->q, rq);
 }
 
-static inline int
+static __always_inline int
 marrow_dispatch_requests(struct request_queue *q, int force)
 {
 	mdata = marrow_get_data(q);
 	struct request *rq = NULL;
-	int io_type = READ;
+	int data_dir = READ;
 
 	/* Retrieve request */
 	if (likely(!rq)) {
-		if (unlikely(!is_display_on() || sizeof(&mdata->fifo_list[SYNC][WRITE]) > sizeof(&mdata->fifo_list[SYNC][READ]))) // If screen off or writes tip seesaw, allow writes through
-			io_type = WRITE;
+		/* If screen off or writes tip seesaw, allow writes through */
+		if (unlikely(!is_display_on() || sizeof(&mdata->fifo_list[SYNC][WRITE]) > sizeof(&mdata->fifo_list[SYNC][READ])))
+			data_dir = WRITE;
 
-		rq = marrow_choose_request(mdata, io_type);
+		rq = marrow_choose_request(mdata, data_dir);
 		if (unlikely(!rq)) return 0;
 	}
 
-	/* Dispatch request */
 	marrow_dispatch_request(mdata, rq);
 
 	return 1;
@@ -156,12 +147,11 @@ marrow_former_request(struct request_queue *q, struct request *rq)
 {
 	mdata = marrow_get_data(q);
 	sync = rq_is_sync(rq);
-	io_type = rq_data_dir(rq);
+	data_dir = rq_data_dir(rq);
 
-	if (unlikely(rq->queuelist.prev == &mdata->fifo_list[sync][io_type]))
+	if (unlikely(rq->queuelist.prev == &mdata->fifo_list[sync][data_dir]))
 		return NULL;
 
-	/* Return former request */
 	return list_entry(rq->queuelist.prev, struct request, queuelist);
 }
 
@@ -170,16 +160,16 @@ marrow_latter_request(struct request_queue *q, struct request *rq)
 {
 	mdata = marrow_get_data(q);
 	sync = rq_is_sync(rq);
-	io_type = rq_data_dir(rq);
+	data_dir = rq_data_dir(rq);
 
-	if (unlikely(rq->queuelist.next == &mdata->fifo_list[sync][io_type]))
+	if (unlikely(rq->queuelist.next == &mdata->fifo_list[sync][data_dir]))
 		return NULL;
 
 	/* Return latter request */
 	return list_entry(rq->queuelist.next, struct request, queuelist);
 }
 
-static inline int marrow_init_queue(struct request_queue *q, struct elevator_type *e)
+static __always_inline int marrow_init_queue(struct request_queue *q, struct elevator_type *e)
 {
 	struct elevator_queue *eq = elevator_alloc(q, e);
 	if (unlikely(!eq))
@@ -200,8 +190,7 @@ static inline int marrow_init_queue(struct request_queue *q, struct elevator_typ
 	INIT_LIST_HEAD(&mdata->fifo_list[ASYNC][WRITE]);
 
 	/* Initialize data */
-	mdata->fifo_batch = (is_display_on() ? fifo_batch : fifo_batch_screen_off);
-	mdata->sleep_latency_multiple = sleep_latency_multiple;
+	mdata->fifo_batch = (is_display_on() ? FIFO_BATCH : FIFO_BATCH_SCREEN_OFF);
 
 	spin_lock_irq(q->queue_lock);
 	q->elevator = eq;
@@ -209,7 +198,7 @@ static inline int marrow_init_queue(struct request_queue *q, struct elevator_typ
 	return 0;
 }
 
-static inline void
+static __always_inline void
 marrow_exit_queue(struct elevator_queue *e)
 {
 	mdata = e->elevator_data;
@@ -223,24 +212,23 @@ marrow_exit_queue(struct elevator_queue *e)
 #define SHOW_FUNCTION(__FUNC, __VAR, __CONV)				\
 static ssize_t __FUNC(struct elevator_queue *e, char *page)		\
 {									\
-	mdata = e->elevator_data;			\
+	mdata = e->elevator_data;					\
 	int __data = __VAR;						\
 	if (__CONV)							\
 		__data = jiffies_to_msecs(__data);			\
-	return sprintf((page), "%d\n", __data);			\
+	return sprintf((page), "%d\n", __data);				\
 }
 SHOW_FUNCTION(marrow_fifo_batch_show, mdata->fifo_batch, 0);
-SHOW_FUNCTION(marrow_sleep_latency_multiple_show, mdata->sleep_latency_multiple, 0);
 #undef SHOW_FUNCTION
 
 #define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
 static ssize_t __FUNC(struct elevator_queue *e, const char *page, size_t count)	\
 {									\
-	mdata = e->elevator_data;			\
-	int __data;					\
-	char *p = (char *) page;			\
-	__data = simple_strtol(p, &p, 10);			\
-	int ret = count;					\
+	mdata = e->elevator_data;					\
+	int __data;							\
+	char *p = (char *) page;					\
+	__data = simple_strtol(p, &p, 10);				\
+	int ret = count;						\
 	if (__data < (MIN))						\
 		__data = (MIN);						\
 	else if (__data > (MAX))					\
@@ -252,7 +240,6 @@ static ssize_t __FUNC(struct elevator_queue *e, const char *page, size_t count)	
 	return ret;							\
 }
 STORE_FUNCTION(marrow_fifo_batch_store, &mdata->fifo_batch, 1, INT_MAX, 0);
-STORE_FUNCTION(marrow_sleep_latency_multiple_store, &mdata->sleep_latency_multiple, 1, INT_MAX, 0);
 #undef STORE_FUNCTION
 
 #define DD_ATTR(name) \
@@ -261,7 +248,6 @@ STORE_FUNCTION(marrow_sleep_latency_multiple_store, &mdata->sleep_latency_multip
 
 static struct elv_fs_entry marrow_attrs[] = {
 	DD_ATTR(fifo_batch),
-  	DD_ATTR(sleep_latency_multiple),
 	__ATTR_NULL
 };
 
@@ -281,13 +267,13 @@ static struct elevator_type iosched_marrow = {
 	.elevator_owner = THIS_MODULE,
 };
 
-static inline int __init marrow_init(void)
+static __always_inline int __init marrow_init(void)
 {
 	elv_register(&iosched_marrow);
 	return 0;
 }
 
-static inline void __exit marrow_exit(void)
+static __always_inline void __exit marrow_exit(void)
 {
 	elv_unregister(&iosched_marrow);
 }
