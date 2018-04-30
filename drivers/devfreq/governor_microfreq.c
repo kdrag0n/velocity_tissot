@@ -16,25 +16,18 @@
 #include <linux/jiffies.h>
 #include "governor.h"
 
-#define TIMEOUT_USECS 1000000
-
 static bool gpu_boost_pending = false;
-static int timeout = 0;
 
-static void gpu_boost() {
-	gpu_boost_pending = true;
-}
-
-static void mf_input_event(struct input_handle *handle,
+static __always_inline void mf_input_event(struct input_handle *handle,
 		unsigned int type,
 		unsigned int code, int value)
 {
 	if (type == EV_SYN && (code == SYN_REPORT || code == SYN_MT_REPORT)) {
-		gpu_boost();
+		gpu_boost_pending = true;
 	}
 }
 
-static int mf_input_connect(struct input_handler *handler,
+static __always_inline int mf_input_connect(struct input_handler *handler,
 		struct input_dev *dev, const struct input_device_id *id)
 {
 	struct input_handle *handle;
@@ -64,7 +57,7 @@ err2:
 	return error;
 }
 
-static void mf_input_disconnect(struct input_handle *handle)
+static __always_inline void mf_input_disconnect(struct input_handle *handle)
 {
 	input_close_device(handle);
 	input_unregister_handle(handle);
@@ -72,21 +65,29 @@ static void mf_input_disconnect(struct input_handle *handle)
 }
 
 static const struct input_device_id mf_ids[] = {
+	/* multi-touch touchscreen */
 	{
 		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
-			 INPUT_DEVICE_ID_MATCH_ABSBIT,
+			INPUT_DEVICE_ID_MATCH_ABSBIT,
 		.evbit = { BIT_MASK(EV_ABS) },
 		.absbit = { [BIT_WORD(ABS_MT_POSITION_X)] =
-			    BIT_MASK(ABS_MT_POSITION_X) |
-			    BIT_MASK(ABS_MT_POSITION_Y) },
-	}, /* multi-touch touchscreen */
+			BIT_MASK(ABS_MT_POSITION_X) |
+			BIT_MASK(ABS_MT_POSITION_Y) },
+	},
+	/* touchpad */
 	{
 		.flags = INPUT_DEVICE_ID_MATCH_KEYBIT |
-			 INPUT_DEVICE_ID_MATCH_ABSBIT,
+			INPUT_DEVICE_ID_MATCH_ABSBIT,
 		.keybit = { [BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH) },
 		.absbit = { [BIT_WORD(ABS_X)] =
-			    BIT_MASK(ABS_X) | BIT_MASK(ABS_Y) },
-	}, /* touchpad */
+			BIT_MASK(ABS_X) | BIT_MASK(ABS_Y) },
+	},
+	/* Keypad */
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT,
+		.evbit = { BIT_MASK(EV_KEY) },
+	},
+	{ },
 };
 
 static struct input_handler mf_input_handler = {
@@ -97,12 +98,10 @@ static struct input_handler mf_input_handler = {
 	.id_table	= mf_ids,
 };
 
-static int devfreq_microfreq_func(struct devfreq *df,
+static __always_inline int devfreq_microfreq_func(struct devfreq *df,
 				    unsigned long *freq,
 				u32 *flag)
 {
-	int usecs = jiffies_to_usecs(jiffies);
-
 	if (gpu_boost_pending) {
 		gpu_boost_pending = false;
 		*freq = df->max_freq;
@@ -113,7 +112,7 @@ static int devfreq_microfreq_func(struct devfreq *df,
 	return 0;
 }
 
-static int devfreq_microfreq_handler(struct devfreq *devfreq,
+static __always_inline int devfreq_microfreq_handler(struct devfreq *devfreq,
 				unsigned int event, void *data)
 {
 	int ret = 0;
@@ -122,18 +121,18 @@ static int devfreq_microfreq_handler(struct devfreq *devfreq,
 	mutex_lock(&devfreq->lock);
 	freq = devfreq->previous_freq;
 	switch (event) {
-	case DEVFREQ_GOV_START:
-		devfreq->profile->target(devfreq->dev.parent,
-				&freq,
-				DEVFREQ_FLAG_WAKEUP_MAXFREQ);
-	case DEVFREQ_GOV_RESUME:
-		ret = update_devfreq(devfreq);
-		break;
-	case DEVFREQ_GOV_SUSPEND:
-		devfreq->profile->target(devfreq->dev.parent,
-				&freq,
-				DEVFREQ_FLAG_WAKEUP_MAXFREQ);
-		break;
+		case DEVFREQ_GOV_START:
+			devfreq->profile->target(devfreq->dev.parent,
+					&freq,
+					DEVFREQ_FLAG_WAKEUP_MAXFREQ);
+		case DEVFREQ_GOV_RESUME:
+			ret = update_devfreq(devfreq);
+			break;
+		case DEVFREQ_GOV_SUSPEND:
+			devfreq->profile->target(devfreq->dev.parent,
+					&freq,
+					DEVFREQ_FLAG_WAKEUP_MAXFREQ);
+			break;
 	}
 	mutex_unlock(&devfreq->lock);
 	return ret;
@@ -145,7 +144,7 @@ static struct devfreq_governor devfreq_microfreq = {
 	.event_handler = devfreq_microfreq_handler,
 };
 
-static int __init devfreq_microfreq_init(void)
+static __always_inline int __init devfreq_microfreq_init(void)
 {
 	input_register_handler(&mf_input_handler);
 
@@ -153,7 +152,7 @@ static int __init devfreq_microfreq_init(void)
 }
 subsys_initcall(devfreq_microfreq_init);
 
-static void __exit devfreq_microfreq_exit(void)
+static __always_inline void __exit devfreq_microfreq_exit(void)
 {
 	int ret;
 
