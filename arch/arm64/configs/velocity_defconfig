@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 3.18.105 Kernel Configuration
+# Linux/arm64 3.18.107 Kernel Configuration
 #
 CONFIG_CUSTOM=y
 CONFIG_ARM64=y
@@ -2749,7 +2749,7 @@ CONFIG_VGA_ARB=y
 CONFIG_VGA_ARB_MAX_GPUS=16
 CONFIG_MSM_KGSL=y
 # CONFIG_MSM_KGSL_CFF_DUMP is not set
-CONFIG_MSM_ADRENO_DEFAULT_GOVERNOR="msm-adreno-tz"
+CONFIG_MSM_ADRENO_DEFAULT_GOVERNOR="microfreq"
 CONFIG_MSM_KGSL_IOMMU=y
 
 #
