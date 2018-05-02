@@ -29,8 +29,9 @@
 enum { ASYNC, SYNC };
 
 /* Tunables */
-#define FIFO_BATCH 4			/* # of sequential requests treated as one by the above parameters. */
-#define FIFO_BATCH_SCREEN_OFF 40	/* ditto for the fifo_batch for screen off */
+#define FIFO_BATCH 		4	/* # of sequential requests treated as one by the above parameters. */
+#define FIFO_BATCH_SCREEN_OFF	40	/* ditto for the fifo_batch for screen off */
+#define READ_MULTIPLIER		1.5 	/* if(WRITE > READ * READ_MULTIPLIER) => do WRITE*/
 
 struct marrow_data *mdata;
 static int sync;
@@ -130,7 +131,8 @@ marrow_dispatch_requests(struct request_queue *q, int force)
 	/* Retrieve request */
 	if (likely(!rq)) {
 		/* If screen off or writes tip seesaw, allow writes through */
-		if (unlikely(!is_display_on() || sizeof(&mdata->fifo_list[SYNC][WRITE]) > sizeof(&mdata->fifo_list[SYNC][READ])))
+		if (unlikely(!is_display_on() || 
+			(sizeof(&mdata->fifo_list[SYNC][WRITE]) * READ_MULTIPLIER) > sizeof(&mdata->fifo_list[SYNC][READ])))
 			data_dir = WRITE;
 
 		rq = marrow_choose_request(mdata, data_dir);
@@ -282,6 +284,6 @@ module_init(marrow_init);
 module_exit(marrow_exit);
 
 MODULE_AUTHOR("Draco & kdragon");
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("GPLv2");
 MODULE_DESCRIPTION("Marrow I/O Scheduler");
 MODULE_VERSION("1.0");
