@@ -16,13 +16,16 @@
 #include <linux/jiffies.h>
 #include "governor.h"
 
+#define DERAMP_MULTIPLIER	5
+#define RAMP_MULTIPLIER		90 	/* Compared against 100 being standard */
+
 static bool gpu_boost_pending = false;
 
 static __always_inline void mf_input_event(struct input_handle *handle,
 		unsigned int type,
 		unsigned int code, int value)
 {
-	if (type == EV_SYN && (code == SYN_REPORT || code == SYN_MT_REPORT)) {
+	if ((type == EV_SYN || type == EV_ABS || type == EV_KEY) && (code == SYN_REPORT || code == SYN_MT_REPORT)) {
 		gpu_boost_pending = true;
 	}
 }
@@ -102,11 +105,36 @@ static __always_inline int devfreq_microfreq_func(struct devfreq *df,
 				    unsigned long *freq,
 				u32 *flag)
 {
+	struct devfreq_dev_status stat;
+	int result = df->profile->get_dev_status(df->dev.parent, &stat);
+	unsigned long long a, b;
+
+	/* keeps stats.private_data == NULL   */
+	if (result) {
+		return result;
+	}
+
+	/* Prevent overflow */
+	if (stat.busy_time >= (1 << 24) || stat.total_time >= (1 << 24)) {
+		stat.busy_time >>= 7;
+		stat.total_time >>= 7;
+	}
+
+	/* Set the desired frequency based on the load */
+	a = stat.busy_time;
+	a *= stat.current_frequency;
+	b = div_u64(a, stat.total_time);
+	b *= 100;
+	b = div_u64(b, (RAMP_MULTIPLIER - DERAMP_MULTIPLIER / 2));
+	*freq = (unsigned long) b;
+
+	if (df->min_freq && *freq < df->min_freq)
+		*freq = df->min_freq;
+	if (df->max_freq && *freq > df->max_freq)
+		*freq = df->max_freq;
 	if (gpu_boost_pending) {
 		gpu_boost_pending = false;
 		*freq = df->max_freq;
-	} else {
-		*freq = df->min_freq;
 	}
 
 	return 0;
