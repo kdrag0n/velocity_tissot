@@ -54,6 +54,7 @@
 #define SWEEP_Y_NEXT	135
 
 /* Wake Gestures */
+#define SINGLE_TAP_TO_WAKE	1
 #define SWEEP_TIMEOUT		90
 #define TRIGGER_TIMEOUT		150
 #define DT2W_FEATHER		150
@@ -434,6 +435,14 @@ static void s2w_input_callback(struct work_struct *unused)
 
 static void dt2w_input_callback(struct work_struct *unused)
 {
+
+#if SINGLE_TAP_TO_WAKE
+	if (is_suspended()) {
+		wake_pwrtrigger();
+		doubletap2wake_reset();
+	}
+	return;
+#endif
 
 	if (is_suspended() && dt2w_switch)
 		detect_doubletap2wake(touch_x, touch_y, true);
