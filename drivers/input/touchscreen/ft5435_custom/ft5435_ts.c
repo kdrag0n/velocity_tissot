@@ -1490,8 +1490,6 @@ static int ft5435_ts_suspend(struct device *dev)
 #ifdef CONFIG_WAKE_GESTURES
 	if (wg_switch) {
 		enable_irq_wake(data->client->irq);
-		data->suspended = true;
-		return 0;
 	}
 #endif
 
@@ -1525,6 +1523,12 @@ static int ft5435_ts_suspend(struct device *dev)
 		}
 	}
 
+#ifdef CONFIG_WAKE_GESTURES
+	if (wg_switch) {
+		enable_irq_wake(data->client->irq);
+	}
+#endif
+
 	data->suspended = true;
 	return 0;
 }
@@ -1552,6 +1556,7 @@ static int ft5435_ts_resume(struct device *dev)
 #ifdef CONFIG_WAKE_GESTURES
 	if (wg_switch) {
 		disable_irq_wake(data->client->irq);
+		data->suspended = true;
 	}
 #endif
 
