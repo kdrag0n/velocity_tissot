@@ -1487,6 +1487,14 @@ static int ft5435_ts_suspend(struct device *dev)
 	__clear_bit(BTN_TOUCH, data->input_dev->keybit);
 	input_sync(data->input_dev);
 
+#ifdef CONFIG_WAKE_GESTURES
+	if (wg_switch) {
+		enable_irq_wake(data->client->irq);
+		data->suspended = true;
+		return 0;
+	}
+#endif
+
 #if defined(FOCALTECH_TP_GESTURE)
 	{
 		if (gesture_func_on) {
@@ -1516,12 +1524,6 @@ static int ft5435_ts_suspend(struct device *dev)
 			}
 		}
 	}
-
-#ifdef CONFIG_WAKE_GESTURES
-	if (wg_switch) {
-		enable_irq_wake(data->client->irq);
-	}
-#endif
 
 	data->suspended = true;
 	return 0;
@@ -4450,3 +4452,4 @@ module_exit(ft5435_ts_exit);
 
 MODULE_DESCRIPTION("FocalTech ft5435 TouchScreen driver");
 MODULE_LICENSE("GPL v2");
+
