@@ -121,6 +121,8 @@ int wlan_hdd_ftm_start(hdd_context_t *pAdapter);
 #include "wlan_hdd_debugfs.h"
 #include "sapInternal.h"
 
+#include <linux/random.h>
+
 #ifdef MODULE
 #define WLAN_MODULE_NAME  module_name(THIS_MODULE)
 #else
@@ -8064,6 +8066,49 @@ VOS_STATUS hdd_read_cfg_file(v_VOID_t *pCtx, char *pFileName,
    return VOS_STATUS_SUCCESS;
 }
 
+static int randomize_mac = 1;
+
+static struct ctl_table randomize_mac_table[] =
+{
+	{
+		.procname		= "randomize_mac",
+		.data			= &randomize_mac,
+		.maxlen			= sizeof(int),
+		.mode			= 0600,
+		.proc_handler	= proc_dointvec
+	},
+	{}
+};
+
+static struct ctl_table cnss_table[] =
+{
+	{
+		.procname		= "cnss",
+		.maxlen			= 0,
+		.mode			= 0555,
+		.child			= randomize_mac_table
+	},
+	{}
+};
+
+static struct ctl_table dev_table[] =
+{
+	{
+		.procname		= "dev",
+		.maxlen			= 0,
+		.mode			= 0555,
+		.child			= cnss_table
+	},
+	{}
+};
+
+static int __init init_randomize_mac(void)
+{
+	register_sysctl_table(dev_table);
+	return 0;
+}
+late_initcall(init_randomize_mac);
+
 /**---------------------------------------------------------------------------
 
   \brief __hdd_set_mac_address() -
@@ -8084,6 +8129,10 @@ static int __hdd_set_mac_address(struct net_device *dev, void *addr)
    struct sockaddr *psta_mac_addr = addr;
    eHalStatus halStatus = eHAL_STATUS_SUCCESS;
    int ret = 0;
+
+   if (randomize_mac) {
+       get_random_bytes(&psta_mac_addr->sa_data[3], 3);
+   }
 
    ENTER();
    pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
