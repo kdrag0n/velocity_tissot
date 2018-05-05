@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 3.18.107 Kernel Configuration
+# Linux/arm64 3.18.108 Kernel Configuration
 #
 CONFIG_CUSTOM=y
 CONFIG_ARM64=y
@@ -1839,7 +1839,7 @@ CONFIG_TOUCHSCREEN_FT5435=y
 CONFIG_TOUCHSCREEN_FTS=y
 # CONFIG_VITURALSAR is not set
 # CONFIG_TOUCHSCREEN_TD4310 is not set
-CONFIG_WAKE_GESTURES=y
+# CONFIG_WAKE_GESTURES is not set
 CONFIG_INPUT_MISC=y
 # CONFIG_INPUT_AD714X is not set
 # CONFIG_INPUT_BMA150 is not set

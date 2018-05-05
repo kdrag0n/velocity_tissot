@@ -34,7 +34,6 @@
 #include <linux/hqsysfs.h>
 #include "ft5435_ts.h"
 
-
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
 
