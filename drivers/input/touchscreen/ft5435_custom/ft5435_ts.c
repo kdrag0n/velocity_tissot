@@ -55,7 +55,9 @@
 
 #define FTS_VENDOR_1    0x3b
 #define FTS_VENDOR_2    0x51
-#define FOCALTECH_AUTO_UPGRADE 1
+
+//#define FOCALTECH_AUTO_UPGRADE 1
+//#define FOCALTECH_PWRON_UPGRADE 1
 
 #if defined(FOCALTECH_AUTO_UPGRADE)
 static unsigned char firmware_data_vendor1[] = {
@@ -917,10 +919,8 @@ void ft5435_change_scanning_frq_switch(struct work_struct *work)
 		return ;
 	ft5x0x_read_reg(ft_g_client, 0x8b, &charger_in_flag);
 
-	if (charger_in_flag != data->charger_in) {
-		printk(KERN_ERR"[ft5435]%s: Write %d to 0x8b\n", __FUNCTION__, data->charger_in);
-		ft5x0x_write_reg(ft_g_client, 0x8b, data->charger_in);
-	}
+	printk(KERN_ERR"[ft5435]%s: Write %d to 0x8b\n", __FUNCTION__, data->charger_in);
+	ft5x0x_write_reg(ft_g_client, 0x8b, 1);
 }
 
 void tpd_usb_plugin(bool mode)
@@ -3575,6 +3575,7 @@ static ssize_t ft5x0x_debug_write(struct file *filp, const char __user *buffer, 
 
 	proc_operate_mode = writebuf[0];
 	printk("proc_operate_mode = %d\n", proc_operate_mode);
+
 	switch (proc_operate_mode) {
 	case PROC_READ_REGISTER:
 	printk("%s, %d:PROC_READ_REGISTER\n", __func__, __LINE__);
@@ -3801,6 +3802,7 @@ static int ft5435_proc_init(struct kernfs_node *sysfs_node_parent)
        kfree(buf);
        kfree(key_disabler_sysfs_node);
        kfree(double_tap_sysfs_node);
+
        return ret;
 }
 
