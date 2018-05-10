@@ -3229,81 +3229,6 @@ static void mmc_blk_cmdq_fail_mult_tasks(struct mmc_host *host,
 };
 
 /*
- * Error handler for cmdq if CQ enabled. Returns 0 if error is successfully
- * handled. Returns negative value if fails.
- */
-static void mmc_blk_cmdq_err_handle(struct mmc_host *host, u32 status, int err)
-{
-	struct mmc_request *mrq = host->err_mrq;
-	struct mmc_cmdq_err_info err_info;
-	u32 red_err_info = 0;
-	struct mmc_request *err_mrq = NULL;
-
-	if (host->cmdq_ops->err_info && host->cmdq_ops->get_mrq_by_tag)
-		host->cmdq_ops->err_info(host, &err_info, mrq);
-	else
-		return;
-
-	if (mrq->cmdq_req->resp_arg & CQ_RED) {
-		red_err_info = mrq->cmdq_req->resp_arg;
-	} else if (status & CQ_RED) {
-		red_err_info = status;
-		err_info.timedout = true;
-	}
-
-	if (red_err_info & CQ_RED) {
-		/*
-		 * The request which caused RED error may need to be
-		 * removed before resetting card and requeueing requests
-		 */
-		if (red_err_info & CQ_WP_RED) {
-			err_mrq = mmc_blk_cmdq_wp_handle(&err_info, host);
-			if (err_info.tag < 0)
-				return;
-			err = -EPERM;
-		} else {
-			pr_err("%s: unhandled RED error detected!\n",
-					mmc_hostname(host));
-			err_mrq = mrq;
-		}
-	}
-
-	if (err_mrq)
-		mrq = err_mrq;
-
-	/* Remove the request if marked for removal */
-	if (err_info.remove_task)
-		mmc_blk_cmdq_remove_task(host, &err_info, mrq, err, true);
-
-	/*
-	 * If there is a chance that one of the completed task caused error,
-	 * tell block layer that all completed tasks failed. Here priority is
-	 * given to removing the errored task than on saving innocent task. This
-	 * is to avoid data corruption at higher layers.
-	 */
-	if (err_info.fail_comp_task)
-		mmc_blk_cmdq_fail_mult_tasks(host, err_info.comp_status,
-				&err_info, err, true);
-	else
-		mmc_blk_cmdq_fail_mult_tasks(host, err_info.comp_status,
-				&err_info, 0, false);
-	/*
-	 * If there is a chance that one of the Dev Pending task caused error,
-	 * tell block layer that all Dev Pending tasks failed. Here priority is
-	 * given to aviod looping with an error causing task than on saving
-	 * innocent task.
-	 */
-	if (err_info.fail_dev_pend) {
-		pr_err("%s: %s: Failing all tasks in Device Pending : 0x%lx\n",
-				mmc_hostname(host), __func__,
-				err_info.dev_pend);
-		mmc_blk_cmdq_fail_mult_tasks(host, err_info.dev_pend,
-				&err_info, err, true);
-	}
-
-}
-
-/*
  * mmc_blk_cmdq_err: error handling of cmdq error requests.
  * Function should be called in context of error out request
  * which has claim_host and rpm acquired.
@@ -3372,7 +3297,6 @@ static void mmc_blk_cmdq_err(struct mmc_queue *mq)
 	}
 reset:
 	mmc_blk_cmdq_reset(host, false);
-	mmc_blk_cmdq_err_handle(host, status, err);
 
 	mmc_blk_cmdq_reset_all(host, err);
 	if (mrq->cmdq_req->resp_err)
