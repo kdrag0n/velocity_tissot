@@ -1,6 +1,6 @@
-export CROSS_COMPILE=$HOME/code/android/google49/bin/aarch64-linux-android-
+#export CROSS_COMPILE=$HOME/code/android/google49/bin/aarch64-linux-android-
 #export CROSS_COMPILE=$HOME/code/android/gclang/clang-4691093/bin/
-#export CROSS_COMPILE=$HOME/code/android/linaro731/bin/aarch64-linux-gnu-
+export CROSS_COMPILE=$HOME/code/android/linaro731/bin/aarch64-linux-gnu-
 export ARCH=arm64
 export SUBARCH=arm64
 export CFLAGS="-Ofast"
@@ -19,7 +19,7 @@ export CXXFLAGS="-Ofast"
 mkzip() {
     rm anykernel/Image.gz-dtb
     rm velocity_kernel.zip
-    cp arch/arm64/boot/Image.gz-dtb anykernel/
+    cat arch/arm64/boot/Image.gz arch/arm/boot/dts/qcom/msm8953-qrd-sku3.dtb > anykernel/Image.gz-dtb
     cd anykernel
     zip -r ../velocity_kernel.zip *
     cd ..
