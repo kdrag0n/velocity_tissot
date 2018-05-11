@@ -17,7 +17,6 @@
 
 #include "ini.h"
 
-
 char CFG_SSL = '[';  /* 项标志符Section Symbol --可根据特殊需要进行定义更改，如 { }等*/
 char CFG_SSR = ']';  /* 项标志符Section Symbol --可根据特殊需要进行定义更改，如 { }等*/
 char CFG_NIS = ':';  /* name 与 index 之间的分隔符 */

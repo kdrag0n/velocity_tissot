@@ -11,7 +11,7 @@
 * Abstract: Set Detail Threshold for all IC
 *
 ************************************************************************/
-
+ 
 #ifndef _DETAIL_THRESHOLD_H
 #define _DETAIL_THRESHOLD_H
 

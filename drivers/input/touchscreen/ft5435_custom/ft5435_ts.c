@@ -2176,7 +2176,7 @@ static int ft5435_fw_upgrade_arbitrate(struct i2c_client *client)
 		/* Enter upgrade mode */
 		w_buf[0] = FT_UPGRADE_55;
 		ft5435_i2c_write(client, w_buf, 1);
-		usleep(FT_55_AA_DLY_NS);
+		usleep_range(FT_55_AA_DLY_NS, FT_55_AA_DLY_NS);
 		w_buf[0] = FT_UPGRADE_AA;
 		ft5435_i2c_write(client, w_buf, 1);
 
