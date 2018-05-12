@@ -52,9 +52,9 @@
 #define FT_SUSPEND_LEVEL 1
 #endif
 
-#if defined(FOCALTECH_AUTO_UPGRADE)
 #define FTS_VENDOR_1	0x3b
 #define FTS_VENDOR_2	0x51
+#if defined(FOCALTECH_AUTO_UPGRADE)
 static unsigned char firmware_data_vendor1[] = {
 	#include "HQ_AL1512_C6_FT5435_Biel0x3b_Ver0a_20170119_app.i"
 };
@@ -995,7 +995,6 @@ static int ft_tp_interrupt(struct ft5435_ts_data *data)
 #endif
 static irqreturn_t ft5435_ts_interrupt(int irq, void *dev_id)
 {
-#if 1
 	struct ft5435_ts_data *data = dev_id;
 	struct input_dev *ip_dev;
 	int rc, i, j;
@@ -1044,8 +1043,6 @@ static irqreturn_t ft5435_ts_interrupt(int irq, void *dev_id)
 		}
 	}
 #endif
-
-
 
 	rc = ft5435_i2c_read(data->client, &reg, 1,
 			buf, data->tch_data_len);
@@ -1109,7 +1106,6 @@ static irqreturn_t ft5435_ts_interrupt(int irq, void *dev_id)
 		input_mt_report_pointer_emulation(ip_dev, false);
 		input_sync(ip_dev);
 	}
-	#endif
 	return IRQ_HANDLED;
 }
 

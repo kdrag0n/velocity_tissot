@@ -23,17 +23,17 @@
 #define FT5X16_ID		0x0A
 #define FT5X36_ID		0x14
 #define FT6X06_ID		0x06
-#define FT6X36_ID       0x36
+#define FT6X36_ID       	0x36
 /* [PLATFORM]-Mod-BEGIN by TCTNB.YQJ, FR797197, 2014/11/28 add for tp gesture  */
 
 #define SET_COVER_MODE
-#define FOCALTECH_AUTO_UPGRADE		1
-#define FOCALTECH_LOCK_DOWN_INFO	1
+//#define FOCALTECH_AUTO_UPGRADE		1
+//#define FOCALTECH_LOCK_DOWN_INFO	1
 #define FOCALTECH_TP_GESTURE
 #define FOCALTECH_FAE_MOD
 
 #define USB_CHARGE_DETECT
-#define FOCALTECH_ITO_TEST			1
+//#define FOCALTECH_ITO_TEST			1
 #define FOCALTECH_MAX_VKEY_NUM 3
 
 struct fw_upgrade_info {
