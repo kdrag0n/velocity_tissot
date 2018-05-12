@@ -647,7 +647,6 @@ compress_again:
 	 */
 	if (!handle)
 		handle = zs_malloc(zram->mem_pool, clen,
-				__GFP_KSWAPD_RECLAIM |
 				__GFP_NOWARN |
 				__GFP_HIGHMEM |
 				__GFP_MOVABLE);
