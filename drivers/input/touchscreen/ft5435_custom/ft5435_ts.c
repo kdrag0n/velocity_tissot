@@ -68,8 +68,6 @@ static unsigned char firmware_data_vendor2[] = {
 #define TCT_KEY_HOME 172
 #define TCT_KEY_MENU 139
 
-
-
 #define TCT_KEY_BACK_POS_X  100
 #define TCT_KEY_BACK_POS_Y  1321
 
@@ -85,7 +83,7 @@ static unsigned char firmware_data_vendor2[] = {
 
 
 /* [PLATFORM]-Mod-BEGIN by TCTNB.ZXZ, PR-814306, 2014/10/24, add for rawdata test */
-#define CONFIG_TCT_TP_FTDEBUG
+//#define CONFIG_TCT_TP_FTDEBUG
 
 /* [PLATFORM]-Mod-END by TCTNB.ZXZ */
 
