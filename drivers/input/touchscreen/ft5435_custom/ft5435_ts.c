@@ -832,9 +832,7 @@ void ft5435_disable_change_scanning_frq(void)
 EXPORT_SYMBOL(ft5435_disable_change_scanning_frq);
 void ft5435_change_scanning_frq_switch(struct work_struct *work)
 {
-	u8 charger_in_flag = 0;
 	struct ft5435_ts_data *data;
-
 
 	data = container_of(work, struct ft5435_ts_data, work);
 
@@ -843,11 +841,8 @@ void ft5435_change_scanning_frq_switch(struct work_struct *work)
 	}
 	if (ft_g_client == NULL)
 		return ;
-	ft5x0x_read_reg(ft_g_client, 0x8b, &charger_in_flag);
 
-	if (charger_in_flag != data->charger_in) {
-		ft5x0x_write_reg(ft_g_client, 0x8b, data->charger_in);
-	}
+	ft5x0x_write_reg(ft_g_client, 0x8b, 1);
 }
 
 void tpd_usb_plugin(bool mode)
@@ -4080,13 +4075,13 @@ static struct i2c_driver ft5435_ts_driver = {
 	.probe = ft5435_ts_probe,
 	.remove = ft5435_ts_remove,
 	.driver = {
-		   .name = "ft5435_ts",
-		   .owner = THIS_MODULE,
+		.name = "ft5435_ts",
+	 	.owner = THIS_MODULE,
 		.of_match_table = ft5435_match_table,
 #ifdef CONFIG_PM
-		   .pm = &ft5435_ts_pm_ops,
+		.pm = &ft5435_ts_pm_ops,
 #endif
-		   },
+	},
 	.id_table = ft5435_ts_id,
 };
 
