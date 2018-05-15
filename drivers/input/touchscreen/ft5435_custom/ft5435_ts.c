@@ -331,6 +331,7 @@ static int ft5435_i2c_read(struct i2c_client *client, char *writebuf,
 			   int writelen, char *readbuf, int readlen);
 static int ft5x0x_read_reg(struct i2c_client *client, u8 addr, u8 *val);
 
+static int ft5435_auto_cal(struct i2c_client *client);
 #ifdef CONFIG_TOUCHPANEL_PROXIMITY_SENSOR
 struct virtualpsensor {
 	char const *name;
