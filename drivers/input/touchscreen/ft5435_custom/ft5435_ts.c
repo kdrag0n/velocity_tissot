@@ -44,8 +44,9 @@
 #if defined(CONFIG_FB)
 #include <linux/notifier.h>
 #include <linux/fb.h>
+#endif
 
-#elif defined(CONFIG_HAS_EARLYSUSPEND)
+#if defined(CONFIG_HAS_EARLYSUSPEND)
 #include <linux/earlysuspend.h>
 #include <linux/sensors.h>
 /* Early-suspend level */
@@ -299,7 +300,8 @@ struct ft5435_ts_data {
 	u8 fw_vendor_id;
 #if defined(CONFIG_FB)
 	struct notifier_block fb_notif;
-#elif defined(CONFIG_HAS_EARLYSUSPEND)
+#endif
+#if defined(CONFIG_HAS_EARLYSUSPEND)
 	struct early_suspend early_suspend;
 #endif
 
