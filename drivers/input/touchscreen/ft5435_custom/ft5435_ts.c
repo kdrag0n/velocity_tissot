@@ -379,7 +379,9 @@ static struct ft5435_ts_data *g_ft5435_ts_data;
 static int init_ok;
 module_param_named(init_ok, init_ok, int, 0644);
 
-
+bool scr_suspended() {
+	return g_ft5435_ts_data->suspended;
+}
 
 static void ft5435_update_fw_ver(struct ft5435_ts_data *data)
 {
