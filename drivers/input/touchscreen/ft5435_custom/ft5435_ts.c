@@ -2525,99 +2525,6 @@ static ssize_t ft5435_fw_version_store(struct device *dev,
 static DEVICE_ATTR(fw_version, 0664, ft5435_fw_version_show, ft5435_fw_version_store);
 
 
-static bool ft5435_debug_addr_is_valid(int addr)
-{
-	if (addr < 0 || addr > 0xFF) {
-		return false;
-	}
-
-	return true;
-}
-
-static int ft5435_debug_data_set(void *_data, u64 val)
-{
-	return 0;
-}
-
-static int ft5435_debug_data_get(void *_data, u64 *val)
-{
-	struct ft5435_ts_data *data = _data;
-	int rc;
-	u8 reg;
-
-	mutex_lock(&data->input_dev->mutex);
-
-	if (ft5435_debug_addr_is_valid(data->addr)) {
-		rc = ft5x0x_read_reg(data->client, data->addr, &reg);
-		if (rc >= 0)
-			*val = reg;
-	}
-
-	mutex_unlock(&data->input_dev->mutex);
-
-	return 0;
-}
-
-DEFINE_SIMPLE_ATTRIBUTE(debug_data_fops, ft5435_debug_data_get,
-			ft5435_debug_data_set, "0x%02llX\n");
-
-static int ft5435_debug_addr_set(void *_data, u64 val)
-{
-	struct ft5435_ts_data *data = _data;
-
-	if (ft5435_debug_addr_is_valid(val)) {
-		mutex_lock(&data->input_dev->mutex);
-		data->addr = val;
-		mutex_unlock(&data->input_dev->mutex);
-	}
-
-	return 0;
-}
-
-static int ft5435_debug_addr_get(void *_data, u64 *val)
-{
-	struct ft5435_ts_data *data = _data;
-
-	mutex_lock(&data->input_dev->mutex);
-
-	if (ft5435_debug_addr_is_valid(data->addr))
-		*val = data->addr;
-
-	mutex_unlock(&data->input_dev->mutex);
-
-	return 0;
-}
-
-DEFINE_SIMPLE_ATTRIBUTE(debug_addr_fops, ft5435_debug_addr_get,
-			ft5435_debug_addr_set, "0x%02llX\n");
-
-static int ft5435_debug_suspend_set(void *_data, u64 val)
-{
-	struct ft5435_ts_data *data = _data;
-
-	mutex_lock(&data->input_dev->mutex);
-
-	if (val)
-		ft5435_ts_suspend(&data->client->dev);
-	else
-		ft5435_ts_resume(&data->client->dev);
-
-	mutex_unlock(&data->input_dev->mutex);
-
-	return 0;
-}
-
-static int ft5435_debug_suspend_get(void *_data, u64 *val)
-{
-	struct ft5435_ts_data *data = _data;
-
-	mutex_lock(&data->input_dev->mutex);
-	*val = data->suspended;
-	mutex_unlock(&data->input_dev->mutex);
-
-	return 0;
-}
-
 #ifdef FOCALTECH_ITO_TEST
 struct i2c_client *G_Client = NULL;
 #define FTXXXX_INI_FILEPATH "/system/etc/"
@@ -2833,31 +2740,6 @@ static DEVICE_ATTR(ftsmcaptest, 0664, ftxxxx_ftsscaptest_show, ftxxxx_ftsscaptes
 
 #endif
 
-
-
-DEFINE_SIMPLE_ATTRIBUTE(debug_suspend_fops, ft5435_debug_suspend_get,
-			ft5435_debug_suspend_set, "%lld\n");
-
-static int ft5435_debug_dump_info(struct seq_file *m, void *v)
-{
-	struct ft5435_ts_data *data = m->private;
-
-	seq_printf(m, "%s\n", data->ts_info);
-
-	return 0;
-}
-
-static int debugfs_dump_info_open(struct inode *inode, struct file *file)
-{
-	return single_open(file, ft5435_debug_dump_info, inode->i_private);
-}
-
-static const struct file_operations debug_dump_info_fops = {
-	.owner		= THIS_MODULE,
-	.open		= debugfs_dump_info_open,
-	.read		= seq_read,
-	.release	= single_release,
-};
 
 #ifdef CONFIG_OF
 static int ft5435_get_dt_coords(struct device *dev, char *name,
@@ -3403,139 +3285,6 @@ static struct attribute_group ft5435_rawdata_properties_attr_group = {
 };
 #endif
 
-#if defined(CONFIG_TCT_TP_FTDEBUG)
-#define FTS_PACKET_LENGTH        128
-#define PROC_UPGRADE              	0
-#define PROC_READ_REGISTER          	1
-#define PROC_WRITE_REGISTER        	2
-#define PROC_AUTOCLB                	4
-#define PROC_UPGRADE_INFO           	5
-#define PROC_WRITE_DATA               	6
-#define PROC_READ_DATA                 	7
-
-#define PROC_NAME    "ft5x0x-debug"
-static unsigned char proc_operate_mode = PROC_UPGRADE;
-static struct proc_dir_entry *ft5x0x_proc_entry;
-
-
-/*interface of write proc*/
-static ssize_t ft5x0x_debug_write(struct file *filp, const char __user *buffer, size_t count, loff_t *off)
-{
-	struct i2c_client *client = ft_g_client;
-	unsigned char writebuf[FTS_PACKET_LENGTH];
-	int buflen = count;
-	int writelen = 0;
-	int ret = 0;
-
-	if (copy_from_user(writebuf, (void __user *)buffer, buflen)) {
-		return -EFAULT;
-	}
-
-	proc_operate_mode = writebuf[0];
-	switch (proc_operate_mode) {
-	case PROC_READ_REGISTER:
-		writelen = 1;
-		ret = ft5435_i2c_write(client, writebuf + 1, writelen);
-		if (ret < 0) {
-			return ret;
-		}
-		break;
-	case PROC_WRITE_REGISTER:
-		writelen = 2;
-		ret = ft5435_i2c_write(client, writebuf + 1, writelen);
-		if (ret < 0) {
-			return ret;
-		}
-		break;
-	case PROC_AUTOCLB:
-		fts_ctpm_auto_clb(client);
-		break;
-	case PROC_READ_DATA:
-	case PROC_WRITE_DATA:
-		writelen = count - 1;
-		ret = ft5435_i2c_write(client, writebuf + 1, writelen);
-		if (ret < 0) {
-		      return ret;
-		}
-		break;
-	default:
-		break;
-	}
-
-	return count;
-}
-
-/*interface of read proc*/
-static ssize_t ft5x0x_debug_read(struct file *file, char __user *page, size_t size, loff_t *ppos)
-{
-	struct i2c_client *client = ft_g_client;
-	int ret = 0;
-	unsigned char buf[1000];
-	int num_read_chars = 0;
-	int readlen = 0;
-	u8 regvalue = 0x00, regaddr = 0x00;
-
-	switch (proc_operate_mode) {
-	case PROC_UPGRADE:
-		/*after calling ft5x0x_debug_write to upgrade*/
-		regaddr = 0xA6;
-		ret = ft5x0x_read_reg(client, regaddr, &regvalue);
-		if (ret < 0)
-			num_read_chars = sprintf(buf, "%s", "get fw version failed.\n");
-		else
-			num_read_chars = sprintf(buf, "current fw version:0x%02x\n", regvalue);
-		break;
-	case PROC_READ_REGISTER:
-		readlen = 1;
-		ret = ft5435_i2c_read(client, NULL, 0, buf, readlen);
-		if (ret < 0) {
-			return ret;
-		}
-		num_read_chars = 1;
-		break;
-	case PROC_READ_DATA:
-		readlen = size;
-		ret = ft5435_i2c_read(client, NULL, 0, buf, readlen);
-		if (ret < 0) {
-			return ret;
-		}
-
-		num_read_chars = readlen;
-		break;
-	case PROC_WRITE_DATA:
-		break;
-	default:
-		break;
-	}
-
-	memcpy(page, buf, num_read_chars);
-
-	return num_read_chars;
-}
-
-static const struct file_operations ft5x0x_debug_ops = {
-	.owner = THIS_MODULE,
-	.read = ft5x0x_debug_read,
-	.write = ft5x0x_debug_write,
-};
-
-static int ft5x0x_create_apk_debug_channel(struct i2c_client *client)
-{
-	ft5x0x_proc_entry = proc_create(PROC_NAME, 0777, NULL, &ft5x0x_debug_ops);
-
-	if (NULL == ft5x0x_proc_entry) {
-		return -ENOMEM;
-	} 
-	return 0;
-}
-
-static void ft5x0x_release_apk_debug_channel(void)
-{
-	if (ft5x0x_proc_entry)
-		remove_proc_entry(PROC_NAME, NULL);
-}
-#endif
-
 static char tp_info_summary[80] = "";
 
 static int ft5435_ts_probe(struct i2c_client *client,
@@ -3792,40 +3541,6 @@ INIT_WORK(&data->work_vr, ft5435_change_vr_switch);
 		goto free_set_cover_mode;
 	}
 #endif
-	data->dir = debugfs_create_dir(FT_DEBUG_DIR_NAME, NULL);
-	if (data->dir == NULL || IS_ERR(data->dir)) {
-		err = PTR_ERR(data->dir);
-		goto free_force_update_fw_sys;
-	}
-
-	temp = debugfs_create_file("addr", S_IRUSR | S_IWUSR, data->dir, data,
-				   &debug_addr_fops);
-	if (temp == NULL || IS_ERR(temp)) {
-		err = PTR_ERR(temp);
-		goto free_debug_dir;
-	}
-
-	temp = debugfs_create_file("data", S_IRUSR | S_IWUSR, data->dir, data,
-				   &debug_data_fops);
-	if (temp == NULL || IS_ERR(temp)) {
-		err = PTR_ERR(temp);
-		goto free_debug_dir;
-	}
-
-	temp = debugfs_create_file("suspend", S_IRUSR | S_IWUSR, data->dir,
-					data, &debug_suspend_fops);
-	if (temp == NULL || IS_ERR(temp)) {
-		err = PTR_ERR(temp);
-		goto free_debug_dir;
-	}
-
-	temp = debugfs_create_file("dump_info", S_IRUSR | S_IWUSR, data->dir,
-					data, &debug_dump_info_fops);
-	if (temp == NULL || IS_ERR(temp)) {
-		err = PTR_ERR(temp);
-		goto free_debug_dir;
-	}
-
 	data->ts_info = devm_kzalloc(&client->dev,
 				FT_INFO_MAX_LEN, GFP_KERNEL);
 	if (!data->ts_info) {
@@ -3922,11 +3637,6 @@ g_ft5435_ts_data = data;
 		ctp_lockdown_status_proc = proc_create(CTP_PROC_LOCKDOWN_FILE, 0644, NULL, &ctp_lockdown_proc_fops);
 #endif
 
-#if defined(CONFIG_TCT_TP_FTDEBUG)
-	if (ft5x0x_create_apk_debug_channel(client) < 0)
-		ft5x0x_release_apk_debug_channel();
-#endif
-
 	w_buf[0] = FT_REG_RESET_FW;
 	ft5435_i2c_write(client, w_buf, 1);
 	init_ok = 1;
@@ -3946,8 +3656,6 @@ g_ft5435_ts_data = data;
 
 free_debug_dir:
 	debugfs_remove_recursive(data->dir);
-free_force_update_fw_sys:
-	device_remove_file(&client->dev, &dev_attr_force_update_fw);
 free_update_fw_sys:
 	device_remove_file(&client->dev, &dev_attr_update_fw);
 
@@ -4043,10 +3751,6 @@ static int ft5435_ts_remove(struct i2c_client *client)
 	else
 		ft5435_power_init(data, false);
 
-
-#if defined(CONFIG_TCT_TP_FTDEBUG)
-	ft5x0x_release_apk_debug_channel();
-#endif
 
 	input_unregister_device(data->input_dev);
 	wake_lock_destroy(&ft5436_wakelock);
