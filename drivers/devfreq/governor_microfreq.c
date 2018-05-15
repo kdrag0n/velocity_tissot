@@ -16,7 +16,7 @@
 #include <linux/jiffies.h>
 #include "governor.h"
 
-#define DERAMP_MULTIPLIER	50
+#define DERAMP_MULTIPLIER	80
 #define RAMP_MULTIPLIER		50
 #define BOOST_MULTIPLIER	2
 
@@ -31,7 +31,7 @@ static __always_inline void mf_input_event(struct input_handle *handle,
 	}
 }
 
-static __always_inline int mf_input_connect(struct input_handler *handler,
+static int mf_input_connect(struct input_handler *handler,
 		struct input_dev *dev, const struct input_device_id *id)
 {
 	struct input_handle *handle;
@@ -102,7 +102,7 @@ static struct input_handler mf_input_handler = {
 	.id_table	= mf_ids,
 };
 
-static __always_inline int devfreq_microfreq_func(struct devfreq *df,
+static int devfreq_microfreq_func(struct devfreq *df,
 				    unsigned long *freq,
 				u32 *flag)
 {
@@ -129,7 +129,7 @@ static __always_inline int devfreq_microfreq_func(struct devfreq *df,
 	/* If input, ramp twice as much as needed */
 	if (gpu_boost_pending) {	
 		gpu_boost_pending = false;
-		b = div_u64(b, (RAMP_MULTIPLIER - DERAMP_MULTIPLIER / 4));
+		b = div_u64(b, (RAMP_MULTIPLIER - DERAMP_MULTIPLIER / 3));
 	} else {
 		b = div_u64(b, (RAMP_MULTIPLIER - DERAMP_MULTIPLIER / 2));
 	}
@@ -143,7 +143,7 @@ static __always_inline int devfreq_microfreq_func(struct devfreq *df,
 	return 0;
 }
 
-static __always_inline int devfreq_microfreq_handler(struct devfreq *devfreq,
+static int devfreq_microfreq_handler(struct devfreq *devfreq,
 				unsigned int event, void *data)
 {
 	int ret = 0;
