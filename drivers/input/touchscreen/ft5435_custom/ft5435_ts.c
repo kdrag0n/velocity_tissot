@@ -80,8 +80,6 @@ static unsigned char firmware_data_vendor2[] = {
 #define TX_NUM_MAX 50
 #define RX_NUM_MAX 50
 
-
-
 /* [PLATFORM]-Mod-BEGIN by TCTNB.ZXZ, PR-814306, 2014/10/24, add for rawdata test */
 //#define CONFIG_TCT_TP_FTDEBUG
 
@@ -1180,7 +1178,6 @@ static int ft5435_power_init(struct ft5435_ts_data *data, bool on)
 		}
 	}
 #endif
-
 
 	return 0;
 
