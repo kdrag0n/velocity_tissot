@@ -909,7 +909,6 @@ static int mpm_init_irq_domain(struct device_node *node, int irq_domain)
 	list = of_get_property(node, mpm_of_map[i].map, &size);
 
 	if (!list || !size) {
-		__WARN();
 		return -ENODEV;
 	}
 

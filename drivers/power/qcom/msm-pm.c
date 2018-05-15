@@ -463,7 +463,7 @@ int msm_pm_wait_cpu_shutdown(unsigned int cpu)
 		 */
 		if (++timeout == 20) {
 			msm_spm_dump_regs(cpu);
-			__WARN_printf("CPU%u didn't collapse in 2ms, sleep status: 0x%x\n",
+			WARN("CPU%u didn't collapse in 2ms, sleep status: 0x%x\n",
 					cpu, acc_sts);
 		}
 	}
@@ -568,7 +568,6 @@ static int msm_cpu_status_probe(struct platform_device *pdev)
 		cpun = of_get_cpu_node(cpu, NULL);
 
 		if (!cpun) {
-			__WARN();
 			continue;
 		}
 
