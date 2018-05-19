@@ -26,6 +26,7 @@ device.name3=tissot_sprout
 
 # shell variables
 block=/dev/block/platform/soc/7824900.sdhci/by-name/boot;
+ramdisk=/tmp/anykernel/ramdisk
 is_slot_device=1;
 ramdisk_compression=auto;
 
@@ -52,6 +53,11 @@ fi;
 
 # begin ramdisk changes
 
+cp /tmp/anykernel/init.spectrum.rc $ramdisk/
+cp /tmp/anykernel/init.spectrum.sh $ramdisk/
+chmod 644 $ramdisk/init.spectrum.rc
+chmod 644 $ramdisk/init.spectrum.sh
+insert_line init.rc "import /init.spectrum.rc" after "import /init.usb.rc" "import /init.spectrum.rc"
 
 # end ramdisk changes
 
