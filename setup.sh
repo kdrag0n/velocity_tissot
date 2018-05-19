@@ -48,10 +48,10 @@ alias make="make CC=$CLANG_TCHAIN CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=
 
 # helpers
 mkzip() {
-    rm anykernel/Image.gz-dtb
+    rm flasher/Image.gz-dtb
     rm velocity_kernel.zip
-    cat arch/arm64/boot/Image.gz arch/arm/boot/dts/qcom/msm8953-qrd-sku3.dtb > anykernel/Image.gz-dtb
-    cd anykernel
+    cat arch/arm64/boot/Image.gz arch/arm/boot/dts/qcom/msm8953-qrd-sku3.dtb > flasher/Image.gz-dtb
+    cd flasher
     zip -r ../velocity_kernel.zip *
     cd ..
     echo 'Done. Output is velocity_kernel.zip'
