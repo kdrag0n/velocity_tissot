@@ -167,6 +167,7 @@ void __init setup_log_buf(int early);
 void dump_stack_set_arch_desc(const char *fmt, ...);
 void dump_stack_print_info(const char *log_lvl);
 void show_regs_print_info(const char *log_lvl);
+int syslog_print_all(char __user *buf, int size, bool clear);
 #else
 static inline __printf(1, 0)
 int vprintk(const char *s, va_list args)
@@ -214,6 +215,10 @@ static inline void dump_stack_print_info(const char *log_lvl)
 }
 
 static inline void show_regs_print_info(const char *log_lvl)
+{
+}
+
+static inline int syslog_print_all(char __user *buf, int size, bool clear)
 {
 }
 #endif
