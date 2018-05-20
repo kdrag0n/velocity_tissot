@@ -1,7 +1,7 @@
 #!/sbin/sh
 # LazyFlasher boot image patcher script by jcadduono
 
-tmp=/tmp/kernel-flasher
+tmp=/tmp/vflash
 
 console=$(cat /tmp/console)
 [ "$console" ] || console=/proc/$$/fd/1
@@ -15,7 +15,7 @@ mkdir "$ramdisk"
 
 print() {
 	if [ "$1" ]; then
-		echo "ui_print - $1" > "$console"
+		echo "ui_print   • $1" > "$console"
 	else
 		echo "ui_print  " > "$console"
 	fi
@@ -51,7 +51,6 @@ find_boot() {
 		else
 			return 1
 		fi
-		print "Found boot partition at: $boot_block"
 	}
 	# if we already have boot block set then verify and use it
 	[ "$boot_block" ] && verify_block && return
@@ -107,11 +106,11 @@ dump_boot() {
 
 # determine the format the ramdisk was compressed in
 determine_ramdisk_format() {
-	magicbytes=$(hexdump -vn2 -e '2/1 "%x"' "$split_img/boot.img-ramdisk")
+	magicbytes=$(hexdump -vn2 -e '2/1 "%.2x"' "$split_img/boot.img-ramdisk")
 	case "$magicbytes" in
-		425a) rdformat=bzip2; decompress="$bin/bzip2 -dc" ;;
+		425a) rdformat=bzip2; decompress="bzip2 -dc" ;;
 		1f8b|1f9e) rdformat=gzip; decompress="gzip -dc" ;;
-		0221) rdformat=lz4; decompress="$bin/lz4 -d" ;;
+		0422) rdformat=lz4; decompress="$bin/lz4 -d" ;;
 		894c) rdformat=lzo; decompress="lzop -dc" ;;
 		5d00) rdformat=lzma; decompress="lzma -dc" ;;
 		fd37) rdformat=xz; decompress="xz -dc" ;;
@@ -122,14 +121,12 @@ determine_ramdisk_format() {
 
 	[ "$ramdisk_compression" ] && rdformat=$ramdisk_compression
 	case "$rdformat" in
-		bzip2) compress="$bin/bzip2 -9c" ;;
+		bzip2) compress="bzip2 -9c" ;;
 		gzip) compress="gzip -9c" ;;
 		lz4) compress="$bin/lz4 -9" ;;
 		lzo) compress="lzop -9c" ;;
-		lzma) compress="$bin/xz --format=lzma --lzma1=dict=16MiB -9";
-			abort "LZMA ramdisk compression is currently unsupported" ;;
-		xz) compress="$bin/xz --check=crc32 --lzma2=dict=16MiB -9";
-			abort "XZ ramdisk compression is currently unsupported" ;;
+		lzma) compress="$bin/xz --format=lzma --lzma1=dict=16MiB -9" ;;
+		xz) compress="$bin/xz --check=crc32 --lzma2=dict=16MiB -9" ;;
 		*) abort "Unknown ramdisk compression format ($rdformat)" ;;
 	esac
 	command -v $compress || abort "Unable to find archiver for $rdformat"
@@ -155,11 +152,9 @@ dump_embedded_ramdisk() {
 
 # execute all scripts in patch.d
 patch_ramdisk() {
-	print "Running ramdisk patching scripts..."
 	cd "$tmp"
 	find patch.d/ -type f | sort > patchfiles
 	while read -r patchfile; do
-		print "Executing: $(basename "$patchfile")"
 		env="$tmp/patch.d-env" sh "$patchfile" ||
 			abort "Script failed: $(basename "$patchfile")"
 	done < patchfiles
@@ -198,17 +193,14 @@ build_boot() {
 	do
 		if [ -s $image ]; then
 			kernel=$image
-			print "Found replacement kernel $image!"
 			break
 		fi
 	done
 	if [ -s ramdisk-new ]; then
 		rd=ramdisk-new
-		print "Found replacement ramdisk image!"
 	fi
 	if [ -s dtb.img ]; then
 		dtb=dtb.img
-		print "Found replacement device tree image!"
 	fi
 	"$bin/bootimg" cvf boot-new.img "$split_img" \
 		${kernel:+--kernel "$kernel"} \
@@ -269,7 +261,7 @@ verify_size() {
 
 # write the new boot image to boot block
 write_boot() {
-	print "Writing new boot image to memory..."
+	print "Writing new boot image..."
 	cd "$tmp"
 	if $use_dd; then
 		dd if=boot-new.img of="$boot_block"

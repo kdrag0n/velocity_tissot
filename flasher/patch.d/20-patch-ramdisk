@@ -24,7 +24,9 @@ print "Copying new files to the system..."
 cp -rd ./. /system/
 
 print "Injecting init code..."
+import_rc "init.velocity.rc"
 import_rc "init.spectrum.rc"
 insert_after_last /system/init.rc "import .*\.rc" "import /init.spectrum.rc"
+insert_after_last /system/init.rc "import .*\.rc" "import /init.velocity.rc"
 
 exit 0

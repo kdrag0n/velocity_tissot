@@ -1,73 +1,39 @@
-on boot
-    # Base settings
-    # Intellithermal
-    write /sys/module/msm_thermal/parameters/enabled 1
-    write /sys/module/msm_thermal/parameters/core_temp_hysteresis_degC 10
-    write /sys/module/msm_thermal/parameters/freq_step 2
-
-    # GPU
-    write /sys/module/simple_gpu_algorithm/parameters/simple_gpu_activate 1
-
-    # Sound: eliminate background noise
-    write /sys/kernel/sound_control/headphone_gain -20 -20
-    write /sys/kernel/fast_charge/force_fast_charge 1
-    write /sys/block/mmcblk0/queue/add_random 0
-    write /sys/block/mmcblk1/queue/add_random 0
-
-    # Light LMK
-    chmod 0666 /sys/module/lowmemorykiller/parameters/minfree
-    chown root /sys/module/lowmemorykiller/parameters/minfree
-    write /sys/module/lowmemorykiller/parameters/minfree 9162,18324,27486,36648,45810,54972
-
-    # Misc
-    write /sys/kernel/power_suspend/power_suspend_mode 0
-    write /sys/class/timed_output/vibrator/vtg_level 2030
-
-    # ZRAM
-    write /sys/module/zswap/parameters/enabled 0
-    exec u:r:init:s0 root root -- swapoff /dev/block/zram0
-    write /sys/block/zram0/reset 1
-    write /sys/block/zram0/disksize 1048576000
-    write /sys/block/zram0/max_comp_streams 6
-    exec u:r:init:s0 root root -- mkswap /dev/block/zram0
-    exec u:r:init:s0 root root -- swapon /dev/block/zram0
-
 on property:sys.boot_completed=1
-    # First boot default
-    exec u:r:init:s0 root root -- /init.spectrum.sh
-    exec u:r:su:s0 root root -- /init.spectrum.sh
+	# First boot default
+	exec u:r:init:s0 root root -- /init.spectrum.sh
+	exec u:r:su:s0 root root -- /init.spectrum.sh
 
-    # Enable spectrum
-    setprop spectrum.support 1
-    setprop persist.spectrum.kernel Velocity Kernel
+	# Enable spectrum
+	setprop spectrum.support 1
+	setprop persist.spectrum.kernel Velocity Kernel
 
 # Balanced (default)
 on property:persist.spectrum.profile=0
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor intelliactive
-    write /sys/module/autosmp/parameters/enabled 1
-    write /sys/kernel/autosmp/conf/min_cpus 2
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2400000
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 307000
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor intelliactive
+	write /sys/module/autosmp/parameters/enabled 1
+	write /sys/kernel/autosmp/conf/min_cpus 2
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2400000
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 307000
 
 # Performance
 on property:persist.spectrum.profile=1
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor performance
-    write /sys/module/autosmp/parameters/enabled 0
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2400000
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1804000
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor performance
+	write /sys/module/autosmp/parameters/enabled 0
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2400000
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1804000
 
 # Battery
 on property:persist.spectrum.profile=2
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor pwrutilx
-    write /sys/module/autosmp/parameters/enabled 1
-    write /sys/kernel/autosmp/conf/min_cpus 2
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2016000
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 307000
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor pwrutilx
+	write /sys/module/autosmp/parameters/enabled 1
+	write /sys/kernel/autosmp/conf/min_cpus 2
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2016000
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 307000
 
 # Gaming
 on property:persist.spectrum.profile=3
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor intelliactive
-    write /sys/module/autosmp/parameters/enabled 1
-    write /sys/module/autosmp/conf/min_cpus 4
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2400000
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1036000
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor intelliactive
+	write /sys/module/autosmp/parameters/enabled 1
+	write /sys/module/autosmp/conf/min_cpus 4
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2400000
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1036000

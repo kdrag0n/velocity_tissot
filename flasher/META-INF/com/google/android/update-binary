@@ -1,7 +1,7 @@
 #!/sbin/sh
 # Kernel Flasher installer backend
 
-tmp=/tmp/kernel-flasher
+tmp=/tmp/vflash
 
 if [ "$3" ]; then
 	zip=$3
@@ -60,7 +60,7 @@ umount() {
 	/sbin/busybox umount "$1"
 }
 
-cat <<EOF
+cat > "$console" <<EOF
 ui_print
 ui_print __     __   _            _ _
 ui_print \ \   / /__| | ___   ___(_) |_ _   _
@@ -69,15 +69,15 @@ ui_print   \ V /  __/ | (_) | (__| | |_| |_| |
 ui_print    \_/ \___|_|\___/ \___|_|\__|\__, |
 ui_print                                |___/
 ui_print
-ui_print   Kernel for Xiaomi Mi A1 (tissot)
-ui_print        by kdragon & tytydraco
+ui_print         Xiaomi Mi A1 (tissot)
+ui_print     Kernel by kdragon & tytydraco
 ui_print -------------------------------------
 ui_print
 EOF
 
 # Unpack the installer
 [ "$zip" ] && {
-	print "Unpacking the installer..."
+	print "  • Unpacking installer..."
 	extract "$zip" "$tmp"
 }
 cd "$tmp"
@@ -89,7 +89,6 @@ cd "$tmp"
 		print "Warning: getprop not found! Skipping device check!"
 		return
 	fi
-	print "Checking device compatibility..."
 	match=0
 	ro_product_device=$(getprop ro.product.device)
 	ro_product_model=$(getprop ro.product.model)
@@ -108,10 +107,7 @@ mount /system
 
 setperm 0755 0755 "$bin"
 
-print "Running boot image patcher..."
 sh boot-patcher.sh || abort
 
-print "Boot image patching complete"
-
 cleanup
-print "Done installing!"
+print "  • Finished!"
