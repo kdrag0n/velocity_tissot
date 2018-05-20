@@ -48,13 +48,13 @@ alias make="make CC=$CLANG_TCHAIN CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=
 
 # helpers
 mkzip() {
+    echo '  ZIP     velocity_kernel.zip'
     rm flasher/Image.gz-dtb
     rm velocity_kernel.zip
     cat arch/arm64/boot/Image.gz arch/arm/boot/dts/qcom/msm8953-qrd-sku3.dtb > flasher/Image.gz-dtb
     cd flasher
-    zip -r ../velocity_kernel.zip *
+    zip -r9 ../velocity_kernel.zip .
     cd ..
-    echo 'Done. Output is velocity_kernel.zip'
 }
 
 cleanbuild() {
@@ -66,6 +66,12 @@ incbuild() {
 }
 
 test() {
+    adb shell ls '/init.recovery*' > /dev/null 2>&1
+    if [ $? -eq 1 ]; then
+        adb reboot recovery && \
+        sleep 20
+    fi
+
     adb reboot recovery && \
     sleep 35 && \
     adb push velocity_kernel.zip /tmp && \
