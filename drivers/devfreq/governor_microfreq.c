@@ -128,7 +128,7 @@ static int devfreq_microfreq_func(struct devfreq *df,
 	/* If input, ramp */
 	if (gpu_boost_pending) {	
 		gpu_boost_pending = false;
-		b = div_u64(b, (RAMP_MULTIPLIER - DERAMP_MULTIPLIER / 3));
+		b = div_u64(b, (RAMP_MULTIPLIER - DERAMP_MULTIPLIER / 4));
 	} else {
 		b = div_u64(b, (RAMP_MULTIPLIER - DERAMP_MULTIPLIER / 2));
 	}
