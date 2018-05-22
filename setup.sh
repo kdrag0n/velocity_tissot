@@ -44,6 +44,8 @@ export CFLAGS=""
 export CXXFLAGS=""
 export LDFLAGS=""
 
+unalias cat > /dev/null 2>&1
+unalias zip > /dev/null 2>&1
 alias make="make CC=$CLANG_TCHAIN CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=$TOOL_CHAIN_PATH KBUILD_COMPILER_STRING=\"${CLANG_VERSION}\" KBUILD_BUILD_VERSION=1 HOSTCC=$CLANG_TCHAIN"
 
 # helpers
