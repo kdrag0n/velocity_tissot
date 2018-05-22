@@ -44,14 +44,15 @@ export CFLAGS=""
 export CXXFLAGS=""
 export LDFLAGS=""
 
+unalias cat > /dev/null 2>&1
+unalias zip > /dev/null 2>&1
 alias make="make CC=$CLANG_TCHAIN CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=$TOOL_CHAIN_PATH KBUILD_COMPILER_STRING=\"${CLANG_VERSION}\" KBUILD_BUILD_VERSION=1 HOSTCC=$CLANG_TCHAIN"
 
 # helpers
 mkzip() {
     echo '  ZIP     velocity_kernel.zip'
-    rm flasher/Image.gz-dtb
     rm velocity_kernel.zip
-    cat arch/arm64/boot/Image.gz arch/arm/boot/dts/qcom/msm8953-qrd-sku3.dtb > flasher/Image.gz-dtb
+    cp arch/arm64/boot/Image.gz-dtb flasher/
     cd flasher
     zip -r9 ../velocity_kernel.zip .
     cd ..
