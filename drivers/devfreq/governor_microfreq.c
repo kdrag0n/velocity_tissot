@@ -17,7 +17,7 @@
 #include "governor.h"
 
 #define RAMP_MULTIPLIER		90
-#define DERAMP_MULTIPLIER	20
+#define DERAMP_MULTIPLIER	10
 
 static bool gpu_boost_pending = false;
 
