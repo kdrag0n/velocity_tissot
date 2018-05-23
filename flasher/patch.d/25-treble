@@ -1,0 +1,14 @@
+#!/sbin/sh
+
+. "$env"
+cd "$tmp"
+
+print "Checking for Project Treble..."
+if [ -e /dev/block/bootdevice/by-name/vendor_a ] && [ ! -L /system/vendor ]; then
+    print "Treble ROM detected, enabling support..."
+    $bin/lz4 -cd treble.dtb.lz4 >> Image.gz
+else
+    $bin/lz4 -cd base.dtb.lz4 >> Image.gz
+fi
+
+exit 0

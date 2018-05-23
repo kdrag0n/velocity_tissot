@@ -14,7 +14,7 @@
 /dts-v1/;
 
 #include "msm8953.dtsi"
-#include "msm8953-ptn.dtsi"
+#include "msm8953-ptn-treble.dtsi"
 
 / {
 	model = "Xiaomi Mi A1";
