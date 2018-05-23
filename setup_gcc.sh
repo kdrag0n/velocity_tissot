@@ -16,12 +16,4 @@ export CXXFLAGS="-Ofast"
 #export CC="${CROSS_COMPILE}${C}"
 
 # helpers
-mkzip() {
-    rm anykernel/Image.gz-dtb
-    rm velocity_kernel.zip
-    cat arch/arm64/boot/Image.gz arch/arm/boot/dts/qcom/msm8953-qrd-sku3.dtb > anykernel/Image.gz-dtb
-    cd anykernel
-    zip -r ../velocity_kernel.zip *
-    cd ..
-    echo 'Done. Output is velocity_kernel.zip'
-}
+source helpers.sh
