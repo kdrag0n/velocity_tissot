@@ -2,8 +2,8 @@ mkzip() {
     echo '  ZIP     velocity_kernel.zip'
     rm velocity_kernel.zip
     cp arch/arm64/boot/Image.gz flasher/
-    lz4 -f9 -BD arch/arm64/boot/dts/qcom/msm8953-qrd-sku3.dtb flasher/base.dtb.lz4
-    lz4 -f9 -BD arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-treble.dtb flasher/treble.dtb.lz4
+    cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3.dtb flasher/base.dtb
+    cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-treble.dtb flasher/treble.dtb
     cd flasher
     zip -r9 ../velocity_kernel.zip .
     cd ..
