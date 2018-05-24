@@ -103,8 +103,8 @@ static void *vb2_dma_sg_alloc(void *alloc_ctx, unsigned long size, gfp_t gfp_fla
 	/* size is already page aligned */
 	buf->num_pages = size >> PAGE_SHIFT;
 
-	buf->pages = kvmalloc_array(buf->num_pages, sizeof(struct page *),
-				    GFP_KERNEL | __GFP_ZERO);
+	buf->pages = kzalloc(buf->num_pages * sizeof(struct page *),
+			     GFP_KERNEL);
 	if (!buf->pages)
 		goto fail_pages_array_alloc;
 
@@ -132,7 +132,7 @@ fail_table_alloc:
 	while (num_pages--)
 		__free_page(buf->pages[num_pages]);
 fail_pages_alloc:
-	kvfree(buf->pages);
+	kfree(buf->pages);
 fail_pages_array_alloc:
 	kfree(buf);
 	return NULL;
@@ -151,7 +151,7 @@ static void vb2_dma_sg_put(void *buf_priv)
 		sg_free_table(&buf->sg_table);
 		while (--i >= 0)
 			__free_page(buf->pages[i]);
-		kvfree(buf->pages);
+		kfree(buf->pages);
 		kfree(buf);
 	}
 }
