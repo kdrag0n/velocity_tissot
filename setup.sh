@@ -36,7 +36,7 @@ export KBUILD_BUILD_USER=velocity
 export KBUILD_BUILD_HOST=kernel
 export TOOL_CHAIN_PATH=$tc_gcc/bin/aarch64-linux-gnu-
 export CLANG_TCHAIN=$CLANG_PREBUILT_BIN/clang
-export CLANG_VERSION="$(${CLANG_TCHAIN} --version|head -n1|cut -d'(' -f1,4|sed -e 's/^\s*//' -e 's/\s*$//')"
+export CLANG_VERSION="$(${CLANG_TCHAIN} --version|head -n1|cut -d'(' -f1,4|sed -e 's/[[:space:]]*$//')"
 export REAL_COMPILER=clang
 export DRAGONTC=$dragontc
 
@@ -46,7 +46,8 @@ export LDFLAGS=""
 
 unalias cat > /dev/null 2>&1
 unalias zip > /dev/null 2>&1
-alias make="make CC=$CLANG_TCHAIN CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=$TOOL_CHAIN_PATH KBUILD_COMPILER_STRING=\"${CLANG_VERSION}\" KBUILD_BUILD_VERSION=1 HOSTCC=$CLANG_TCHAIN"
+
+MAKEFLAGS=(CC=$CLANG_TCHAIN CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=$TOOL_CHAIN_PATH "KBUILD_COMPILER_STRING=${CLANG_VERSION}" HOSTCC=$CLANG_TCHAIN)
 
 # helpers
 source helpers.sh

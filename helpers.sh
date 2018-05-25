@@ -9,12 +9,18 @@ mkzip() {
     cd ..
 }
 
+zerover() {
+    echo 0 >| .version
+}
+
 cleanbuild() {
-    make clean && make -j$jobs && mkzip
+    zerover
+    make "${MAKEFLAGS[@]}" clean && make -j$jobs && mkzip
 }
 
 incbuild() {
-    make -j$jobs && mkzip
+    zerover
+    make "${MAKEFLAGS[@]}" -j$jobs && mkzip
 }
 
 test() {
