@@ -381,9 +381,11 @@ static struct ft5435_ts_data *g_ft5435_ts_data;
 static int init_ok;
 module_param_named(init_ok, init_ok, int, 0644);
 
+#ifdef CONFIG_WAKE_GESTURES
 bool scr_suspended() {
 	return g_ft5435_ts_data->suspended;
 }
+#endif
 
 static void ft5435_update_fw_ver(struct ft5435_ts_data *data)
 {
@@ -1082,9 +1084,9 @@ static irqreturn_t ft5435_ts_interrupt(int irq, void *dev_id)
 					if (x == data->pdata->vkeys[j].x) {
 						if (status == FT_TOUCH_DOWN || status == FT_TOUCH_CONTACT)
 							input_report_key(data->input_dev, data->pdata->vkeys[j].keycode, true);
-						else 
+						else
 							input_report_key(data->input_dev, data->pdata->vkeys[j].keycode, false);
-						
+
 					}
 				}
 			}
