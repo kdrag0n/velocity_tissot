@@ -1407,6 +1407,30 @@ static int qcom_ice_config_start(struct platform_device *pdev,
 	}
 
 	/*
+	 * info field in req->end_io_data could be used by mulitple dm or
+	 * non-dm entities. To ensure that we are running operation on dm
+	 * based request, check BIO_DONT_FREE flag
+	 */
+	if (bio_flagged(req->bio, BIO_INLINECRYPT)) {
+		info = dm_get_rq_mapinfo(req);
+		if (!info) {
+			pr_debug("%s info not available in request\n",
+				 __func__);
+			return 0;
+		}
+
+		crypto_data = (struct ice_crypto_setting *)info->ptr;
+		if (!crypto_data) {
+			pr_err("%s crypto_data not available in request\n",
+				 __func__);
+			return -EINVAL;
+		}
+
+		return qti_ice_setting_config(req, pdev,
+				crypto_data, setting);
+	}
+
+	/*
 	 * It is not an error. If target is not req-crypt based, all request
 	 * from storage driver would come here to check if there is any ICE
 	 * setting required
