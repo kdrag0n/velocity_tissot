@@ -705,7 +705,7 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.capability = ARM64_UNMAP_KERNEL_AT_EL0,
 		.matches = unmap_kernel_at_el0,
 	},
-#endifc
+#endif
 	{
 		.desc = "Software prefetching using PRFM",
 		.capability = ARM64_HAS_NO_HW_PREFETCH,
