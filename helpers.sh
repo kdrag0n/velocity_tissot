@@ -1,3 +1,5 @@
+_RELEASE=0
+
 mkzip() {
     echo '  ZIP     velocity_kernel.zip'
     rm velocity_kernel.zip
@@ -9,17 +11,32 @@ mkzip() {
     cd ..
 }
 
+rel() {
+    [ ! -f .relversion ] && echo 0 > .relversion
+    mv .version .devversion && \
+    mv .relversion .version
+    _RELEASE=1
+    incbuild
+    _RELEASE=0
+    mv .version .relversion && \
+    mv .devversion .version && \
+    mkdir -p releases
+    fn="releases/velocity_kernel-tissot-r$(cat .relversion)-$(date +%Y%m%d).zip"
+    echo "  REL     $fn"
+    mv velocity_kernel.zip "$fn"
+}
+
 zerover() {
     echo 0 >| .version
 }
 
 cleanbuild() {
-    zerover
+    [ ! $_RELEASE ] && zerover
     make "${MAKEFLAGS[@]}" clean && make -j$jobs && mkzip
 }
 
 incbuild() {
-    zerover
+    [ ! $_RELEASE ] && zerover
     make "${MAKEFLAGS[@]}" -j$jobs && mkzip
 }
 
