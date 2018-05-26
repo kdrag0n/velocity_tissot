@@ -659,17 +659,6 @@ KBUILD_CFLAGS	+= $(call cc-option,-fno-PIE)
 KBUILD_AFLAGS	+= $(call cc-option,-fno-PIE)
 KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
 
-KBUILD_CFLAGS	+= $(call cc-option,-fno-code-hoisting,)
-KBUILD_CFLAGS	+= $(call cc-option,-fno-fp-int-builtin-inexact,)
-KBUILD_CFLAGS	+= $(call cc-option,-fno-ipa-bit-cp,)
-KBUILD_CFLAGS	+= $(call cc-option,-fno-ipa-icf-variables,)
-KBUILD_CFLAGS	+= $(call cc-option,-fno-ipa-vrp,)
-KBUILD_CFLAGS	+= $(call cc-option,-fno-printf-return-value,)
-KBUILD_CFLAGS	+= $(call cc-option,-fno-shrink-wrap-separate,)
-KBUILD_CFLAGS	+= $(call cc-option,-fno-store-merging,)
-KBUILD_CFLAGS	+= $(call cc-option,-fno-peel-loops,)
-KBUILD_CFLAGS	+= $(call cc-option,-fno-split-loops,)
-
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= $(call cc-option,-Oz,-Os)
 KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
