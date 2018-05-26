@@ -31,7 +31,6 @@ export ARCH=arm64
 export LD_LIBRARY_PATH=$tc_clang/lib64:$LD_LIBRARY_PATH
 export PATH=$CLANG_PREBUILT_BIN:$GCC_TOOLCHAIN/bin:$PATH
 export REAL_COMPILER=clang
-export SUBARCH=arm64
 export KBUILD_BUILD_USER=velocity
 export KBUILD_BUILD_HOST=kernel
 export TOOL_CHAIN_PATH=$tc_gcc/bin/aarch64-linux-gnu-

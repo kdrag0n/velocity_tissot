@@ -2,18 +2,17 @@
 #export CROSS_COMPILE=$HOME/code/android/gclang/clang-4691093/bin/
 export CROSS_COMPILE=$HOME/code/android/linaro731/bin/aarch64-linux-gnu-
 export ARCH=arm64
-export SUBARCH=arm64
-export CFLAGS="-Ofast"
-export CXXFLAGS="-Ofast"
-#export C="clang"
-#export CXX="clang++"
-#export USE_CCACHE=0
-#export CCACHE_DISABLE=1
-#export HOSTCC="clang"
-#export HOSTCXX="clang++"
-#export CFLAGS="-target aarch64-linux-gnu -Ofast"
-#export CXXFLAGS="-target aarch64-linux-gnu -Ofast"
-#export CC="${CROSS_COMPILE}${C}"
+
+jobs=10
+
+export CFLAGS=""
+export CXXFLAGS=""
+export LDFLAGS=""
+
+unalias cat > /dev/null 2>&1
+unalias zip > /dev/null 2>&1
+
+MAKEFLAGS=()
 
 # helpers
 source helpers.sh
