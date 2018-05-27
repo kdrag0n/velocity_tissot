@@ -2,8 +2,9 @@ _RELEASE=0
 
 mkzip() {
     echo '  ZIP     velocity_kernel.zip'
-    rm velocity_kernel.zip > /dev/null 2>&1
+    rm -f velocity_kernel.zip
     [ $_RELEASE -eq 0 ] && cp arch/arm64/boot/Image flasher/Image-custom
+    [ $_RELEASE -eq 0 ] && rm -f flasher/.rel
     cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3.dtb flasher/base.dtb
     cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-treble.dtb flasher/treble.dtb
     cd flasher
@@ -46,6 +47,7 @@ rel() {
     mv .devversion .version
 
     # Pack zip
+    touch flasher/.rel && \
     mkzip && \
     mkdir -p releases
 
