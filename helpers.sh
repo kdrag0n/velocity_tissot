@@ -3,7 +3,7 @@ _RELEASE=0
 mkzip() {
     echo '  ZIP     velocity_kernel.zip'
     rm velocity_kernel.zip > /dev/null 2>&1
-    [ ! $_RELEASE ] && cp arch/arm64/boot/Image flasher/Image-custom && echo 'copied'
+    [ $_RELEASE -eq 0 ] && cp arch/arm64/boot/Image flasher/Image-custom
     cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3.dtb flasher/base.dtb
     cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-treble.dtb flasher/treble.dtb
     cd flasher
@@ -65,12 +65,10 @@ zerover() {
 }
 
 cleanbuild() {
-    [ ! $_RELEASE ] && zerover
     make "${MAKEFLAGS[@]}" clean && make -j$jobs && mkzip
 }
 
 incbuild() {
-    [ ! $_RELEASE ] && zerover
     make "${MAKEFLAGS[@]}" -j$jobs && mkzip
 }
 
