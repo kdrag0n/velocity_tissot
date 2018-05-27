@@ -17,7 +17,7 @@ rel() {
     # Swap out version files
     [ ! -f .relversion ] && echo 0 > .relversion
     mv .version .devversion && \
-    mv .relversion .version && \
+    mv .relversion .version
 
     # Compile for custom
     make oldconfig && \
@@ -38,12 +38,12 @@ rel() {
     # Create patch delta
     echo '  BSDIFF  flasher/stock.delta' && \
     # Custom bsdiff that matches revised format of flasher patcher
-    ./bsdiff flasher/Image-custom arch/arm64/boot/Image flasher/stock.delta && \
+    ./bsdiff flasher/Image-custom arch/arm64/boot/Image flasher/stock.delta
 
     # Revert version and config files
     mv .occonfig .config && \
     mv .version .relversion && \
-    mv .devversion .version && \
+    mv .devversion .version
 
     # Pack zip
     mkzip && \
