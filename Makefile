@@ -689,7 +689,7 @@ KBUILD_CFLAGS += \
   -mllvm -polly-enable-delicm
 endif
 else
-KBUILD_CFLAGS	+= -Ofast -ffast-math -funsafe-math-optimizations -march=armv8-a+crypto+fp16+rcpc+dotprod+crc -mtune=cortex-a53 -mcpu=cortex-a53+crypto+fp16+rcpc+dotprod+crc
+KBUILD_CFLAGS	+= -Ofast -ffast-math -funsafe-math-optimizations -march=armv8-a+crypto+crc -mtune=cortex-a53 -mcpu=cortex-a53+crypto+crc
 endif
 endif
 

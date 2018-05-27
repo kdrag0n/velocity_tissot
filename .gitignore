@@ -109,6 +109,7 @@ firmware/synaptics/startup_fw_update.img
 
 # Flasher
 flasher/*.dtb
-flasher/Image.gz*
+flasher/Image*
+flasher/*.delta
 
 releases/

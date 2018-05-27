@@ -2,28 +2,62 @@ _RELEASE=0
 
 mkzip() {
     echo '  ZIP     velocity_kernel.zip'
-    rm velocity_kernel.zip
-    cp arch/arm64/boot/Image.gz flasher/
+    rm velocity_kernel.zip > /dev/null 2>&1
+    [ ! $_RELEASE ] && cp arch/arm64/boot/Image flasher/Image-custom && echo 'copied'
     cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3.dtb flasher/base.dtb
     cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-treble.dtb flasher/treble.dtb
     cd flasher
-    zip -r9 ../velocity_kernel.zip .
+    zip -r9 ../velocity_kernel.zip . > /dev/null
     cd ..
 }
 
 rel() {
+    _RELEASE=1
+
+    # Swap out version files
     [ ! -f .relversion ] && echo 0 > .relversion
     mv .version .devversion && \
-    mv .relversion .version
-    _RELEASE=1
-    incbuild
-    _RELEASE=0
+    mv .relversion .version && \
+
+    # Compile for custom
+    make oldconfig && \
+    make "${MAKEFLAGS[@]}" -j$jobs && \
+    cp arch/arm64/boot/Image flasher/Image-custom && \
+
+    # Reset version
+    echo $(($(cat .version) - 1)) >| .version && \
+
+    # Disable pronto for stock
+    cp .config .occonfig && \
+    sed -i 's/CONFIG_PRONTO_WLAN=y/# CONFIG_PRONTO_WLAN is not set/' .config && \
+    make oldconfig && \
+
+    # Compile for stock
+    make "${MAKEFLAGS[@]}" -j$jobs && \
+
+    # Create patch delta
+    echo '  BSDIFF  flasher/stock.delta' && \
+    # Custom bsdiff that matches revised format of flasher patcher
+    ./bsdiff flasher/Image-custom arch/arm64/boot/Image flasher/stock.delta && \
+
+    # Revert version and config files
+    mv .occonfig .config && \
     mv .version .relversion && \
     mv .devversion .version && \
+
+    # Pack zip
+    mkzip && \
     mkdir -p releases
-    fn="releases/velocity_kernel-tissot-r$(cat .relversion)-$(date +%Y%m%d).zip"
-    echo "  REL     $fn"
-    mv velocity_kernel.zip "$fn"
+
+    # Rename to release format
+    fn="releases/velocity_kernel-tissot-r$(cat .relversion)-$(date +%Y%m%d).zip" && \
+    echo "  REL     $fn" && \
+    mv velocity_kernel.zip "$fn" && \
+
+    # Increment version for next release
+    echo $(($(cat .relversion) + 1)) >| .relversion
+
+    _RELEASE=0
 }
 
 zerover() {
