@@ -27,6 +27,7 @@
 #include <linux/cpumask.h>
 #include <linux/hrtimer.h>
 
+#define CONFIG_ASMP_SUSPEND
 #if defined(CONFIG_ASMP_SUSPEND)
 
 #ifdef CONFIG_POWERSUSPEND
