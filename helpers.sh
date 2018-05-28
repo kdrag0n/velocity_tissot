@@ -81,9 +81,11 @@ test() {
         adb reboot recovery
     fi
 
+    fn="velocity_kernel.zip"
+    [ "x$1" != "x" ] && fn="$1"
     adb wait-for-usb-recovery && \
-    adb push $1 /tmp && \
-    adb shell twrp install /tmp/velocity_kernel.zip && \
+    adb push $fn /tmp/kernel.zip && \
+    adb shell twrp install /tmp/kernel.zip && \
     adb shell reboot
 }
 
