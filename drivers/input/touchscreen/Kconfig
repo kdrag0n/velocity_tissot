@@ -1150,4 +1150,12 @@ source "drivers/input/touchscreen/gt9xx/Kconfig"
 config WAKE_GESTURES
         bool "Wake Gestures"
 
+config TOUCHSCREEN_SWEEP2WAKE
+        bool "Sweep2Wake for touchscreens"
+        default n
+
+config TOUCHSCREEN_DOUBLETAP2WAKE
+	bool "DoubleTap2Wake for touchscreens"
+	default n
+
 endif

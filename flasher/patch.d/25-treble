@@ -5,10 +5,10 @@ cd "$tmp"
 
 print "Checking for Project Treble..."
 if [ -e /dev/block/bootdevice/by-name/vendor_a ] && [ ! -L /system/vendor ]; then
-    print "Treble ROM detected, enabling support..."
-    cat treble.dtb >> Image.gz
+	print "Treble ROM detected, enabling support..."
+	cat treble.dtb >> Image.gz
 else
-    cat base.dtb >> Image.gz
+	cat base.dtb >> Image.gz
 fi
 
 exit 0

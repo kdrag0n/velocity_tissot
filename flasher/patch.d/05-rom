@@ -1,0 +1,19 @@
+#!/sbin/sh
+
+. "$env"
+cd "$tmp"
+
+if [ -f /system/system/vendor/lib/modules/pronto/pronto_wlan.ko ]; then
+	print "Stock ROM detected"
+	if [ ! -f stock.delta ]; then
+		print "This build does not support stock, aborting..."
+		exit 1
+	fi
+	$bin/bspatch Image-custom Image-stock stock.delta
+	cat Image-stock | gzip -nfc9 > Image.gz
+else
+	print "Custom ROM detected"
+	cat Image-custom | gzip -nfc9 > Image.gz
+fi
+
+exit 0

@@ -8066,7 +8066,7 @@ VOS_STATUS hdd_read_cfg_file(v_VOID_t *pCtx, char *pFileName,
    return VOS_STATUS_SUCCESS;
 }
 
-static int randomize_mac = 1;
+static int randomize_mac;
 
 static struct ctl_table randomize_mac_table[] =
 {
