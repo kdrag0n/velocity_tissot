@@ -15,6 +15,8 @@ on property:persist.spectrum.profile=0
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2208000
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 307200
 	write /sys/kernel/gpu/gpu_max_clock 682
+	write /sys/kernel/gpu/gpu_min_clock 133
+	write /sys/kernel/gpu/gpu_governor microfreq
 	write /sys/kernel/autosmp/conf/max_cpus 8
 	write /sys/kernel/autosmp/conf/cpufreq_down 80
 	write /sys/kernel/autosmp/conf/cpufreq_up 20
@@ -26,6 +28,8 @@ on property:persist.spectrum.profile=1
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2400000
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1804800
 	write /sys/kernel/gpu/gpu_max_clock 855
+	write /sys/kernel/gpu/gpu_min_clock 320
+	write /sys/kernel/gpu/gpu_governor microfreq
 	write /sys/kernel/autosmp/conf/max_cpus 8
 	write /sys/kernel/autosmp/conf/cpufreq_down 20
 	write /sys/kernel/autosmp/conf/cpufreq_up 80
@@ -38,6 +42,8 @@ on property:persist.spectrum.profile=2
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1689600
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 307200
 	write /sys/kernel/gpu/gpu_max_clock 320
+	write /sys/kernel/gpu/gpu_min_clock 133
+	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
 	write /sys/kernel/autosmp/conf/max_cpus 4
 	write /sys/kernel/autosmp/conf/cpufreq_down 90
 	write /sys/kernel/autosmp/conf/cpufreq_up 10
@@ -50,6 +56,8 @@ on property:persist.spectrum.profile=3
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2400000
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1401600
 	write /sys/kernel/gpu/gpu_max_clock 855
+	write /sys/kernel/gpu/gpu_min_clock 455
+	write /sys/kernel/gpu/gpu_governor performance
 	write /sys/kernel/autosmp/conf/max_cpus 8
 	write /sys/kernel/autosmp/conf/cpufreq_down 20
 	write /sys/kernel/autosmp/conf/cpufreq_up 80
