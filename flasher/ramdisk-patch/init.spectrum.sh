@@ -6,3 +6,6 @@
 if [ ! -f /data/property/persist.spectrum.profile ]; then
 	setprop persist.spectrum.profile 0
 fi
+
+# Ensure settings take effect
+setprop persist.spectrum.profile $(getprop persist.spectrum.profile)

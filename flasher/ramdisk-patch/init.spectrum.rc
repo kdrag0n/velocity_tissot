@@ -10,9 +10,17 @@ on property:sys.boot_completed=1
 # Balanced (default)
 on property:persist.spectrum.profile=0
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor helix_schedutil
+	write /sys/devices/system/cpu/cpufreq/helix_schedutil/up_rate_limit_us 550
+	write /sys/devices/system/cpu/cpufreq/helix_schedutil/down_rate_limit_us 4200
+	write /sys/devices/system/cpu/cpufreq/helix_schedutil/target_load2 68
+	write /sys/devices/system/cpu/cpufreq/helix_schedutil/target_load1 32
+	write /sys/devices/system/cpu/cpufreq/helix_schedutil/bit_shift1 8
+	write /sys/devices/system/cpu/cpufreq/helix_schedutil/bit_shift2 5
 	write /sys/module/autosmp/parameters/enabled 1
 	write /sys/module/lazyplug/parameters/lazyplug_active 0
-	write /sys/kernel/autosmp/conf/min_cpus 1
+	write /sys/kernel/autosmp/conf/min_cpus 2
+	write /sys/kernel/autosmp/conf/cycle_down 4
+	write /sys/kernel/autosmp/conf/cycle_up 3
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2208000
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 307200
 	write /sys/kernel/gpu/gpu_max_clock 682
@@ -24,7 +32,7 @@ on property:persist.spectrum.profile=0
 
 # Performance
 on property:persist.spectrum.profile=1
-	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor performance
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor intelliactive
 	write /sys/module/autosmp/parameters/enabled 0
 	write /sys/module/lazyplug/parameters/lazyplug_active 1
 	write /sys/module/lazyplug/parameters/nr_run_profile_sel 1
@@ -34,9 +42,6 @@ on property:persist.spectrum.profile=1
 	write /sys/kernel/gpu/gpu_max_clock 855
 	write /sys/kernel/gpu/gpu_min_clock 320
 	write /sys/kernel/gpu/gpu_governor microfreq
-	write /sys/kernel/autosmp/conf/max_cpus 8
-	write /sys/kernel/autosmp/conf/cpufreq_down 20
-	write /sys/kernel/autosmp/conf/cpufreq_up 80
 
 # Battery
 on property:persist.spectrum.profile=2
@@ -44,12 +49,14 @@ on property:persist.spectrum.profile=2
 	write /sys/module/autosmp/parameters/enabled 1
 	write /sys/module/lazyplug/parameters/lazyplug_active 0
 	write /sys/kernel/autosmp/conf/min_cpus 1
+	write /sys/kernel/autosmp/conf/cycle_down 2
+	write /sys/kernel/autosmp/conf/cycle_up 4
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1689600
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 307200
 	write /sys/kernel/gpu/gpu_max_clock 320
 	write /sys/kernel/gpu/gpu_min_clock 133
 	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
-	write /sys/kernel/autosmp/conf/max_cpus 4
+	write /sys/kernel/autosmp/conf/max_cpus 5
 	write /sys/kernel/autosmp/conf/cpufreq_down 90
 	write /sys/kernel/autosmp/conf/cpufreq_up 10
 
