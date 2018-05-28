@@ -56,6 +56,9 @@ rel() {
     echo "  REL     $fn" && \
     mv velocity_kernel.zip "$fn"
 
+    # Fix config for next build
+    make oldconfig
+
     _RELEASE=0
 }
 
