@@ -54,10 +54,7 @@ rel() {
     # Rename to release format
     fn="releases/velocity_kernel-tissot-r$(cat .relversion)-$(date +%Y%m%d).zip" && \
     echo "  REL     $fn" && \
-    mv velocity_kernel.zip "$fn" && \
-
-    # Increment version for next release
-    echo $(($(cat .relversion) + 1)) >| .relversion
+    mv velocity_kernel.zip "$fn"
 
     _RELEASE=0
 }
