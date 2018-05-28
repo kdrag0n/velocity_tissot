@@ -29,6 +29,7 @@ on property:persist.spectrum.profile=0
 	write /sys/kernel/autosmp/conf/max_cpus 8
 	write /sys/kernel/autosmp/conf/cpufreq_down 80
 	write /sys/kernel/autosmp/conf/cpufreq_up 20
+	write /sys/kernel/autosmp/conf/delay 120
 
 # Performance
 on property:persist.spectrum.profile=1
@@ -59,6 +60,7 @@ on property:persist.spectrum.profile=2
 	write /sys/kernel/autosmp/conf/max_cpus 5
 	write /sys/kernel/autosmp/conf/cpufreq_down 90
 	write /sys/kernel/autosmp/conf/cpufreq_up 10
+	write /sys/kernel/autosmp/conf/delay 100
 
 # Gaming
 on property:persist.spectrum.profile=3
