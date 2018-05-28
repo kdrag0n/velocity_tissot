@@ -37,6 +37,7 @@
 #include <linux/compat.h>
 #include <linux/pm_runtime.h>
 #include <linux/ioprio.h>
+#include <linux/iosched_switcher.h>
 
 #include <trace/events/mmc.h>
 
@@ -3960,6 +3961,8 @@ static struct mmc_blk_data *mmc_blk_alloc_req(struct mmc_card *card,
 		if (!mmc_packed_init(&md->queue, card))
 			md->flags |= MMC_BLK_PACKED_CMD;
 	}
+
+	init_iosched_switcher(md->queue.queue);
 
 	return md;
 
