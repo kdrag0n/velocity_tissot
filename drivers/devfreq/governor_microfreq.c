@@ -120,6 +120,25 @@ static int devfreq_microfreq_func(struct devfreq *df,
 		stat.total_time >>= 7;
 	}
 
+	/* Assume MAX if it is going to be divided by zero */
+	if (stat.total_time == 0) {
+		*freq = df->max_freq;
+		return 0;
+	}
+
+	/* Set MAX if we do not know the initial frequency */
+	if (stat.current_frequency == 0) {
+		*freq = df->max_freq;
+		return 0;
+	}
+
+	/* Keep the current frequency */
+	if (stat.busy_time * 100 >
+	    stat.total_time * (RAMP_MULTIPLIER - DERAMP_MULTIPLIER)) {
+		*freq = stat.current_frequency;
+		return 0;
+	}
+
 	/* Set the desired frequency based on the load */
 	a = stat.busy_time;
 	a *= stat.current_frequency;
