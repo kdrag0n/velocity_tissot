@@ -16,20 +16,18 @@ on property:persist.spectrum.profile=0
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/target_load1 32
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/bit_shift1 8
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/bit_shift2 5
-	write /sys/module/autosmp/parameters/enabled 1
-	write /sys/module/lazyplug/parameters/lazyplug_active 0
-	write /sys/kernel/autosmp/conf/min_cpus 2
-	write /sys/kernel/autosmp/conf/cycle_down 4
-	write /sys/kernel/autosmp/conf/cycle_up 3
+	write /sys/module/autosmp/parameters/enabled 0
+	write /sys/module/lazyplug/parameters/lazyplug_active 1
+	write /sys/module/lazyplug/parameters/nr_run_profile_sel 0
+	write /sys/module/lazyplug/parameters/touch_boost_active 0
+	write /sys/module/lazyplug/parameters/cpu_nr_run_threshold 1000
+	write /sys/module/lazyplug/parameters/nr_possible_cores 8
+	write /sys/module/lazyplug/parameters/nr_run_hysteresis 10
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2208000
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 307200
 	write /sys/kernel/gpu/gpu_max_clock 682
 	write /sys/kernel/gpu/gpu_min_clock 133
 	write /sys/kernel/gpu/gpu_governor microfreq
-	write /sys/kernel/autosmp/conf/max_cpus 8
-	write /sys/kernel/autosmp/conf/cpufreq_down 80
-	write /sys/kernel/autosmp/conf/cpufreq_up 20
-	write /sys/kernel/autosmp/conf/delay 120
 
 # Performance
 on property:persist.spectrum.profile=1
