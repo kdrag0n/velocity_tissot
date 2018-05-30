@@ -23,10 +23,10 @@ on boot
 	write /sys/block/mmcblk0/queue/add_random 0
 	write /sys/block/mmcblk1/queue/add_random 0
 
-	# Light LMK
+	# Very Light LMK
 	chmod 0666 /sys/module/lowmemorykiller/parameters/minfree
 	chown root /sys/module/lowmemorykiller/parameters/minfree
-	write /sys/module/lowmemorykiller/parameters/minfree 9162,18324,27486,36648,45810,54972
+	write /sys/module/lowmemorykiller/parameters/minfree 9167,18334,27501,36668,45835,55002
 
 	# Misc
 	write /sys/class/timed_output/vibrator/vtg_level 2030
