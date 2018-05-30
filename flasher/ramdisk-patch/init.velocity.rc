@@ -9,6 +9,7 @@ on boot
 
 	# GPU
 	write /sys/module/simple_gpu_algorithm/parameters/simple_gpu_activate 0
+	write /sys/module/adreno_idler/parameters/adreno_idler_active N
 
 	# Sound: eliminate background noise
 	write /sys/kernel/sound_control/headphone_gain -10 -10
