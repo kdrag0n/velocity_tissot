@@ -56,7 +56,7 @@ on property:persist.spectrum.profile=2
 	write /sys/kernel/autosmp/conf/delay 500
 	write /sys/kernel/autosmp/conf/max_cpus 8
 	write /sys/kernel/autosmp/conf/min_cpus 1
-	write /sys/kernel/autosmp/conf/cycle_down 2
+	write /sys/kernel/autosmp/conf/cycle_down 0
 	write /sys/kernel/autosmp/conf/cycle_up 4
 	write /sys/kernel/autosmp/conf/cpufreq_down 50
 	write /sys/kernel/autosmp/conf/cpufreq_up 40
