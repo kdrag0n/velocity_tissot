@@ -132,8 +132,7 @@ marrow_dispatch_requests(struct request_queue *q, int force)
 	if (likely(!rq)) {
 		/* If screen off or writes tip seesaw, allow writes through */
 		if (unlikely(!is_display_on() || 
-			(sizeof(&mdata->fifo_list[SYNC][WRITE]) * READ_MULTIPLIER) > sizeof(&mdata->fifo_list[SYNC][READ]) || 
-			sizeof(&mdata->fifo_list[ASYNC][WRITE]) * READ_MULTIPLIER) > sizeof(&mdata->fifo_list[ASYNC][READ]))
+			(sizeof(&mdata->fifo_list[SYNC][WRITE]) * READ_MULTIPLIER) > sizeof(&mdata->fifo_list[SYNC][READ])))
 			data_dir = WRITE;
 
 		rq = marrow_choose_request(mdata, data_dir);
