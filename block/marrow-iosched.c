@@ -30,8 +30,8 @@ enum { ASYNC, SYNC };
 
 /* Tunables */
 #define FIFO_BATCH 		1	/* # of sequential requests treated as one by the above parameters. */
-#define FIFO_BATCH_SCREEN_OFF	40	/* ditto for the fifo_batch for screen off */
-#define READ_MULTIPLIER		2 	/* if(WRITE > READ * READ_MULTIPLIER) => do WRITE*/
+#define FIFO_BATCH_SCREEN_OFF	20	/* ditto for the fifo_batch for screen off */
+#define READ_MULTIPLIER		1.5 	/* if(WRITE > READ * READ_MULTIPLIER) => do WRITE*/
 
 struct marrow_data *mdata;
 static int sync;
