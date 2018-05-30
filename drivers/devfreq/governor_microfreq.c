@@ -16,8 +16,8 @@
 #include <linux/jiffies.h>
 #include "governor.h"
 
-#define RAMP_MULTIPLIER		90
-#define DERAMP_MULTIPLIER	5
+#define RAMP_MULTIPLIER		85
+#define DERAMP_MULTIPLIER	8
 
 static bool gpu_boost_pending = false;
 
