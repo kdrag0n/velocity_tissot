@@ -31,7 +31,7 @@ enum { ASYNC, SYNC };
 /* Tunables */
 #define FIFO_BATCH 		1	/* # of sequential requests treated as one by the above parameters. */
 #define FIFO_BATCH_SCREEN_OFF	20	/* ditto for the fifo_batch for screen off */
-#define READ_MULTIPLIER		1.5 	/* if(WRITE > READ * READ_MULTIPLIER) => do WRITE*/
+#define READ_MULTIPLIER		2	/* if(WRITE > READ * READ_MULTIPLIER) => do WRITE*/
 
 struct marrow_data *mdata;
 static int sync;
@@ -132,7 +132,8 @@ marrow_dispatch_requests(struct request_queue *q, int force)
 	if (likely(!rq)) {
 		/* If screen off or writes tip seesaw, allow writes through */
 		if (unlikely(!is_display_on() || 
-			(sizeof(&mdata->fifo_list[SYNC][WRITE]) * READ_MULTIPLIER) > sizeof(&mdata->fifo_list[SYNC][READ])))
+			(sizeof(&mdata->fifo_list[SYNC][WRITE]) * READ_MULTIPLIER) > sizeof(&mdata->fifo_list[SYNC][READ]) || 
+			sizeof(&mdata->fifo_list[ASYNC][WRITE]) * READ_MULTIPLIER) > sizeof(&mdata->fifo_list[ASYNC][READ]))
 			data_dir = WRITE;
 
 		rq = marrow_choose_request(mdata, data_dir);
