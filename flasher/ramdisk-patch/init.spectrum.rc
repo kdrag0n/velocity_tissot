@@ -7,7 +7,7 @@ on property:sys.boot_completed=1
 	setprop spectrum.support 1
 	setprop persist.spectrum.kernel Velocity
 
-# Balanced (default)
+# Balanced
 on property:persist.spectrum.profile=0
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor helix_schedutil
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/up_rate_limit_us 1000
