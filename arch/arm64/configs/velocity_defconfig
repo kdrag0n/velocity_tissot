@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 3.18.110 Kernel Configuration
+# Linux/arm64 3.18.112 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -517,7 +517,7 @@ CONFIG_CPU_PM=y
 # CONFIG_SUSPEND_TIME is not set
 # CONFIG_SUSPEND_WATCHDOG is not set
 CONFIG_PM_SYNC_BEFORE_SUSPEND=y
-# CONFIG_QUICK_WAKEUP is not set
+CONFIG_QUICK_WAKEUP=y
 # CONFIG_SUSPEND_DEBUG is not set
 # CONFIG_DEDUCE_WAKEUP_REASONS is not set
 CONFIG_BOEFFLA_WL_BLOCKER=y
