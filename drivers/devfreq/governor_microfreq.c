@@ -18,8 +18,11 @@
 
 #define RAMP_MULTIPLIER		90
 #define DERAMP_MULTIPLIER	5
+#define GPU_BOOST_TAIL		250
 
 static bool gpu_boost_pending = false;
+u64 now = 0;
+u64 gpu_boost_expire = 0;
 
 static __always_inline void mf_input_event(struct input_handle *handle,
 		unsigned int type,
@@ -139,16 +142,23 @@ static int devfreq_microfreq_func(struct devfreq *df,
 		return 0;
 	}
 
+	now = ktime_to_ms(ktime_get());
+
 	/* Set the desired frequency based on the load */
 	a = stat.busy_time;
 	a *= stat.current_frequency;
 	b = div_u64(a, stat.total_time);
 	b *= 100;
 	/* If input, ramp */
-	if (gpu_boost_pending) {	
+	/* If gpu_boost_expire hasn't been reached yet, treat as input boost */
+	if (gpu_boost_pending || now <= gpu_boost_expire) {
+		/* If we got here because of input boost, set gpu_boost_expire to GPU_BOOST_TAIL in the future */
+		if (gpu_boost_pending)
+			gpu_boost_expire = now + GPU_BOOST_TAIL;
 		gpu_boost_pending = false;
 		b = div_u64(b, (RAMP_MULTIPLIER - DERAMP_MULTIPLIER));
-	} else {
+	/* If there is no gpu_boost_pending, and we already passed gpu_boost_expire, don't ramp */
+	} else if (now > gpu_boost_expire) {
 		b = div_u64(b, (RAMP_MULTIPLIER - DERAMP_MULTIPLIER / 2));
 	}
 	*freq = (unsigned long) b;
