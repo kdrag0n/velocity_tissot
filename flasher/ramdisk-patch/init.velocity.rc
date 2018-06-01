@@ -31,10 +31,6 @@ on boot
 	# Misc
 	write /proc/sys/vm/swappiness 25
 
-	# Gestures
-	write /sys/android_touch/sweep2wake 0
-	write /sys/android_touch/doubletap2wake 0
-
 on property:sys.boot_completed=1
 	# Disable printk later to aid debugging during boot
 	write /sys/kernel/printk_mode/printk_mode 0
