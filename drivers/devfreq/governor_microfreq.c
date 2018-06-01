@@ -16,8 +16,8 @@
 #include <linux/jiffies.h>
 #include "governor.h"
 
-#define RAMP_MULTIPLIER		85
-#define DERAMP_MULTIPLIER	8
+#define RAMP_MULTIPLIER		90
+#define DERAMP_MULTIPLIER	5
 
 static bool gpu_boost_pending = false;
 
@@ -147,7 +147,7 @@ static int devfreq_microfreq_func(struct devfreq *df,
 	/* If input, ramp */
 	if (gpu_boost_pending) {	
 		gpu_boost_pending = false;
-		b = div_u64(b, (RAMP_MULTIPLIER - DERAMP_MULTIPLIER * 2));
+		b = div_u64(b, (RAMP_MULTIPLIER - DERAMP_MULTIPLIER));
 	} else {
 		b = div_u64(b, (RAMP_MULTIPLIER - DERAMP_MULTIPLIER / 2));
 	}
