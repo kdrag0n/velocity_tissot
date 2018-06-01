@@ -52,12 +52,11 @@
 #define FT_SUSPEND_LEVEL 1
 #endif
 
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && !defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
 #include <linux/input/doubletap2wake.h>
-#elif (defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) && !defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE))
-#include <linux/input/sweep2wake.h>
-#elif (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-#include <linux/input/doubletap2wake.h>
+#endif
+
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
 #include <linux/input/sweep2wake.h>
 #endif
 
@@ -1424,7 +1423,7 @@ static int ft5435_ts_resume(struct device *dev)
 			__set_bit(BTN_TOUCH, data->input_dev->keybit);
 			input_sync(data->input_dev);
 			ev_btn_status = false;
-		}		
+		}
 		ft5435_irq_handler(data->client->irq, false);
 	}
 #endif
@@ -1437,7 +1436,7 @@ static int ft5435_ts_resume(struct device *dev)
 	input_mt_report_slot_state(data->input_dev, MT_TOOL_FINGER, 0);
 	__set_bit(BTN_TOUCH, data->input_dev->keybit);
 	input_sync(data->input_dev);
-	
+
 	if (gesture_func_on)
                  disable_irq_wake(data->client->irq);
 
