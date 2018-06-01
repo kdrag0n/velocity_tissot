@@ -12,7 +12,7 @@ dragontc=true
 # Path to the root of the gcc toolchain.
 # Must be recent, or you may encounter problems.
 # Do not add /bin/... or anything.
-tc_gcc=$HOME/code/android/linaro731
+tc_gcc=$HOME/code/android/8tc
 
 # Number of parallel jobs to run
 # This should be set to the number of CPU cores on your system.
