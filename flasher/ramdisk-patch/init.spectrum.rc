@@ -10,28 +10,29 @@ on property:sys.boot_completed=1
 # Balanced (default)
 on property:persist.spectrum.profile=0
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor helix_schedutil
-	write /sys/devices/system/cpu/cpufreq/helix_schedutil/up_rate_limit_us 550
-	write /sys/devices/system/cpu/cpufreq/helix_schedutil/down_rate_limit_us 4200
-	write /sys/devices/system/cpu/cpufreq/helix_schedutil/target_load2 58
-	write /sys/devices/system/cpu/cpufreq/helix_schedutil/target_load1 30
+	write /sys/devices/system/cpu/cpufreq/helix_schedutil/up_rate_limit_us 1000
+	write /sys/devices/system/cpu/cpufreq/helix_schedutil/down_rate_limit_us 1000
+	write /sys/devices/system/cpu/cpufreq/helix_schedutil/target_load2 20
+	write /sys/devices/system/cpu/cpufreq/helix_schedutil/target_load1 80
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/bit_shift1 9
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/bit_shift2 5
-	write /sys/module/cpu_boost/parameters/input_boost_freq 0:1689600
+	write /sys/module/cpu_boost/parameters/input_boost_freq 0:652800
 	write /sys/module/cpu_boost/parameters/input_boost_ms 140
 	write /sys/module/autosmp/parameters/enabled 1
 	write /sys/module/lazyplug/parameters/lazyplug_active 0
 	write /sys/kernel/autosmp/conf/delay 500
 	write /sys/kernel/autosmp/conf/max_cpus 8
 	write /sys/kernel/autosmp/conf/min_cpus 1
-	write /sys/kernel/autosmp/conf/cycle_down 1
-	write /sys/kernel/autosmp/conf/cycle_up 1
-	write /sys/kernel/autosmp/conf/cpufreq_down 60
-	write /sys/kernel/autosmp/conf/cpufreq_up 40
+	write /sys/kernel/autosmp/conf/cycle_down 0
+	write /sys/kernel/autosmp/conf/cycle_up 2
+	write /sys/kernel/autosmp/conf/cpufreq_down 50
+	write /sys/kernel/autosmp/conf/cpufreq_up 50
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2208000
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 307200
 	write /sys/kernel/gpu/gpu_max_clock 682
 	write /sys/kernel/gpu/gpu_min_clock 133
-	write /sys/kernel/gpu/gpu_governor microfreq
+	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 3
 
 # Performance
 on property:persist.spectrum.profile=1
@@ -45,7 +46,8 @@ on property:persist.spectrum.profile=1
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1804800
 	write /sys/kernel/gpu/gpu_max_clock 855
 	write /sys/kernel/gpu/gpu_min_clock 320
-	write /sys/kernel/gpu/gpu_governor microfreq
+	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 3
 
 # Battery
 on property:persist.spectrum.profile=2
@@ -54,17 +56,18 @@ on property:persist.spectrum.profile=2
 	write /sys/module/cpu_boost/parameters/input_boost_freq 0:0
 	write /sys/module/lazyplug/parameters/lazyplug_active 0
 	write /sys/kernel/autosmp/conf/delay 500
-	write /sys/kernel/autosmp/conf/max_cpus 8
+	write /sys/kernel/autosmp/conf/max_cpus 4
 	write /sys/kernel/autosmp/conf/min_cpus 1
 	write /sys/kernel/autosmp/conf/cycle_down 0
 	write /sys/kernel/autosmp/conf/cycle_up 4
 	write /sys/kernel/autosmp/conf/cpufreq_down 50
-	write /sys/kernel/autosmp/conf/cpufreq_up 40
+	write /sys/kernel/autosmp/conf/cpufreq_up 50
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1689600
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 307200
 	write /sys/kernel/gpu/gpu_max_clock 320
 	write /sys/kernel/gpu/gpu_min_clock 133
-	write /sys/kernel/gpu/gpu_governor microfreq
+	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 0
 
 # Gaming
 on property:persist.spectrum.profile=3
@@ -79,3 +82,4 @@ on property:persist.spectrum.profile=3
 	write /sys/kernel/gpu/gpu_max_clock 855
 	write /sys/kernel/gpu/gpu_min_clock 455
 	write /sys/kernel/gpu/gpu_governor performance
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 3
