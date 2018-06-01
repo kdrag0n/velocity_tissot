@@ -12,8 +12,8 @@ on property:persist.spectrum.profile=0
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor helix_schedutil
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/up_rate_limit_us 1000
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/down_rate_limit_us 1000
-	write /sys/devices/system/cpu/cpufreq/helix_schedutil/target_load2 20
-	write /sys/devices/system/cpu/cpufreq/helix_schedutil/target_load1 80
+	write /sys/devices/system/cpu/cpufreq/helix_schedutil/target_load2 80
+	write /sys/devices/system/cpu/cpufreq/helix_schedutil/target_load1 20
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/bit_shift1 9
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/bit_shift2 5
 	write /sys/module/cpu_boost/parameters/input_boost_freq 0:652800
