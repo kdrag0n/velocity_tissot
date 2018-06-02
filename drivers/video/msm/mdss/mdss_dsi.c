@@ -286,6 +286,13 @@ static int mdss_dsi_regulator_init(struct platform_device *pdev,
 	return rc;
 }
 
+
+#if 1
+extern int ft8716_suspend;
+extern int  ft8716_gesture_func_on;
+int acc_vreg = 0;
+#endif
+
  int mdss_dsi_panel_power_off(struct mdss_panel_data *pdata)
 {
 	int ret = 0;
@@ -307,11 +314,54 @@ static int mdss_dsi_regulator_init(struct platform_device *pdev,
 	if (mdss_dsi_pinctrl_set_state(ctrl_pdata, false))
 			pr_debug("reset disable: pinctrl not enabled\n");
 
+#if 1
+
+	if ((panel_suspend_power_flag != 3) && acc_vreg) {
+		ret = msm_dss_enable_vreg(
+		ctrl_pdata->panel_power_data.vreg_config,
+		ctrl_pdata->panel_power_data.num_vreg, 0);
+		acc_vreg--;
+		if (ret)
+			pr_err("%s: failed to disable vregs for %s\n",
+			__func__, __mdss_dsi_pm_name(DSI_PANEL_PM));
+	} else {
+		if (!ft8716_gesture_func_on && ft8716_suspend && acc_vreg) {
+			ret = msm_dss_enable_vreg(
+					ctrl_pdata->panel_power_data.vreg_config,
+					ctrl_pdata->panel_power_data.num_vreg, 0);
+			acc_vreg--;
+			if (ret)
+				pr_err("%s: failed to disable vregs for %s\n",
+					 __func__, __mdss_dsi_pm_name(DSI_PANEL_PM));
+
+		}
+
+	}
+#elif defined CONFIG_PROJECT_VINCE
+	if ((!synaptics_gesture_func_on) || (!synaptics_gesture_func_on_lansi) || (!NVT_gesture_func_on)) {
+		ret = msm_dss_enable_vreg(
+				ctrl_pdata->panel_power_data.vreg_config,
+				ctrl_pdata->panel_power_data.num_vreg, 0);
+		if (ret)
+			pr_err("%s: failed to disable vregs for %s\n",
+				__func__, __mdss_dsi_pm_name(DSI_PANEL_PM));
+	}
+#else
+
+	if (!panel_suspend_power_flag) {
+		ret = msm_dss_enable_vreg(
+				ctrl_pdata->panel_power_data.vreg_config,
+				ctrl_pdata->panel_power_data.num_vreg, 0);
+	if (ret)
+		pr_err("%s: failed to disable vregs for %s\n",
+				__func__, __mdss_dsi_pm_name(DSI_PANEL_PM));
+	}
+
+#endif
+
 end:
 	return ret;
 }
-
-int acc_vreg = 0;
 
 static int mdss_dsi_panel_power_on(struct mdss_panel_data *pdata)
 {
