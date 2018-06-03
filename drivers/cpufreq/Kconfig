@@ -487,7 +487,7 @@ config CPU_FREQ_GOV_ALUCARD
 	tristate "'alucard' cpufreq governor"
 	depends on CPU_FREQ
 	select CPU_FREQ_GOV_COMMON
-
+	help
 	  If in doubt, say N.
 
 config CPU_FREQ_GOV_ELECTROUTIL
