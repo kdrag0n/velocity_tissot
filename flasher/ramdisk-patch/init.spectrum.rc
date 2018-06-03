@@ -29,8 +29,8 @@ on property:persist.spectrum.profile=0
 	write /sys/kernel/autosmp/conf/cpufreq_up 50
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2208000
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 307200
-	write /sys/kernel/gpu/gpu_max_clock 682
-	write /sys/kernel/gpu/gpu_min_clock 133
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 739000000
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 133330000
 	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 3
 
@@ -44,8 +44,8 @@ on property:persist.spectrum.profile=1
 	write /sys/module/lazyplug/parameters/nr_run_hysteresis 16
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2400000
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1804800
-	write /sys/kernel/gpu/gpu_max_clock 855
-	write /sys/kernel/gpu/gpu_min_clock 320
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 855000000
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 320000000
 	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 3
 
@@ -64,10 +64,10 @@ on property:persist.spectrum.profile=2
 	write /sys/kernel/autosmp/conf/cpufreq_up 50
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1689600
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 307200
-	write /sys/kernel/gpu/gpu_max_clock 320
-	write /sys/kernel/gpu/gpu_min_clock 133
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 320000000
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 133330000
 	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
-	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 0
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 1
 
 # Gaming
 on property:persist.spectrum.profile=3
@@ -79,7 +79,7 @@ on property:persist.spectrum.profile=3
 	write /sys/module/lazyplug/parameters/nr_run_hysteresis 16
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2400000
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1401600
-	write /sys/kernel/gpu/gpu_max_clock 855
-	write /sys/kernel/gpu/gpu_min_clock 455
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 855000000
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 455000000
 	write /sys/kernel/gpu/gpu_governor performance
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 3
