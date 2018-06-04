@@ -46,6 +46,8 @@
 #define RCU_TREE_NONCORE
 #include "tree.h"
 
+DECLARE_PER_CPU_SHARED_ALIGNED(unsigned long, rcu_qs_ctr);
+
 static int r_open(struct inode *inode, struct file *file,
 					const struct seq_operations *op)
 {
