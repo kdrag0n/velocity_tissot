@@ -80,7 +80,7 @@ MODULE_LICENSE("GPLv2");
 #endif
 
 /* Resources */
-int s2w_switch = 2;
+int s2w_switch = 0;
 static int s2w_debug = 0;
 static int s2w_pwrkey_dur = 60;
 static int touch_x = 0, touch_y = 0;
