@@ -498,30 +498,6 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 			gpio_set_value((ctrl_pdata->disp_en_gpio), 0);
 			gpio_free(ctrl_pdata->disp_en_gpio);
 		}
-#if 1
-
-		if ((panel_suspend_reset_flag == 2) || ((panel_suspend_reset_flag == 3) && (ft8716_gesture_func_on == 0))) {
-			if (ft8716_suspend || (panel_suspend_reset_flag == 2)) {
-				gpio_set_value((ctrl_pdata->rst_gpio), 1);
-				mdelay(10);
-				gpio_set_value((ctrl_pdata->rst_gpio), 0);
-				mdelay(10);
-				gpio_set_value((ctrl_pdata->rst_gpio), 1);
-				mdelay(10);
-				gpio_set_value((ctrl_pdata->rst_gpio), 0);
-				mdelay(10);
-			}
-		} else if ((panel_suspend_reset_flag == 3) || (panel_suspend_reset_flag == 0)) {
-			gpio_set_value((ctrl_pdata->rst_gpio), 0);
-		}
-#elif defined CONFIG_PROJECT_VINCE
-
-#else
-	if (panel_suspend_reset_flag == 0) {
-		gpio_set_value((ctrl_pdata->rst_gpio), 0);
-	}
-
-#endif
 		gpio_free(ctrl_pdata->rst_gpio);
 		if (gpio_is_valid(ctrl_pdata->mode_gpio))
 			gpio_free(ctrl_pdata->mode_gpio);
