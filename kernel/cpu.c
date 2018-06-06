@@ -539,11 +539,6 @@ static int switch_to_fair_policy(void)
 int cpu_up(unsigned int cpu)
 {
 	int err = 0;
-	int switch_err = 0;
-
-	switch_err = switch_to_rt_policy();
-	if (switch_err < 0)
-		return switch_err;
 
 	if (!cpu_possible(cpu)) {
 		pr_err("can't online cpu %d because it is not configured as may-hotadd at boot time\n",
@@ -569,13 +564,6 @@ int cpu_up(unsigned int cpu)
 
 out:
 	cpu_maps_update_done();
-
-	if (!switch_err) {
-		switch_err = switch_to_fair_policy();
-		pr_err("Hotplug policy switch err. Task %s pid=%d\n",
-					current->comm, current->pid);
-	}
-
 	return err;
 }
 EXPORT_SYMBOL_GPL(cpu_up);
