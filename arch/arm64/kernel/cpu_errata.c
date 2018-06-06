@@ -21,17 +21,22 @@
 #include <asm/cputype.h>
 #include <asm/cpufeature.h>
 
-#define MIDR_CORTEX_A53 MIDR_CPU_MODEL(ARM_CPU_IMP_ARM, ARM_CPU_PART_CORTEX_A53)
-#define MIDR_CORTEX_A57 MIDR_CPU_MODEL(ARM_CPU_IMP_ARM, ARM_CPU_PART_CORTEX_A57)
-#define MIDR_KRYO2XX_SILVER MIDR_CPU_MODEL(ARM_CPU_IMP_QCOM, ARM_CPU_PART_KRYO2XX_SILVER)
-#define MIDR_QCOM_KRYO MIDR_CPU_MODEL(ARM_CPU_IMP_QCOM, QCOM_CPU_PART_KRYO)
+#define MIDR_CORTEX_A53 MIDR_CPU_PART(ARM_CPU_IMP_ARM, ARM_CPU_PART_CORTEX_A53)
+#define MIDR_CORTEX_A57 MIDR_CPU_PART(ARM_CPU_IMP_ARM, ARM_CPU_PART_CORTEX_A57)
+#define MIDR_KRYO2XX_SILVER MIDR_CPU_PART(ARM_CPU_IMP_QCOM, ARM_CPU_PART_KRYO2XX_SILVER)
+#define MIDR_QCOM_KRYO MIDR_CPU_PART(ARM_CPU_IMP_QCOM, QCOM_CPU_PART_KRYO)
 
 static bool __maybe_unused
 is_affected_midr_range(const struct arm64_cpu_capabilities *entry)
 {
-	return MIDR_IS_CPU_MODEL_RANGE(read_cpuid_id(), entry->midr_model,
-				       entry->midr_range_min,
-				       entry->midr_range_max);
+	u32 midr = read_cpuid_id();
+
+	if ((midr & CPU_MODEL_MASK) != entry->midr_model)
+		return false;
+
+	midr &= MIDR_REVISION_MASK | MIDR_VARIANT_MASK;
+
+	return (midr >= entry->midr_range_min && midr <= entry->midr_range_max);
 }
 
 static bool __maybe_unused

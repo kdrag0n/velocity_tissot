@@ -22,18 +22,17 @@
 #define MAX_CPU_FEATURES	(8 * sizeof(elf_hwcap))
 #define cpu_feature(x)		ilog2(HWCAP_ ## x)
 
-#define ARM64_WORKAROUND_CLEAN_CACHE	0
+#define ARM64_WORKAROUND_CLEAN_CACHE		0
 #define ARM64_WORKAROUND_DEVICE_LOAD_ACQUIRE	1
 #define ARM64_WORKAROUND_845719			2
 #define ARM64_HAS_SYSREG_GIC_CPUIF		3
-#define ARM64_HAS_PAN					4
-#define ARM64_HAS_UAO					5
+#define ARM64_HAS_PAN				4
+#define ARM64_HAS_UAO				5
 #define ARM64_ALT_PAN_NOT_UAO			6
-#define ARM64_HARDEN_BRANCH_PREDICTOR	7
+#define ARM64_HARDEN_BRANCH_PREDICTOR		7
 #define ARM64_UNMAP_KERNEL_AT_EL0		23
-#define ARM64_HAS_NO_HW_PREFETCH 		9
 
-#define ARM64_NCAPS						24
+#define ARM64_NCAPS				24
 
 #ifndef __ASSEMBLY__
 

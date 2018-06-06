@@ -651,18 +651,6 @@ static int __init parse_kpti(char *str)
 __setup("kpti=", parse_kpti);
 #endif	/* CONFIG_UNMAP_KERNEL_AT_EL0 */
 
-static bool has_no_hw_prefetch(const struct arm64_cpu_capabilities *entry)
-{
-	u32 midr = read_cpuid_id();
-	u32 rv_min, rv_max;
-
-	/* Cavium ThunderX pass 1.x and 2.x */
-	rv_min = 0;
-	rv_max = (1 << MIDR_VARIANT_SHIFT) | MIDR_REVISION_MASK;
-
-	return MIDR_IS_CPU_MODEL_RANGE(midr, MIDR_THUNDERX, rv_min, rv_max);
-}
-
 static const struct arm64_cpu_capabilities arm64_features[] = {
 	{
 		.desc = "GIC system register CPU interface",
@@ -706,11 +694,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.matches = unmap_kernel_at_el0,
 	},
 #endif
-	{
-		.desc = "Software prefetching using PRFM",
-		.capability = ARM64_HAS_NO_HW_PREFETCH,
-		.matches = has_no_hw_prefetch,
-	},
 	{},
 };
 
