@@ -60,16 +60,16 @@
 	(0xf			<< MIDR_ARCHITECTURE_SHIFT) | \
 	((partnum)		<< MIDR_PARTNUM_SHIFT))
 
-#define MIDR_CPU_MODEL_MASK (MIDR_IMPLEMENTOR_MASK | MIDR_PARTNUM_MASK | \
+#define MIDR_CPU_MODEL_MASK(MIDR_IMPLEMENTOR_MASK | MIDR_PARTNUM_MASK |
 							MIDR_ARCHITECTURE_MASK)
 
 #define MIDR_IS_CPU_MODEL_RANGE(midr, model, rv_min, rv_max)        \
-({                                                              \
-	u32 _model = (midr)&MIDR_CPU_MODEL_MASK;                    \
-	u32 rv = (midr) & (MIDR_REVISION_MASK | MIDR_VARIANT_MASK); \
-                                                                \
-	_model == (model) && rv >= (rv_min) && rv <= (rv_max);      \
-}) 
+	({                                                              \
+		u32 _model = (midr)&MIDR_CPU_MODEL_MASK;                    \
+		u32 rv = (midr) & (MIDR_REVISION_MASK | MIDR_VARIANT_MASK); \
+                                                                    \
+		_model == (model) && rv >= (rv_min) && rv <= (rv_max);      \
+	}) 
 
 #define ARM_CPU_IMP_ARM 	0x41
 #define ARM_CPU_IMP_APM		0x50
