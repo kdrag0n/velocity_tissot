@@ -30,7 +30,6 @@ on boot
 
 	# Misc
 	write /proc/sys/vm/swappiness 25
-	write /sys/module/msm_thermal/parameters/limit_temp_degC 45
 
 	# Gestures
 	write /sys/android_touch/sweep2wake 0
