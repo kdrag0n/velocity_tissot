@@ -29,7 +29,6 @@ on boot
 	write /sys/module/lowmemorykiller/parameters/minfree 9167,18334,27501,36668,45835,55002
 
 	# Misc
-	write /proc/sys/vm/swappiness 25
 	write /sys/module/msm_thermal/parameters/limit_temp_degC 60
 
 	# Gestures
