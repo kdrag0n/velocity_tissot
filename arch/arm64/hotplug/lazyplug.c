@@ -139,9 +139,6 @@ defined (CONFIG_ARCH_MSM8610) || defined (CONFIG_ARCH_MSM8228)
 #define THREAD_CAPACITY	(250 - CAPACITY_RESERVE)
 #endif
 
-static unsigned int __read_mostly nr_run_profile_sel = 0;
-module_param(nr_run_profile_sel, uint, 0664);
-
 #define MULT_FACTOR	4
 #define DIV_FACTOR	100000
 #define NR_FSHIFT	3
