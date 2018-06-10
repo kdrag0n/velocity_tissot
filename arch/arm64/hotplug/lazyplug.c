@@ -125,7 +125,7 @@ static DEFINE_PER_CPU(struct ip_cpu_info, ip_info);
 #define CAPACITY_RESERVE	50
 
 #if defined(CONFIG_ARCH_MSM8994) || defined(CONFIG_ARCH_MSM_8996) || \
-defined(CONFIG_ARCH_MSM8992)
+defined(CONFIG_ARCH_MSM8992) || defined(CONFIG_ARCH_MSM8953)
 #define THREAD_CAPACITY (520 - CAPACITY_RESERVE)
 #elif defined(CONFIG_ARCH_APQ8084) || defined(CONFIG_ARM64)
 #define THREAD_CAPACITY (430 - CAPACITY_RESERVE)
@@ -138,6 +138,9 @@ defined (CONFIG_ARCH_MSM8610) || defined (CONFIG_ARCH_MSM8228)
 #else
 #define THREAD_CAPACITY	(250 - CAPACITY_RESERVE)
 #endif
+
+static unsigned int __read_mostly nr_run_profile_sel = 0;
+module_param(nr_run_profile_sel, uint, 0664);
 
 #define MULT_FACTOR	4
 #define DIV_FACTOR	100000
