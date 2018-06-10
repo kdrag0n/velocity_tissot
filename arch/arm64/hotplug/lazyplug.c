@@ -272,10 +272,16 @@ static unsigned int calculate_thread_stats(void)
 		threshold_size =
 			ARRAY_SIZE(nr_run_thresholds_eco);
 
+#if defined(CONFIG_ARCH_MSM8953)
+	nr_fshift = 1;
+#elif
+
 	if (nr_run_profile_sel >= NR_RUN_ECO_MODE_PROFILE)
 		nr_fshift = 1;
 	else
 		nr_fshift = num_possible_cpus() - 1;
+#endif
+
 
 	for (nr_run = 1; nr_run < threshold_size; nr_run++) {
 		unsigned int nr_threshold;
