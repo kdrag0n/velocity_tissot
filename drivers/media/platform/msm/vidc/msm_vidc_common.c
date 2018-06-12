@@ -730,12 +730,15 @@ static void handle_sys_init_done(enum hal_command_response cmd, void *data)
 
 void put_inst_helper(struct kref *kref)
 {
-    struct msm_vidc_inst *inst = container_of(kref, struct msm_vidc_inst, kref);
-    msm_vidc_destroy(inst);
+	struct msm_vidc_inst *inst = container_of(kref,
+			struct msm_vidc_inst, kref);
+
+	msm_vidc_destroy(inst);
 }
 
 void put_inst(struct msm_vidc_inst *inst)
 {
+
 	if (!inst)
 		return;
 
@@ -1068,7 +1071,7 @@ static void handle_session_init_done(enum hal_command_response cmd, void *data)
 
 static void handle_event_change(enum hal_command_response cmd, void *data)
 {
-	struct msm_vidc_inst *inst = NULL;
+	struct msm_vidc_inst *inst;
 	struct msm_vidc_cb_event *event_notify = data;
 	int event = V4L2_EVENT_SEQ_CHANGED_INSUFFICIENT;
 	struct v4l2_event seq_changed_event = {0};

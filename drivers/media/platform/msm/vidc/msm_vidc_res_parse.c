@@ -53,9 +53,9 @@ fail_read:
 }
 
 bool is_compatible(char *compat)
-	{
-		return !!of_find_compatible_node(NULL, NULL, compat);
-	}
+{
+	return !!of_find_compatible_node(NULL, NULL, compat);
+}
 
 static inline enum imem_type read_imem_type(struct platform_device *pdev)
 {
