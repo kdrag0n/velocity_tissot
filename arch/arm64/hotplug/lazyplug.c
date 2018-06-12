@@ -77,7 +77,7 @@
 #undef DEBUG_LAZYPLUG
 
 #define LAZYPLUG_MAJOR_VERSION	1
-#define LAZYPLUG_MINOR_VERSION	13
+#define LAZYPLUG_MINOR_VERSION	14
 
 #define DEF_SAMPLING_MS			(268)
 #define DEF_IDLE_COUNT			(19) /* 268 * 19 = 5092, almost equals to 5 seconds */
@@ -204,6 +204,9 @@ static unsigned int __read_mostly *nr_run_profiles[] = {
 #define NR_RUN_HYSTERESIS_DUAL	4
 
 #define CPU_NR_THRESHOLD	((THREAD_CAPACITY << 1) + (THREAD_CAPACITY / 2))
+
+static unsigned int __read_mostly nr_min_cores = 1;
+module_param(nr_min_cores, uint, 0644);
 
 static unsigned int __read_mostly nr_possible_cores;
 module_param(nr_possible_cores, uint, 0644);
@@ -375,7 +378,7 @@ static void lazyplug_work_fn(struct work_struct *work)
 
 				if (idle_count == DEF_IDLE_COUNT && persist_count == 0) {
 					/* take down everyone */
-					unplug_cpu(0);
+					unplug_cpu(nr_min_cores - 1);
 #ifdef DEBUG_LAZYPLUG
 					offline_state_count++;
 					if (previous_online_status == true) {
