@@ -85,8 +85,7 @@ test() {
     [ "x$1" != "x" ] && fn="$1"
     adb wait-for-usb-recovery && \
     adb push $fn /tmp/kernel.zip && \
-    adb shell twrp install /tmp/kernel.zip && \
-    adb shell reboot
+    adb shell "twrp install /tmp/kernel.zip && reboot"
 }
 
 inc() {
