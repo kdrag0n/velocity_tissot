@@ -17,16 +17,20 @@ find -type f \( \
 	-name "ueventd.*" -o -name "sepolicy" -o -name "sepolicy_version" \
 	\) -exec chmod 0644 {} \;
 
+overlay="$ramdisk/overlay"
+
 print "Copying new files to the ramdisk..."
 cp -rd ./. "$ramdisk/"
-
-print "Copying new files to the system..."
-cp -rd ./. /system/
+rm -rf "$overlay"
+mkdir -p "$overlay"
+cp -rd ./. "$overlay/"
 
 print "Injecting init code..."
 import_rc "init.velocity.rc"
 import_rc "init.spectrum.rc"
-insert_after_last /system/init.rc "import .*\.rc" "import /init.spectrum.rc"
-insert_after_last /system/init.rc "import .*\.rc" "import /init.velocity.rc"
+
+cp /system/init.rc "$overlay/"
+insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.spectrum.rc"
+insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.velocity.rc"
 
 exit 0
