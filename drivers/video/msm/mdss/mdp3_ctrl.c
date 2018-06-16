@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -651,8 +651,11 @@ int mdp3_ctrl_get_source_format(u32 imgType)
 	case MDP_RGB_888:
 		format = MDP3_DMA_IBUF_FORMAT_RGB888;
 		break;
+	case MDP_XRGB_8888:
 	case MDP_ARGB_8888:
 	case MDP_RGBA_8888:
+	case MDP_BGRA_8888:
+	case MDP_RGBX_8888:
 		format = MDP3_DMA_IBUF_FORMAT_XRGB8888;
 		break;
 	default:
