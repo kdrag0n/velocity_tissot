@@ -1,14 +1,18 @@
 _RELEASE=0
 
 mkzip() {
-    echo '  ZIP     velocity_kernel.zip'
-    rm -f velocity_kernel.zip
     [ $_RELEASE -eq 0 ] && cp arch/arm64/boot/Image flasher/Image-custom
     [ $_RELEASE -eq 0 ] && rm -f flasher/.rel
+    [ $_RELEASE -eq 1 ] && touch flasher/.rel
     cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3.dtb flasher/base.dtb
     cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-treble.dtb flasher/treble.dtb
     cd flasher
-    zip -r9 ../velocity_kernel.zip . > /dev/null
+
+    fn="velocity_kernel.zip"
+    [ "x$1" != "x" ] && fn="$1"
+    rm -f "../$fn"
+    echo "  ZIP     $fn"
+    zip -r9 "../$fn" . > /dev/null
     cd ..
 }
 
@@ -47,14 +51,8 @@ rel() {
     mv .devversion .version
 
     # Pack zip
-    touch flasher/.rel && \
-    mkzip && \
-    mkdir -p releases
-
-    # Rename to release format
-    fn="releases/velocity_kernel-tissot-r$(cat .relversion)-$(date +%Y%m%d).zip" && \
-    echo "  REL     $fn" && \
-    mv velocity_kernel.zip "$fn"
+    mkdir -p releases && \
+    mkzip "releases/velocity_kernel-tissot-r$(cat .relversion)-$(date +%Y%m%d).zip" && \
 
     # Fix config for next build
     make oldconfig
@@ -72,6 +70,14 @@ cleanbuild() {
 
 incbuild() {
     make "${MAKEFLAGS[@]}" -j$jobs && mkzip
+}
+
+dbuild() {
+    make "${MAKEFLAGS[@]}" -j$jobs $@ && dzip
+}
+
+dzip() {
+    mkzip "betas/velocity_kernel-tissot-b$(cat .version)-$(date +%Y%m%d).zip"
 }
 
 test() {
