@@ -2,12 +2,12 @@
 
 # Path to the root of the clang toolchain
 # Do not add /bin/... or anything.
-tc_clang=$HOME/code/android/dtc/out/7.0
+tc_clang=$HOME/code/android/gclang/clang-r328903
 
 # Whether the given clang toolchain is DragonTC.
 # Controls use of optimizations.
 # Value: true or false
-dragontc=true
+dragontc=false
 
 # Path to the root of the gcc toolchain.
 # Must be recent, or you may encounter problems.
