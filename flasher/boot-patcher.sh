@@ -122,7 +122,7 @@ determine_ramdisk_format() {
 	[ "$ramdisk_compression" ] && rdformat=$ramdisk_compression
 	case "$rdformat" in
 		bzip2) compress="bzip2 -9c" ;;
-		gzip) compress="gzip -9c" ;;
+		gzip) compress="pigz -p 8 -9c" ;;
 		lz4) compress="$bin/lz4 -9" ;;
 		lzo) compress="lzop -9c" ;;
 		lzma) compress="$bin/xz --format=lzma --lzma1=dict=16MiB -9" ;;

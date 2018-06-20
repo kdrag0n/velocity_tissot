@@ -10,10 +10,10 @@ if [ -f /system/system/vendor/lib/modules/pronto/pronto_wlan.ko ]; then
 		exit 1
 	fi
 	$bin/bspatch Image-custom Image-stock stock.delta
-	cat Image-stock | gzip -nfc9 > Image.gz
+	cat Image-stock | pigz -p 8 -nfc9 > Image.gz
 else
 	print "Custom ROM detected"
-	cat Image-custom | gzip -nfc9 > Image.gz
+	cat Image-custom | pigz -p 8 -nfc9 > Image.gz
 fi
 
 exit 0
