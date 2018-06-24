@@ -135,7 +135,7 @@ determine_ramdisk_format() {
 # extract the old ramdisk contents
 dump_ramdisk() {
 	cd "$ramdisk"
-	$decompress < "$split_img/boot.img-ramdisk" | cpio -i
+	$decompress < "$split_img/boot.img-ramdisk" | cpio -di
 	[ $? != 0 ] && abort "Unpacking ramdisk failed"
 }
 
