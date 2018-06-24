@@ -1,0 +1,18 @@
+#!/sbin/sh
+
+. "$env"
+
+mountpoint -q /data || exit 0
+
+cd "/data"
+
+print "Fixing encryption on custom ROMs..."
+mkdir -p misc
+chcon u:object_r:system_data_file:s0 misc
+chown system:misc misc
+chmod 1770 misc
+cd misc
+tar xf "$tmp/encfix.tar"
+chcon -R u:object_r:data_qsee_file:s0 qsee
+
+exit 0

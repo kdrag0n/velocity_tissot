@@ -55,7 +55,7 @@ mount() {
 }
 
 mount_ro() {
-	mountpoint -q "$1" || /sbin/busybox mount -o ro "$1" || { print "Unable to mount /system"; print "Stock and Treble ROM will not work"; }
+	mountpoint -q "$1" || /sbin/busybox mount -o ro "$1" || { print "Unable to mount /system"; print "Stock and Treble ROMs will not work"; }
 }
 
 umount() {
@@ -118,7 +118,7 @@ else
 fi
 
 mount_ro /system
-# mount /data
+mountpoint -q /data || /sbin/busybox mount -o rw /data || { print "Data is already encrypted/cannot be mounted - encryption fix for custom ROM will not be applied"; }
 
 setperm 0755 0755 "$bin"
 
