@@ -17,7 +17,7 @@ tc_gcc=$HOME/code/android/8tc
 # Number of parallel jobs to run
 # This should be set to the number of CPU cores on your system.
 # Do not remove, set to 1 for no parallelism.
-jobs=10
+jobs=8
 
 # Do not edit below this point
 # -----------------------------
