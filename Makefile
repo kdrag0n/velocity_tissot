@@ -693,9 +693,6 @@ KBUILD_CFLAGS	+= -Ofast -ffast-math -funsafe-math-optimizations -march=armv8-a+c
 endif
 endif
 
-# Disable KASAN
-KASAN_SANITIZE := n
-
 # Tell gcc to never replace conditional load with a non-conditional one
 KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
 
