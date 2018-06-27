@@ -32,8 +32,7 @@ cp /system/init.rc "$overlay/"
 insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.spectrum.rc"
 insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.velocity.rc"
 
-if [ -f "$overlay/init.magisk.rc" ]; then
-	insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.magisk.rc"
-fi
+# silently fails if there's none
+insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.magisk.rc"
 
 exit 0
