@@ -262,7 +262,6 @@ static void ipa3_tx_switch_to_intr_mode(struct ipa3_sys_context *sys)
 
 	if (ipa3_ctx->transport_prototype == IPA_TRANSPORT_TYPE_GSI) {
 		atomic_set(&sys->curr_polling_state, 0);
-		ipa3_dec_release_wakelock();
 		ret = gsi_config_channel_mode(sys->ep->gsi_chan_hdl,
 			GSI_CHAN_MODE_CALLBACK);
 		if (ret != GSI_STATUS_SUCCESS) {
@@ -290,8 +289,8 @@ static void ipa3_tx_switch_to_intr_mode(struct ipa3_sys_context *sys)
 		}
 		atomic_set(&sys->curr_polling_state, 0);
 		ipa3_handle_tx_core(sys, true, false);
-		ipa3_dec_release_wakelock();
 	}
+	ipa3_dec_release_wakelock();
 	return;
 
 fail:
@@ -1079,7 +1078,6 @@ static void ipa3_rx_switch_to_intr_mode(struct ipa3_sys_context *sys)
 			goto fail;
 		}
 		atomic_set(&sys->curr_polling_state, 0);
-		ipa3_dec_release_wakelock();
 		ret = gsi_config_channel_mode(sys->ep->gsi_chan_hdl,
 			GSI_CHAN_MODE_CALLBACK);
 		if (ret != GSI_STATUS_SUCCESS) {
@@ -1116,8 +1114,8 @@ static void ipa3_rx_switch_to_intr_mode(struct ipa3_sys_context *sys)
 		}
 		atomic_set(&sys->curr_polling_state, 0);
 		ipa3_handle_rx_core(sys, true, false);
-		ipa3_dec_release_wakelock();
 	}
+	ipa3_dec_release_wakelock();
 	return;
 
 fail:
