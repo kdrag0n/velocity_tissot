@@ -118,10 +118,8 @@ else
 fi
 
 mount_ro /system
-if [ -f /dev/block/dm-0 ]; then
-print "Already encrypted, not flashing custom ROM encryption fix"
-else
-mountpoint -q /data || /sbin/busybox mount -o rw /data || { print "Data is already encrypted/cannot be mounted - encryption fix for custom ROM will not be applied"; }
+if [ ! -f /dev/block/dm-0 ]; then # encryption fix
+mountpoint -q /data || /sbin/busybox mount -o rw /data
 fi
 
 setperm 0755 0755 "$bin"

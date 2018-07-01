@@ -4,10 +4,11 @@
 
 [ -f /dev/block/dm-0 ] && exit 0 # already encrypted
 mountpoint -q /data || exit 0 # couldn't mount; probably encrypted
+[ -f /data/misc/qsee/default_qti_regular_43.bin ] && exit 0 # already fixed
 
 cd "/data"
 
-print "Fixing encryption on custom ROMs..."
+print "Fixing initial encryption on custom ROMs..."
 mkdir -p misc
 chcon u:object_r:system_data_file:s0 misc
 chown system:misc misc

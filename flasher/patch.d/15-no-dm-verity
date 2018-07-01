@@ -2,7 +2,7 @@
 
 . "$env"
 
-print "Disabling dm-verity..."
+print "Disabling system verification..."
 
 found_fstab=false
 

@@ -19,12 +19,11 @@ find -type f \( \
 
 overlay="$ramdisk/overlay"
 
-print "Copying new files to the ramdisk..."
+print "Copying new files..."
 cp -rd ./. "$ramdisk/"
 mkdir -p "$overlay"
 cp -rd ./. "$overlay/"
 
-print "Injecting init code..."
 import_rc "init.velocity.rc"
 import_rc "init.spectrum.rc"
 
