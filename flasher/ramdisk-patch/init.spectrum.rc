@@ -20,13 +20,10 @@ on property:persist.spectrum.profile=0
 	write /sys/module/cpu_boost/parameters/input_boost_ms 150
 	write /sys/module/autosmp/parameters/enabled 0
 	write /sys/module/lazyplug/parameters/lazyplug_active 0
-	write /sys/module/msm_hotplug/msm_enabled 1
-	write /sys/module/msm_hotplug/update_rates 42
-	write /sys/module/msm_hotplug/boost_lock_duration 2100
-	write /sys/module/msm_hotplug/max_cpus_online_susp 1
-	write /sys/module/msm_hotplug/min_cpus_online 2
-	write /sys/module/msm_hotplug/cpus_boosted 5
-	write /sys/module/msm_hotplug/fast_lane_load 98
+	write /sys/module/msm_hotplug/msm_enabled 0
+	write /sys/module/thunderplug/hotplug_enabled 0
+	write /sys/module/blu_plug/parameters/enabled 0
+	write /sys/kernel/intelli_plug/intelli_plug_active 0
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2208000
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 307200
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 682000000
@@ -38,13 +35,13 @@ on property:persist.spectrum.profile=0
 on property:persist.spectrum.profile=1
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor intelliactive
 	write /sys/module/autosmp/parameters/enabled 0
+	write /sys/module/lazyplug/parameters/lazyplug_active 0
 	write /sys/module/msm_hotplug/msm_enabled 0
-	write /sys/module/cpu_boost/parameters/input_boost_freq 0:1804800
-	write /sys/module/cpu_boost/parameters/input_boost_ms 225
-	write /sys/module/lazyplug/parameters/lazyplug_active 1
-	write /sys/module/lazyplug/parameters/nr_run_profile_sel 1
-	write /sys/module/lazyplug/parameters/nr_run_hysteresis 16
-	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2400000
+	write /sys/module/thunderplug/hotplug_enabled 0
+	write /sys/module/blu_plug/parameters/enabled 0
+	write /sys/kernel/intelli_plug/intelli_plug_active 0
+	write /sys/module/cpu_boost/parameters/input_boost_freq 0:0
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2361600
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1804800
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 855000000
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 320000000
@@ -55,9 +52,12 @@ on property:persist.spectrum.profile=1
 on property:persist.spectrum.profile=2
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor darkness
 	write /sys/module/autosmp/parameters/enabled 1
-	write /sys/module/msm_hotplug/msm_enabled 0
-	write /sys/module/cpu_boost/parameters/input_boost_freq 0:0
 	write /sys/module/lazyplug/parameters/lazyplug_active 0
+	write /sys/module/msm_hotplug/msm_enabled 0
+	write /sys/module/thunderplug/hotplug_enabled 0
+	write /sys/module/blu_plug/parameters/enabled 0
+	write /sys/kernel/intelli_plug/intelli_plug_active 0
+	write /sys/module/cpu_boost/parameters/input_boost_freq 0:0
 	write /sys/kernel/autosmp/conf/delay 500
 	write /sys/kernel/autosmp/conf/max_cpus 4
 	write /sys/kernel/autosmp/conf/min_cpus 1
@@ -76,13 +76,13 @@ on property:persist.spectrum.profile=2
 on property:persist.spectrum.profile=3
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor intelliactive
 	write /sys/module/autosmp/parameters/enabled 0
+	write /sys/module/lazyplug/parameters/lazyplug_active 0
 	write /sys/module/msm_hotplug/msm_enabled 0
-	write /sys/module/cpu_boost/parameters/input_boost_freq 0:1804800
-	write /sys/module/cpu_boost/parameters/input_boost_ms 225
-	write /sys/module/lazyplug/parameters/lazyplug_active 1
-	write /sys/module/lazyplug/parameters/nr_run_profile_sel 1
-	write /sys/module/lazyplug/parameters/nr_run_hysteresis 16
-	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2400000
+	write /sys/module/thunderplug/hotplug_enabled 0
+	write /sys/module/blu_plug/parameters/enabled 0
+	write /sys/kernel/intelli_plug/intelli_plug_active 0
+	write /sys/module/cpu_boost/parameters/input_boost_freq 0:0
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2361600
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1401600
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 855000000
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 455000000
