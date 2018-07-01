@@ -722,6 +722,9 @@ WLANTL_Open
   pTLCb->tlConfigInfo.uDelayedTriggerFrmInt =
                 pTLConfig->uDelayedTriggerFrmInt;
 
+  pTLCb->tlConfigInfo.ucIsReplayCheck =
+                pTLConfig->ucIsReplayCheck;
+
   /*------------------------------------------------------------------------
     Allocate internal resources
    ------------------------------------------------------------------------*/
@@ -843,7 +846,8 @@ WLANTL_Start
   vos_atomic_set_U8( &pTLCb->ucTxSuspended, 0);
   pTLCb->uResCount = uResCount;
 
-  vos_timer_start(&pTLCb->tx_frames_timer, WLANTL_SAMPLE_INTERVAL);
+  if (IS_FEATURE_SUPPORTED_BY_FW(SAP_BUFF_ALLOC))
+    vos_timer_start(&pTLCb->tx_frames_timer, WLANTL_SAMPLE_INTERVAL);
 
   return VOS_STATUS_SUCCESS;
 }/* WLANTL_Start */
@@ -1522,7 +1526,9 @@ WLANTL_RegisterSTAClient
   vos_copy_macaddr( &pClientSTA->wSTADesc.vSelfMACAddress, &pwSTADescType->vSelfMACAddress);
 
   /* In volans release L replay check is done at TL */
-  pClientSTA->ucIsReplayCheckValid = pwSTADescType->ucIsReplayCheckValid;
+  if (pTLCb->tlConfigInfo.ucIsReplayCheck)
+     pClientSTA->ucIsReplayCheckValid = pwSTADescType->ucIsReplayCheckValid;
+
   pClientSTA->ulTotalReplayPacketsDetected =  0;
 /*Clear replay counters of the STA on all TIDs*/
   for(ucTid = 0; ucTid < WLANTL_MAX_TID ; ucTid++)
@@ -6136,10 +6142,18 @@ static void WLANTL_CacheEapol(WLANTL_CbType* pTLCb, vos_pkt_t* vosTempBuff)
 static void WLANTL_SampleRxRSSI(WLANTL_CbType* pTLCb, void * pBDHeader,
                                 uint8_t sta_id)
 {
-   WLANTL_STAClientType *pClientSTA = pTLCb->atlSTAClients[sta_id];
-   uint8_t count = pClientSTA->rssi_sample_cnt;
-   uint8_t old_idx = pClientSTA->rssi_stale_idx;
+   uint8_t count;
+   uint8_t old_idx;
    s8 curr_RSSI, curr_RSSI0, curr_RSSI1;
+   WLANTL_STAClientType *pClientSTA = pTLCb->atlSTAClients[sta_id];
+
+   if(pClientSTA == NULL) {
+      TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+      " %s: pClientSTA is NULL", __func__));
+      return;
+   }
+   count = pClientSTA->rssi_sample_cnt;
+   old_idx = pClientSTA->rssi_stale_idx;
 
    curr_RSSI0 = WLANTL_GETRSSI0(pBDHeader);
    curr_RSSI1 = WLANTL_GETRSSI1(pBDHeader);
@@ -11863,9 +11877,9 @@ WLAN_TLAPGetNextTxIds
   if ( WLAN_MAX_STA_COUNT <= ucNextSTA )
     ucNextSTA = 0;
 
-  isServed = FALSE;
-  if ( 0 == pTLCb->ucCurLeftWeight )
-  {
+    isServed = FALSE;
+    if ( 0 == pTLCb->ucCurLeftWeight )
+    {
       //current prioirty is done
       if ( WLANTL_AC_BK == (WLANTL_ACEnumType)pTLCb->uCurServedAC )
       {
@@ -11879,7 +11893,7 @@ WLAN_TLAPGetNextTxIds
 
       pTLCb->ucCurLeftWeight =  pTLCb->tlConfigInfo.ucAcWeights[pTLCb->uCurServedAC];
  
-  } // (0 == pTLCb->ucCurLeftWeight)
+    } // (0 == pTLCb->ucCurLeftWeight)
 
   ucTempSTA = ucNextSTA;
   minWeightSta = ucNextSTA;
@@ -14491,8 +14505,8 @@ void WLANTL_RegisterFwdEapol(v_PVOID_t pvosGCtx,
    WLANTL_CbType* pTLCb = NULL;
    pTLCb = VOS_GET_TL_CB(pvosGCtx);
 
-   pTLCb->pfnEapolFwd = pfnFwdEapol;
-
+   if (pTLCb)
+      pTLCb->pfnEapolFwd = pfnFwdEapol;
 }
 
  /**

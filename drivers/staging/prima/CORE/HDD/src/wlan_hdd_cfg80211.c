@@ -459,6 +459,15 @@ wlan_hdd_iface_combination[] = {
 };
 #endif
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)) || defined(WITH_BACKPORTS)
+static const struct wiphy_wowlan_support wowlan_support_cfg80211_init = {
+    .flags = WIPHY_WOWLAN_MAGIC_PKT,
+    .n_patterns = WOWL_MAX_PTRNS_ALLOWED,
+    .pattern_min_len = 1,
+    .pattern_max_len = WOWL_PTRN_MAX_SIZE,
+};
+#endif
+
 static struct cfg80211_ops wlan_hdd_cfg80211_ops;
 
 /* Data rate 100KBPS based on IE Index */
@@ -7810,6 +7819,23 @@ static int wlan_hdd_cfg80211_get_link_properties(struct wiphy *wiphy,
 #define PARAM_BCNMISS_PENALTY_PARAM_COUNT \
         QCA_WLAN_VENDOR_ATTR_CONFIG_PENALIZE_AFTER_NCONS_BEACON_MISS
 
+/*
+ * hdd_set_qpower() - Process the qpower command and invoke the SME api
+ * @hdd_ctx: hdd context
+ * @enable: Value received in the command, 1 for disable and 2 for enable
+ *
+ * Return: void
+ */
+static void hdd_set_qpower(hdd_context_t *hdd_ctx, uint8_t enable)
+{
+    if (!hdd_ctx) {
+        hddLog(LOGE, "hdd_ctx NULL");
+        return;
+    }
+
+    sme_set_qpower(hdd_ctx->hHal, enable);
+}
+
 /**
  * __wlan_hdd_cfg80211_wifi_configuration_set() - Wifi configuration
  * vendor command
@@ -7839,6 +7865,7 @@ static int __wlan_hdd_cfg80211_wifi_configuration_set(struct wiphy *wiphy,
     eHalStatus status;
     int ret_val;
     uint8_t hb_thresh_val;
+    uint8_t qpower;
 
     static const struct nla_policy policy[PARAM_WIFICONFIG_MAX + 1] = {
                         [PARAM_STATS_AVG_FACTOR] = { .type = NLA_U16 },
@@ -8012,6 +8039,21 @@ static int __wlan_hdd_cfg80211_wifi_configuration_set(struct wiphy *wiphy,
            pReq = NULL;
            return -EPERM;
        }
+    }
+
+    if (tb[QCA_WLAN_VENDOR_ATTR_CONFIG_QPOWER]) {
+       qpower = nla_get_u8(
+              tb[QCA_WLAN_VENDOR_ATTR_CONFIG_QPOWER]);
+
+       if(qpower > 1) {
+           hddLog(LOGE, "Invalid QPOWER value %d", qpower);
+           vos_mem_free(pReq);
+           pReq = NULL;
+           return -EINVAL;
+       }
+       /* FW is expacting qpower as 1 for Disable and 2 for enable */
+       qpower++;
+       hdd_set_qpower(pHddCtx, qpower);
     }
 
     EXIT();
@@ -8477,6 +8519,93 @@ static int wlan_hdd_cfg80211_apfind_cmd(struct wiphy *wiphy,
     return ret;
 }
 #endif /* WLAN_FEATURE_APFIND */
+
+/**
+ * __wlan_hdd_cfg80211_get_logger_supp_feature() - Get the wifi logger features
+ * @wiphy:   pointer to wireless wiphy structure.
+ * @wdev:    pointer to wireless_dev structure.
+ * @data:    Pointer to the data to be passed via vendor interface
+ * @data_len:Length of the data to be passed
+ *
+ * This is called by userspace to know the supported logger features
+ *
+ * Return:   Return the Success or Failure code.
+ */
+static int
+__wlan_hdd_cfg80211_get_logger_supp_feature(struct wiphy *wiphy,
+		struct wireless_dev *wdev,
+		const void *data, int data_len)
+{
+	hdd_context_t *hdd_ctx = wiphy_priv(wiphy);
+	int status;
+	uint32_t features;
+	struct sk_buff *reply_skb = NULL;
+
+	if (VOS_FTM_MODE == hdd_get_conparam()) {
+		hddLog(LOGE, FL("Command not allowed in FTM mode"));
+		return -EINVAL;
+	}
+
+	status = wlan_hdd_validate_context(hdd_ctx);
+	if (0 != status)
+		return -EINVAL;
+
+	features = 0;
+
+	if (hdd_is_memdump_supported())
+		features |= WIFI_LOGGER_MEMORY_DUMP_SUPPORTED;
+
+	if (hdd_ctx->cfg_ini->wlanLoggingEnable &&
+	    hdd_ctx->cfg_ini->enableFatalEvent &&
+	    hdd_ctx->is_fatal_event_log_sup) {
+		features |= WIFI_LOGGER_PER_PACKET_TX_RX_STATUS_SUPPORTED;
+		features |= WIFI_LOGGER_CONNECT_EVENT_SUPPORTED;
+	}
+
+	reply_skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
+			sizeof(uint32_t) + NLA_HDRLEN + NLMSG_HDRLEN);
+	if (!reply_skb) {
+		hddLog(LOGE, FL("cfg80211_vendor_cmd_alloc_reply_skb failed"));
+		return -ENOMEM;
+	}
+
+	hddLog(LOG1, FL("Supported logger features: 0x%0x"), features);
+	if (nla_put_u32(reply_skb, QCA_WLAN_VENDOR_ATTR_LOGGER_SUPPORTED,
+				   features)) {
+		hddLog(LOGE, FL("nla put fail"));
+		kfree_skb(reply_skb);
+		return -EINVAL;
+	}
+
+	return cfg80211_vendor_cmd_reply(reply_skb);
+}
+
+/**
+ * wlan_hdd_cfg80211_get_logger_supp_feature() - Get the wifi logger features
+ * @wiphy:   pointer to wireless wiphy structure.
+ * @wdev:    pointer to wireless_dev structure.
+ * @data:    Pointer to the data to be passed via vendor interface
+ * @data_len:Length of the data to be passed
+ *
+ * This is called by userspace to know the supported logger features
+ *
+ * Return:   Return the Success or Failure code.
+ */
+static int
+wlan_hdd_cfg80211_get_logger_supp_feature(struct wiphy *wiphy,
+		struct wireless_dev *wdev,
+		const void *data, int data_len)
+{
+	int ret;
+
+	vos_ssr_protect(__func__);
+	ret = __wlan_hdd_cfg80211_get_logger_supp_feature(wiphy, wdev,
+							  data, data_len);
+	vos_ssr_unprotect(__func__);
+
+	return ret;
+}
+
 const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
 {
     {
@@ -8740,6 +8869,14 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
             WIPHY_VENDOR_CMD_NEED_RUNNING,
         .doit = hdd_cfg80211_get_station_cmd
     },
+    {
+        .info.vendor_id = QCA_NL80211_VENDOR_ID,
+        .info.subcmd = QCA_NL80211_VENDOR_SUBCMD_GET_LOGGER_FEATURE_SET,
+        .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+                 WIPHY_VENDOR_CMD_NEED_NETDEV |
+                 WIPHY_VENDOR_CMD_NEED_RUNNING,
+        .doit = wlan_hdd_cfg80211_get_logger_supp_feature
+   },
 };
 
 /* vendor specific events */
@@ -8980,6 +9117,29 @@ int wlan_hdd_cfg80211_update_band(struct wiphy *wiphy, eCsrBand eBand)
     }
     return 0;
 }
+
+/**
+ * hdd_add_channel_switch_support()- Adds Channel Switch flag if supported
+ * @wiphy: Pointer to the wiphy.
+ *
+ * This Function adds Channel Switch support flag, if channel switch is
+ * supported by kernel.
+ * Return: void.
+ */
+#ifdef CHANNEL_SWITCH_SUPPORTED
+static inline
+void hdd_add_channel_switch_support(struct wiphy *wiphy)
+{
+   wiphy->flags |= WIPHY_FLAG_HAS_CHANNEL_SWITCH;
+   wiphy->max_num_csa_counters = WLAN_HDD_MAX_NUM_CSA_COUNTERS;
+}
+#else
+static inline
+void hdd_add_channel_switch_support(struct wiphy *wiphy)
+{
+}
+#endif
+
 /*
  * FUNCTION: wlan_hdd_cfg80211_init
  * This function is called by hdd_wlan_startup()
@@ -9019,6 +9179,14 @@ int wlan_hdd_cfg80211_init(struct device *dev,
     wiphy->flags |=   WIPHY_FLAG_DISABLE_BEACON_HINTS;
 #endif
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)) || defined(WITH_BACKPORTS)
+    wiphy->wowlan = &wowlan_support_cfg80211_init;
+#else
+    wiphy->wowlan.flags = WIPHY_WOWLAN_MAGIC_PKT;
+    wiphy->wowlan.n_patterns = WOWL_MAX_PTRNS_ALLOWED;
+    wiphy->wowlan.pattern_min_len = 1;
+    wiphy->wowlan.pattern_max_len = WOWL_PTRN_MAX_SIZE;
+#endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0))
     wiphy->flags |= WIPHY_FLAG_HAVE_AP_SME
@@ -9203,6 +9371,7 @@ int wlan_hdd_cfg80211_init(struct device *dev,
     wiphy->max_remain_on_channel_duration = 5000;
 #endif
 
+    hdd_add_channel_switch_support(wiphy);
     wiphy->n_vendor_commands = ARRAY_SIZE(hdd_wiphy_vendor_commands);
     wiphy->vendor_commands = hdd_wiphy_vendor_commands;
     wiphy->vendor_events = wlan_hdd_cfg80211_vendor_events;
@@ -10629,6 +10798,166 @@ void hdd_check_and_disconnect_sta_on_invalid_channel(hdd_context_t *hdd_ctx)
     wlan_hdd_disconnect(sta_adapter, eCSR_DISCONNECT_REASON_DEAUTH);
 }
 
+int wlan_hdd_restore_channels(hdd_context_t *hdd_ctx)
+{
+	struct hdd_cache_channels *cache_chann;
+	struct wiphy *wiphy;
+	int freq, status, rfChannel;
+	int i, band_num, channel_num;
+	struct ieee80211_channel *wiphy_channel;
+
+	ENTER();
+
+	if (!hdd_ctx) {
+		hddLog(VOS_TRACE_LEVEL_FATAL, "HDD Context is NULL");
+		return -EINVAL;
+	}
+
+	wiphy = hdd_ctx->wiphy;
+
+	mutex_lock(&hdd_ctx->cache_channel_lock);
+
+	cache_chann = hdd_ctx->original_channels;
+
+	if (!cache_chann || !cache_chann->num_channels) {
+		hddLog(VOS_TRACE_LEVEL_INFO,
+		       "%s channel list is NULL or num channels are zero",
+		       __func__);
+		mutex_unlock(&hdd_ctx->cache_channel_lock);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < cache_chann->num_channels; i++) {
+		status = hdd_wlan_get_freq(
+				cache_chann->channel_info[i].channel_num,
+				&freq);
+
+		for (band_num = 0; band_num < HDD_NUM_NL80211_BANDS;
+		     band_num++) {
+			for (channel_num = 0; channel_num <
+				wiphy->bands[band_num]->n_channels;
+				channel_num++) {
+				wiphy_channel = &(wiphy->bands[band_num]->
+							channels[channel_num]);
+				if (wiphy_channel->center_freq == freq) {
+					rfChannel = wiphy_channel->hw_value;
+					/*
+					 *Restore the orginal states
+					 *of the channels
+					 */
+					vos_nv_set_channel_state(
+						rfChannel,
+						cache_chann->
+						channel_info[i].reg_status);
+					wiphy_channel->flags =
+						cache_chann->
+						channel_info[i].wiphy_status;
+					break;
+				}
+			}
+			if (channel_num < wiphy->bands[band_num]->n_channels)
+				break;
+		}
+	}
+
+	mutex_unlock(&hdd_ctx->cache_channel_lock);
+
+	status = sme_update_channel_list((tpAniSirGlobal)hdd_ctx->hHal);
+	if (status)
+		hddLog(VOS_TRACE_LEVEL_ERROR, "Can't Restore channel list");
+	EXIT();
+
+	return 0;
+}
+
+/*
+ * wlan_hdd_disable_channels() - Cache the the channels
+ * and current state of the channels from the channel list
+ * received in the command and disable the channels on the
+ * wiphy and NV table.
+ * @hdd_ctx: Pointer to hdd context
+ *
+ * @return: 0 on success, Error code on failure
+ */
+
+static int wlan_hdd_disable_channels(hdd_context_t *hdd_ctx)
+{
+	struct hdd_cache_channels *cache_chann;
+	struct wiphy *wiphy;
+	int freq, status, rfChannel;
+	int i, band_num, band_ch_num;
+	struct ieee80211_channel *wiphy_channel;
+
+	if (!hdd_ctx) {
+		hddLog(VOS_TRACE_LEVEL_FATAL, "HDD Context is NULL");
+		return -EINVAL;
+	}
+
+	wiphy = hdd_ctx->wiphy;
+
+	mutex_lock(&hdd_ctx->cache_channel_lock);
+	cache_chann = hdd_ctx->original_channels;
+
+	if (!cache_chann || !cache_chann->num_channels) {
+		hddLog(VOS_TRACE_LEVEL_INFO,
+		       "%s channel list is NULL or num channels are zero",
+		       __func__);
+		mutex_unlock(&hdd_ctx->cache_channel_lock);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < cache_chann->num_channels; i++) {
+		status = hdd_wlan_get_freq(
+				cache_chann->channel_info[i].channel_num,
+				&freq);
+
+		for (band_num = 0; band_num < HDD_NUM_NL80211_BANDS;
+							band_num++) {
+			for (band_ch_num = 0; band_ch_num <
+					wiphy->bands[band_num]->n_channels;
+					band_ch_num++) {
+				wiphy_channel = &(wiphy->bands[band_num]->
+							channels[band_ch_num]);
+				if (wiphy_channel->center_freq == freq) {
+					rfChannel = wiphy_channel->hw_value;
+					/*
+					 * Cache the current states of
+					 * the channels
+					 */
+					cache_chann->
+					channel_info[i].reg_status =
+						vos_nv_getChannelEnabledState(
+							rfChannel);
+
+					cache_chann->
+						channel_info[i].wiphy_status =
+							wiphy_channel->flags;
+					hddLog(VOS_TRACE_LEVEL_INFO,
+					"Disable channel %d reg_stat %d wiphy_stat 0x%x",
+					cache_chann->
+						channel_info[i].channel_num,
+					cache_chann->
+						channel_info[i].reg_status,
+					wiphy_channel->flags);
+
+					vos_nv_set_channel_state(
+							rfChannel,
+							NV_CHANNEL_DISABLE);
+					wiphy_channel->flags |=
+						IEEE80211_CHAN_DISABLED;
+					break;
+				}
+			}
+			if (band_ch_num < wiphy->bands[band_num]->n_channels)
+				break;
+		}
+	}
+
+	mutex_unlock(&hdd_ctx->cache_channel_lock);
+	sme_update_channel_list((tpAniSirGlobal)hdd_ctx->hHal);
+	return 0;
+}
+
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0))
 static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
                             struct beacon_parameters *params)
@@ -10670,7 +10999,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     iniConfig = pHddCtx->cfg_ini;
 
     /* Mark the indoor channel (passive) to disable */
-    if (iniConfig->disable_indoor_channel) {
+    if (iniConfig->disable_indoor_channel &&
+                pHostapdAdapter->device_mode == WLAN_HDD_SOFTAP) {
         hdd_update_indoor_channel(pHddCtx, true);
 
         if (!VOS_IS_STATUS_SUCCESS(
@@ -10684,6 +11014,12 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
         /* check if STA is on indoor channel */
         if (hdd_is_sta_sap_scc_allowed_on_dfs_chan(pHddCtx))
             hdd_check_and_disconnect_sta_on_invalid_channel(pHddCtx);
+    }
+
+    if (pHostapdAdapter->device_mode == WLAN_HDD_SOFTAP) {
+        /* Disable the channels received in command SET_DISABLE_CHANNEL_LIST*/
+        wlan_hdd_disable_channels(pHddCtx);
+        hdd_check_and_disconnect_sta_on_invalid_channel(pHddCtx);
     }
 
     pHostapdState = WLAN_HDD_GET_HOSTAP_STATE_PTR(pHostapdAdapter);
@@ -10742,7 +11078,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
             {
                  hddLog(VOS_TRACE_LEVEL_ERROR,
                          "%s: Invalid Channel [%d]", __func__, pConfig->channel);
-                 return -EINVAL;
+                 ret = -EINVAL;
+                 goto error;
             }
             pConfig->user_config_channel = pConfig->channel;
         }
@@ -10807,7 +11144,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
         if(pIe[1] < (2 + WPS_OUI_TYPE_SIZE))
         {
             hddLog( VOS_TRACE_LEVEL_ERROR, "**Wps Ie Length is too small***");
-            return -EINVAL;
+            ret = -EINVAL;
+            goto error;
         }
         else if(memcmp(&pIe[2], WPS_OUI_TYPE, WPS_OUI_TYPE_SIZE) == 0)
         {
@@ -10933,7 +11271,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
 
     if (pConfig->RSNWPAReqIELength > sizeof(pConfig->RSNWPAReqIE)) {
         hddLog( VOS_TRACE_LEVEL_ERROR, "**RSNWPAReqIELength is too large***");
-        return -EINVAL;
+        ret = -EINVAL;
+        goto error;
     }
 
     pConfig->SSIDinfo.ssidHidden = VOS_FALSE;
@@ -11061,7 +11400,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     if ( 0 != wlan_hdd_cfg80211_update_apies(pHostapdAdapter))
     {
         hddLog(LOGE, FL("SAP Not able to set AP IEs"));
-        return -EINVAL;
+        ret = -EINVAL;
+        goto error;
     }
 
     //Uapsd Enabled Bit
@@ -11102,7 +11442,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
 
     if (vos_max_concurrent_connections_reached()) {
         hddLog(VOS_TRACE_LEVEL_INFO, FL("Reached max concurrent connections"));
-        return -EINVAL;
+        ret = -EINVAL;
+        goto error;
     }
 
     pConfig->persona = pHostapdAdapter->device_mode;
@@ -11278,8 +11619,11 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
 
    return 0;
 error:
+    if (pHostapdAdapter->device_mode == WLAN_HDD_SOFTAP)
+        wlan_hdd_restore_channels(pHddCtx);
    /* Revert the indoor to passive marking if START BSS fails */
-    if (iniConfig->disable_indoor_channel) {
+    if (iniConfig->disable_indoor_channel &&
+                   pHostapdAdapter->device_mode == WLAN_HDD_SOFTAP) {
         hdd_update_indoor_channel(pHddCtx, false);
         sme_update_channel_list((tpAniSirGlobal)pHddCtx->hHal);
     }
@@ -11520,6 +11864,8 @@ static int __wlan_hdd_cfg80211_stop_ap (struct wiphy *wiphy,
         mutex_lock(&pHddCtx->sap_lock);
         if(test_bit(SOFTAP_BSS_STARTED, &pAdapter->event_flags))
         {
+            vos_flush_delayed_work(&pHddCtx->ecsa_chan_change_work);
+            hdd_wait_for_ecsa_complete(pHddCtx);
             if ( VOS_STATUS_SUCCESS == (status = WLANSAP_StopBss(pHddCtx->pvosContext) ) )
             {
                 hdd_hostapd_state_t *pHostapdState = WLAN_HDD_GET_HOSTAP_STATE_PTR(pAdapter);
@@ -12618,7 +12964,11 @@ VOS_STATUS wlan_hdd_send_sta_authorized_event(
 
 	vendor_event =
 		cfg80211_vendor_event_alloc(
-			hdd_ctx->wiphy, &adapter->wdev, sizeof(sta_flags) +
+			hdd_ctx->wiphy,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
+			&adapter->wdev,
+#endif
+			sizeof(sta_flags) +
 			VOS_MAC_ADDR_SIZE + NLMSG_HDRLEN,
 			QCA_NL80211_VENDOR_SUBCMD_LINK_PROPERTIES_INDEX,
 			GFP_KERNEL);
@@ -12742,14 +13092,16 @@ static int __wlan_hdd_change_station(struct wiphy *wiphy,
              */
             if (0 != params->supported_channels_len) {
                 int i = 0,j = 0,k = 0, no_of_channels = 0 ;
-                for ( i = 0 ; i < params->supported_channels_len ; i+=2)
+                for ( i = 0 ; i < params->supported_channels_len
+                      && j < SIR_MAC_MAX_SUPP_CHANNELS; i+=2)
                 {
                     int wifi_chan_index;
                     StaParams.supported_channels[j] = params->supported_channels[i];
                     wifi_chan_index =
                         ((StaParams.supported_channels[j] <= HDD_CHANNEL_14 ) ? 1 : 4 );
                     no_of_channels = params->supported_channels[i+1];
-                    for(k=1; k <= no_of_channels; k++)
+                    for(k=1; k <= no_of_channels
+                        && j < SIR_MAC_MAX_SUPP_CHANNELS - 1; k++)
                     {
                         StaParams.supported_channels[j+1] =
                               StaParams.supported_channels[j] + wifi_chan_index;
@@ -13905,7 +14257,8 @@ wlan_hdd_cfg80211_inform_bss_frame( hdd_adapter_t *pAdapter,
     struct ieee80211_channel *chan;
     struct ieee80211_mgmt *mgmt = NULL;
     struct cfg80211_bss *bss_status = NULL;
-    size_t frame_len = sizeof (struct ieee80211_mgmt) + ie_length;
+    size_t frame_len = ie_length + offsetof(struct ieee80211_mgmt,
+                                            u.probe_resp.variable);
     int rssi = 0;
     hdd_context_t *pHddCtx;
     int status;
@@ -13921,7 +14274,7 @@ wlan_hdd_cfg80211_inform_bss_frame( hdd_adapter_t *pAdapter,
         return NULL;
     }
 
-    mgmt = kzalloc((sizeof (struct ieee80211_mgmt) + ie_length), GFP_KERNEL);
+    mgmt = kzalloc(frame_len, GFP_KERNEL);
     if (!mgmt)
     {
         VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -15468,7 +15821,6 @@ int wlan_hdd_cfg80211_connect_start( hdd_adapter_t  *pAdapter,
         return -EINVAL;
     }
 
-    wlan_hdd_tdls_disable_offchan_and_teardown_links(pHddCtx);
 
     pRoamProfile = &pWextState->roamProfile;
 
@@ -15628,7 +15980,10 @@ int wlan_hdd_cfg80211_connect_start( hdd_adapter_t  *pAdapter,
                    FL("Set HDD connState to eConnectionState_Connecting"));
             hdd_connSetConnectionState(WLAN_HDD_GET_STATION_CTX_PTR(pAdapter),
                                                  eConnectionState_Connecting);
+            vos_flush_delayed_work(&pHddCtx->ecsa_chan_change_work);
+            hdd_wait_for_ecsa_complete(pHddCtx);
         }
+
         status = sme_RoamConnect( WLAN_HDD_GET_HAL_CTX(pAdapter),
                             pAdapter->sessionId, pRoamProfile, &roamId);
 
@@ -16937,6 +17292,7 @@ static int wlan_hdd_cfg80211_set_privacy_ibss(
                                          )
 {
     int status = 0;
+    tANI_U32 ret;
     hdd_wext_state_t *pWextState = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
     eCsrEncryptionType encryptionType = eCSR_ENCRYPT_TYPE_NONE;
     hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
@@ -16968,10 +17324,18 @@ static int wlan_hdd_cfg80211_set_privacy_ibss(
                 pWextState->wpaVersion = IW_AUTH_WPA_VERSION_WPA;
                 // Unpack the WPA IE
                 //Skip past the EID byte and length byte - and four byte WiFi OUI
-                dot11fUnpackIeWPA((tpAniSirGlobal) halHandle,
+                ret = dot11fUnpackIeWPA((tpAniSirGlobal) halHandle,
                                 &ie[2+4],
                                 ie[1] - 4,
                                 &dot11WPAIE);
+                if (DOT11F_FAILED(ret))
+                {
+                    hddLog(LOGE,
+                           FL("unpack failed status:(0x%08x)"),
+                           ret);
+                    return -EINVAL;
+                }
+
                 /*Extract the multicast cipher, the encType for unicast
                                cipher for wpa-none is none*/
                 encryptionType =
@@ -17829,6 +18193,11 @@ static int __wlan_hdd_cfg80211_get_station(struct wiphy *wiphy, struct net_devic
             (int) rate_flags,
             (int) pAdapter->hdd_stats.ClassA_stat.mcs_index);
 #endif //LINKSPEED_DEBUG_ENABLED
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)) || defined(WITH_BACKPORTS)
+    /* assume basic BW. anything else will override this later */
+    sinfo->txrate.bw = RATE_INFO_BW_20;
+#endif
 
     if (eHDD_LINK_SPEED_REPORT_ACTUAL != pCfg->reportMaxLinkSpeed)
     {
@@ -19646,6 +20015,7 @@ static int __wlan_hdd_cfg80211_tdls_mgmt(struct wiphy *wiphy,
     if (!pHddTdlsCtx) {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                   "%s: pHddTdlsCtx not valid.", __func__);
+        return -EINVAL;
     }
 
     if (eTDLS_SUPPORT_NOT_ENABLED == pHddCtx->tdls_mode)
@@ -21725,6 +22095,7 @@ static int __wlan_hdd_cfg80211_channel_switch(struct wiphy *wiphy,
    hdd_context_t *hdd_ctx;
    uint8_t channel;
    int ret;
+   ptSapContext sap_ctx;
    v_CONTEXT_t vos_ctx;
 
    hddLog(LOGE, FL("Set Freq %d"), csa_params->chandef.chan->center_freq);
@@ -21740,12 +22111,28 @@ static int __wlan_hdd_cfg80211_channel_switch(struct wiphy *wiphy,
        return -EINVAL;
    }
 
-   if ((WLAN_HDD_SOFTAP != adapter->device_mode) &&
-       (WLAN_HDD_P2P_GO != adapter->device_mode))
+   if (WLAN_HDD_SOFTAP != adapter->device_mode)
         return -ENOTSUPP;
+
+   sap_ctx = VOS_GET_SAP_CB(vos_ctx);
+   if (!sap_ctx) {
+       hddLog(LOGE, FL("sap_ctx is NULL"));
+       return -EINVAL;
+   }
+
+   ret = wlansap_chk_n_set_chan_change_in_progress(sap_ctx);
+   if (ret)
+       return ret;
+
+   INIT_COMPLETION(sap_ctx->ecsa_info.chan_switch_comp);
 
    channel = vos_freq_to_chan(csa_params->chandef.chan->center_freq);
    ret = wlansap_set_channel_change(vos_ctx, channel, false);
+
+   if (ret) {
+       wlansap_reset_chan_change_in_progress(sap_ctx);
+       complete(&sap_ctx->ecsa_info.chan_switch_comp);
+   }
 
    return ret;
 }

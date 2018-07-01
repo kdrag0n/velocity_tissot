@@ -1771,7 +1771,7 @@ VOS_STATUS hdd_softap_rx_packet_cbk( v_VOID_t *vosContext,
          if (!(VOS_PKT_PROTO_TYPE_ARP & proto_type) &&
              !(VOS_PKT_PROTO_TYPE_EAPOL & proto_type))
             hdd_log_ip_addr(skb);
-         pHddCtx->rx_wow_dump = false;
+            pHddCtx->rx_wow_dump = false;
       }
 
       if (WLAN_RX_BCMC_STA_ID == pRxMetaInfo->ucDesSTAId)
@@ -2130,8 +2130,12 @@ VOS_STATUS hdd_softap_stop_bss( hdd_adapter_t *pAdapter)
        }
     }
 
+    if (pAdapter->device_mode == WLAN_HDD_SOFTAP)
+        wlan_hdd_restore_channels(pHddCtx);
+
     /* Mark the indoor channel (passive) to enable */
-    if (pHddCtx->cfg_ini->disable_indoor_channel) {
+    if (pHddCtx->cfg_ini->disable_indoor_channel &&
+                      pAdapter->device_mode == WLAN_HDD_SOFTAP) {
         hdd_update_indoor_channel(pHddCtx, false);
         sme_update_channel_list((tpAniSirGlobal)pHddCtx->hHal);
     }

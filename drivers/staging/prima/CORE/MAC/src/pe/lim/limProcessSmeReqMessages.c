@@ -188,8 +188,8 @@ __limFreshScanReqd(tpAniSirGlobal pMac, tANI_U8 returnFreshResults)
     }
     limLog(pMac, LOG1, FL("FreshScanReqd: %d "), validState);
 
-    if( (validState) && (returnFreshResults & SIR_BG_SCAN_RETURN_FRESH_RESULTS))
-        return TRUE;
+   if( (validState) && (returnFreshResults & SIR_BG_SCAN_RETURN_FRESH_RESULTS))
+    return TRUE;
 
     return FALSE;
 }
@@ -2094,7 +2094,7 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                                      TX_POWER_DEFAULT);
             psessionEntry->maxTxPower = TX_POWER_DEFAULT;
         }
-
+        psessionEntry->def_max_tx_pwr = psessionEntry->maxTxPower;
         VOS_TRACE(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_INFO,
                         "Regulatory max = %d, local power constraint = %d,"
                         " max tx = %d", regMax, localPowerConstraint,

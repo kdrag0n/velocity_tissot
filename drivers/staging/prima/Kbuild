@@ -53,7 +53,6 @@ ifneq ($(CONFIG_PRONTO_WLAN),)
     CONFIG_WLAN_OFFLOAD_PACKETS := y
 
     endif
-
 #Flag to enable AP Find feature
 CONFIG_WLAN_FEATURE_AP_FIND := y
 
@@ -67,6 +66,7 @@ CONFIG_QCOM_ESE_UPLOAD := n
 
 # Feature flags which are not (currently) configurable via Kconfig
 
+#Whether to build debug version
 BUILD_DEBUG_VERSION := 0
 
 #Enable this flag to build driver in diag version
@@ -150,6 +150,7 @@ HDD_OBJS := 	$(HDD_SRC_DIR)/wlan_hdd_assoc.o \
 		$(HDD_SRC_DIR)/wlan_hdd_main.o \
 		$(HDD_SRC_DIR)/wlan_hdd_mib.o \
 		$(HDD_SRC_DIR)/wlan_hdd_oemdata.o \
+		$(HDD_SRC_DIR)/wlan_hdd_request_manager.o \
 		$(HDD_SRC_DIR)/wlan_hdd_scan.o \
 		$(HDD_SRC_DIR)/wlan_hdd_softap_tx_rx.o \
 		$(HDD_SRC_DIR)/wlan_hdd_tx_rx.o \
