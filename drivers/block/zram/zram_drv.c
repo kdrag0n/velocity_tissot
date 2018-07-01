@@ -478,12 +478,12 @@ static int zram_decompress_page(struct zram *zram, char *mem, u32 index)
 	unsigned long handle;
 	unsigned int size;
 
-	zram_lock_table(&meta->table[index]);
+	bit_spin_lock(ZRAM_ACCESS, &zram->table[index].value);
 	handle = zram->table[index].handle;
 	size = zram_get_obj_size(zram, index);
 
 	if (!handle || zram_test_flag(zram, index, ZRAM_SAME)) {
-		zram_unlock_table(&meta->table[index]);
+		bit_spin_unlock(ZRAM_ACCESS, &zram->table[index].value);
 		memset(mem, 0, PAGE_SIZE);
 		return 0;
 	}
@@ -498,7 +498,7 @@ static int zram_decompress_page(struct zram *zram, char *mem, u32 index)
 		zcomp_stream_put(zram->comp);
 	}
 	zs_unmap_object(zram->mem_pool, handle);
-	zram_unlock_table(&meta->table[index]);
+	bit_spin_unlock(ZRAM_ACCESS, &zram->table[index].value);
 
 	/* Should NEVER happen. Return bio error if it does. */
 	if (unlikely(ret)) {
@@ -517,14 +517,14 @@ static int zram_bvec_read(struct zram *zram, struct bio_vec *bvec,
 	unsigned char *user_mem, *uncmem = NULL;
 	page = bvec->bv_page;
 
-	zram_lock_table(&meta->table[index]);
+	bit_spin_lock(ZRAM_ACCESS, &zram->table[index].value);
 	if (unlikely(!zram->table[index].handle) ||
 			zram_test_flag(zram, index, ZRAM_SAME)) {
-		zram_unlock_table(&meta->table[index]);
+		bit_spin_unlock(ZRAM_ACCESS, &zram->table[index].value);
 		handle_same_page(bvec, zram->table[index].element);
 		return 0;
 	}
-	zram_unlock_table(&meta->table[index]);
+	bit_spin_unlock(ZRAM_ACCESS, &zram->table[index].value);
 
 	if (is_partial_io(bvec))
 		/* Use  a temporary buffer to decompress the page */
@@ -601,11 +601,11 @@ compress_again:
 		if (user_mem)
 			kunmap_atomic(user_mem);
 		/* Free memory associated with this sector now. */
-		zram_lock_table(&meta->table[index]);
+		bit_spin_lock(ZRAM_ACCESS, &zram->table[index].value);
 		zram_free_page(zram, index);
 		zram_set_flag(zram, index, ZRAM_SAME);
 		zram_set_element(zram, index, element);
-		zram_unlock_table(&meta->table[index]);
+		bit_spin_unlock(ZRAM_ACCESS, &zram->table[index].value);
 
 		atomic64_inc(&zram->stats.same_pages);
 		ret = 0;
@@ -695,12 +695,12 @@ compress_again:
 	 * Free memory associated with this sector
 	 * before overwriting unused sectors.
 	 */
-	zram_lock_table(&meta->table[index]);
+	bit_spin_lock(ZRAM_ACCESS, &zram->table[index].value);
 	zram_free_page(zram, index);
 
 	zram->table[index].handle = handle;
 	zram_set_obj_size(zram, index, clen);
-	zram_unlock_table(&meta->table[index]);
+	bit_spin_unlock(ZRAM_ACCESS, &zram->table[index].value);
 
 	/* Update stats */
 	atomic64_add(clen, &zram->stats.compr_data_size);
@@ -742,9 +742,9 @@ static void zram_bio_discard(struct zram *zram, u32 index,
 	}
 
 	while (n >= PAGE_SIZE) {
-		zram_lock_table(&meta->table[index]);
+		bit_spin_lock(ZRAM_ACCESS, &zram->table[index].value);
 		zram_free_page(zram, index);
-		zram_unlock_table(&meta->table[index]);
+		bit_spin_unlock(ZRAM_ACCESS, &zram->table[index].value);
 		atomic64_inc(&zram->stats.notify_free);
 		index++;
 		n -= PAGE_SIZE;
@@ -855,9 +855,9 @@ static void zram_slot_free_notify(struct block_device *bdev,
 
 	zram = bdev->bd_disk->private_data;
 
-	zram_lock_table(&meta->table[index]);
+	bit_spin_lock(ZRAM_ACCESS, &zram->table[index].value);
 	zram_free_page(zram, index);
-	zram_unlock_table(&meta->table[index]);
+	bit_spin_unlock(ZRAM_ACCESS, &zram->table[index].value);
 	atomic64_inc(&zram->stats.notify_free);
 }
 

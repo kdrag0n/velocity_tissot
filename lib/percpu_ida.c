@@ -29,9 +29,6 @@
 #include <linux/string.h>
 #include <linux/spinlock.h>
 #include <linux/percpu_ida.h>
-#include <linux/locallock.h>
-
-static DEFINE_LOCAL_IRQ_LOCK(irq_off_lock);
 
 struct percpu_ida_cpu {
 	/*
@@ -154,13 +151,13 @@ int percpu_ida_alloc(struct percpu_ida *pool, int state)
 	unsigned long flags;
 	int tag;
 
-	local_lock_irqsave(irq_off_lock, flags);
+	local_irq_save(flags);
 	tags = this_cpu_ptr(pool->tag_cpu);
 
 	/* Fastpath */
 	tag = alloc_local_tag(tags);
 	if (likely(tag >= 0)) {
-		local_unlock_irqrestore(irq_off_lock, flags);
+		local_irq_restore(flags);
 		return tag;
 	}
 
@@ -179,7 +176,6 @@ int percpu_ida_alloc(struct percpu_ida *pool, int state)
 
 		if (!tags->nr_free)
 			alloc_global_tags(pool, tags);
-
 		if (!tags->nr_free)
 			steal_tags(pool, tags);
 
@@ -191,7 +187,7 @@ int percpu_ida_alloc(struct percpu_ida *pool, int state)
 		}
 
 		spin_unlock(&pool->lock);
-		local_unlock_irqrestore(irq_off_lock, flags);
+		local_irq_restore(flags);
 
 		if (tag >= 0 || state == TASK_RUNNING)
 			break;
@@ -203,7 +199,7 @@ int percpu_ida_alloc(struct percpu_ida *pool, int state)
 
 		schedule();
 
-		local_lock_irqsave(irq_off_lock, flags);
+		local_irq_save(flags);
 		tags = this_cpu_ptr(pool->tag_cpu);
 	}
 	if (state != TASK_RUNNING)
@@ -228,7 +224,7 @@ void percpu_ida_free(struct percpu_ida *pool, unsigned tag)
 
 	BUG_ON(tag >= pool->nr_tags);
 
-	local_lock_irqsave(irq_off_lock, flags);
+	local_irq_save(flags);
 	tags = this_cpu_ptr(pool->tag_cpu);
 
 	spin_lock(&tags->lock);
@@ -260,7 +256,7 @@ void percpu_ida_free(struct percpu_ida *pool, unsigned tag)
 		spin_unlock(&pool->lock);
 	}
 
-	local_unlock_irqrestore(irq_off_lock, flags);
+	local_irq_restore(flags);
 }
 EXPORT_SYMBOL_GPL(percpu_ida_free);
 
@@ -352,7 +348,7 @@ int percpu_ida_for_each_free(struct percpu_ida *pool, percpu_ida_cb fn,
 	struct percpu_ida_cpu *remote;
 	unsigned cpu, i, err = 0;
 
-	local_lock_irqsave(irq_off_lock, flags);
+	local_irq_save(flags);
 	for_each_possible_cpu(cpu) {
 		remote = per_cpu_ptr(pool->tag_cpu, cpu);
 		spin_lock(&remote->lock);
@@ -374,7 +370,7 @@ int percpu_ida_for_each_free(struct percpu_ida *pool, percpu_ida_cb fn,
 	}
 	spin_unlock(&pool->lock);
 out:
-	local_unlock_irqrestore(irq_off_lock, flags);
+	local_irq_restore(flags);
 	return err;
 }
 EXPORT_SYMBOL_GPL(percpu_ida_for_each_free);

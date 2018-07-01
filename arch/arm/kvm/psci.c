@@ -67,7 +67,7 @@ static unsigned long kvm_psci_vcpu_on(struct kvm_vcpu *source_vcpu)
 {
 	struct kvm *kvm = source_vcpu->kvm;
 	struct kvm_vcpu *vcpu = NULL, *tmp;
-	struct swait_head *wq;
+	wait_queue_head_t *wq;
 	unsigned long cpu_id;
 	unsigned long context_id;
 	unsigned long mpidr;
@@ -124,7 +124,7 @@ static unsigned long kvm_psci_vcpu_on(struct kvm_vcpu *source_vcpu)
 	smp_mb();		/* Make sure the above is visible */
 
 	wq = kvm_arch_vcpu_wq(vcpu);
-	swait_wake_interruptible(wq);
+	wake_up_interruptible(wq);
 
 	return PSCI_RET_SUCCESS;
 }

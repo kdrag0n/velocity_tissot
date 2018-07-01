@@ -57,7 +57,7 @@ void do_page_fault(struct pt_regs *regs)
 	/* If we're in an interrupt or have no user
 	 * context, we must not take the fault..
 	 */
-	if (!mm || pagefault_disabled()) {
+	if (in_atomic() || !mm) {
 		bad_page_fault(regs, address, SIGSEGV);
 		return;
 	}

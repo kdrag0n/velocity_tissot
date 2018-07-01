@@ -60,8 +60,6 @@
 #include <net/sock.h>
 #include <net/ip.h>
 #include <net/tcp_memcontrol.h>
-#include <linux/locallock.h>
-
 #include "slab.h"
 
 #include <asm/uaccess.h>
@@ -89,7 +87,6 @@ static int really_do_swap_account __initdata;
 #define do_swap_account		0
 #endif
 
-static DEFINE_LOCAL_IRQ_LOCK(event_lock);
 
 static const char * const mem_cgroup_stat_names[] = {
 	"cache",
@@ -2364,17 +2361,14 @@ static void __init memcg_stock_init(void)
  */
 static void refill_stock(struct mem_cgroup *memcg, unsigned int nr_pages)
 {
-	struct memcg_stock_pcp *stock;
-	int cpu = get_cpu_light();
-
-	stock = &per_cpu(memcg_stock, cpu);
+	struct memcg_stock_pcp *stock = &get_cpu_var(memcg_stock);
 
 	if (stock->cached != memcg) { /* reset if necessary */
 		drain_stock(stock);
 		stock->cached = memcg;
 	}
 	stock->nr_pages += nr_pages;
-	put_cpu_light();
+	put_cpu_var(memcg_stock);
 }
 
 /*
@@ -2388,7 +2382,7 @@ static void drain_all_stock(struct mem_cgroup *root_memcg, bool sync)
 
 	/* Notify other cpus that system-wide "drain" is running */
 	get_online_cpus();
-	curcpu = get_cpu_light();
+	curcpu = get_cpu();
 	for_each_online_cpu(cpu) {
 		struct memcg_stock_pcp *stock = &per_cpu(memcg_stock, cpu);
 		struct mem_cgroup *memcg;
@@ -2405,7 +2399,7 @@ static void drain_all_stock(struct mem_cgroup *root_memcg, bool sync)
 				schedule_work_on(cpu, &stock->work);
 		}
 	}
-	put_cpu_light();
+	put_cpu();
 
 	if (!sync)
 		goto out;
@@ -3382,12 +3376,12 @@ static int mem_cgroup_move_account(struct page *page,
 	move_unlock_mem_cgroup(from, &flags);
 	ret = 0;
 
-	local_lock_irq(event_lock);
+	local_irq_disable();
 	mem_cgroup_charge_statistics(to, page, nr_pages);
 	memcg_check_events(to, page);
 	mem_cgroup_charge_statistics(from, page, -nr_pages);
 	memcg_check_events(from, page);
-	local_unlock_irq(event_lock);
+	local_irq_enable();
 out_unlock:
 	unlock_page(page);
 out:
@@ -6370,10 +6364,10 @@ void mem_cgroup_commit_charge(struct page *page, struct mem_cgroup *memcg,
 		VM_BUG_ON_PAGE(!PageTransHuge(page), page);
 	}
 
-	local_lock_irq(event_lock);
+	local_irq_disable();
 	mem_cgroup_charge_statistics(memcg, page, nr_pages);
 	memcg_check_events(memcg, page);
-	local_unlock_irq(event_lock);
+	local_irq_enable();
 
 	if (do_swap_account && PageSwapCache(page)) {
 		swp_entry_t entry = { .val = page_private(page) };
@@ -6432,14 +6426,14 @@ static void uncharge_batch(struct mem_cgroup *memcg, unsigned long pgpgout,
 		memcg_oom_recover(memcg);
 	}
 
-	local_lock_irqsave(event_lock, flags);
+	local_irq_save(flags);
 	__this_cpu_sub(memcg->stat->count[MEM_CGROUP_STAT_RSS], nr_anon);
 	__this_cpu_sub(memcg->stat->count[MEM_CGROUP_STAT_CACHE], nr_file);
 	__this_cpu_sub(memcg->stat->count[MEM_CGROUP_STAT_RSS_HUGE], nr_huge);
 	__this_cpu_add(memcg->stat->events[MEM_CGROUP_EVENTS_PGPGOUT], pgpgout);
 	__this_cpu_add(memcg->stat->nr_page_events, nr_anon + nr_file);
 	memcg_check_events(memcg, dummy_page);
-	local_unlock_irqrestore(event_lock, flags);
+	local_irq_restore(flags);
 }
 
 static void uncharge_list(struct list_head *page_list)

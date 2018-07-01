@@ -81,7 +81,7 @@ asmlinkage void do_page_fault(unsigned long ecr, struct pt_regs *regs)
 	 * If we're in an interrupt or have no user context, we must
 	 * not take the fault...
 	 */
-	if (!mm || regs->sr & SYSREG_BIT(GM) || pagefault_disabled())
+	if (in_atomic() || !mm || regs->sr & SYSREG_BIT(GM))
 		goto no_context;
 
 	local_irq_enable();

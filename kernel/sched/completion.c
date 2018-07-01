@@ -30,10 +30,10 @@ void complete(struct completion *x)
 {
 	unsigned long flags;
 
-	raw_spin_lock_irqsave(&x->wait.lock, flags);
+	spin_lock_irqsave(&x->wait.lock, flags);
 	x->done++;
-	__swait_wake_locked(&x->wait, TASK_NORMAL, 1);
-	raw_spin_unlock_irqrestore(&x->wait.lock, flags);
+	__wake_up_locked(&x->wait, TASK_NORMAL, 1);
+	spin_unlock_irqrestore(&x->wait.lock, flags);
 }
 EXPORT_SYMBOL(complete);
 
@@ -50,10 +50,10 @@ void complete_all(struct completion *x)
 {
 	unsigned long flags;
 
-	raw_spin_lock_irqsave(&x->wait.lock, flags);
+	spin_lock_irqsave(&x->wait.lock, flags);
 	x->done += UINT_MAX/2;
-	__swait_wake_locked(&x->wait, TASK_NORMAL, 0);
-	raw_spin_unlock_irqrestore(&x->wait.lock, flags);
+	__wake_up_locked(&x->wait, TASK_NORMAL, 0);
+	spin_unlock_irqrestore(&x->wait.lock, flags);
 }
 EXPORT_SYMBOL(complete_all);
 
@@ -62,20 +62,20 @@ do_wait_for_common(struct completion *x,
 		   long (*action)(long), long timeout, int state)
 {
 	if (!x->done) {
-		DEFINE_SWAITER(wait);
+		DECLARE_WAITQUEUE(wait, current);
 
-		swait_prepare_locked(&x->wait, &wait);
+		__add_wait_queue_tail_exclusive(&x->wait, &wait);
 		do {
 			if (signal_pending_state(state, current)) {
 				timeout = -ERESTARTSYS;
 				break;
 			}
 			__set_current_state(state);
-			raw_spin_unlock_irq(&x->wait.lock);
+			spin_unlock_irq(&x->wait.lock);
 			timeout = action(timeout);
-			raw_spin_lock_irq(&x->wait.lock);
+			spin_lock_irq(&x->wait.lock);
 		} while (!x->done && timeout);
-		swait_finish_locked(&x->wait, &wait);
+		__remove_wait_queue(&x->wait, &wait);
 		if (!x->done)
 			return timeout;
 	}
@@ -89,9 +89,9 @@ __wait_for_common(struct completion *x,
 {
 	might_sleep();
 
-	raw_spin_lock_irq(&x->wait.lock);
+	spin_lock_irq(&x->wait.lock);
 	timeout = do_wait_for_common(x, action, timeout, state);
-	raw_spin_unlock_irq(&x->wait.lock);
+	spin_unlock_irq(&x->wait.lock);
 	return timeout;
 }
 
@@ -267,12 +267,12 @@ bool try_wait_for_completion(struct completion *x)
 	unsigned long flags;
 	int ret = 1;
 
-	raw_spin_lock_irqsave(&x->wait.lock, flags);
+	spin_lock_irqsave(&x->wait.lock, flags);
 	if (!x->done)
 		ret = 0;
 	else
 		x->done--;
-	raw_spin_unlock_irqrestore(&x->wait.lock, flags);
+	spin_unlock_irqrestore(&x->wait.lock, flags);
 	return ret;
 }
 EXPORT_SYMBOL(try_wait_for_completion);
@@ -290,10 +290,10 @@ bool completion_done(struct completion *x)
 	unsigned long flags;
 	int ret = 1;
 
-	raw_spin_lock_irqsave(&x->wait.lock, flags);
+	spin_lock_irqsave(&x->wait.lock, flags);
 	if (!x->done)
 		ret = 0;
-	raw_spin_unlock_irqrestore(&x->wait.lock, flags);
+	spin_unlock_irqrestore(&x->wait.lock, flags);
 	return ret;
 }
 EXPORT_SYMBOL(completion_done);

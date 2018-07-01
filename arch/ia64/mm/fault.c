@@ -96,7 +96,7 @@ ia64_do_page_fault (unsigned long address, unsigned long isr, struct pt_regs *re
 	/*
 	 * If we're in an interrupt or have no user context, we must not take the fault..
 	 */
-	if (!mm || pagefault_disabled())
+	if (in_atomic() || !mm)
 		goto no_context;
 
 #ifdef CONFIG_VIRTUAL_MEM_MAP

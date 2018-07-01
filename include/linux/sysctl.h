@@ -25,7 +25,6 @@
 #include <linux/rcupdate.h>
 #include <linux/wait.h>
 #include <linux/rbtree.h>
-#include <linux/atomic.h>
 #include <uapi/linux/sysctl.h>
 
 /* For the /proc/sys support */

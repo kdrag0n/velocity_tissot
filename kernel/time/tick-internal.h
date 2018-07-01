@@ -6,8 +6,7 @@
 
 #include "timekeeping.h"
 
-extern raw_spinlock_t jiffies_lock;
-extern seqcount_t jiffies_seq;
+extern seqlock_t jiffies_lock;
 
 #define CS_NAME_LEN	32
 

@@ -16,7 +16,6 @@
 #define IRQ_WORK_BUSY		2UL
 #define IRQ_WORK_FLAGS		3UL
 #define IRQ_WORK_LAZY		4UL /* Doesn't want IPI, wait for tick */
-#define IRQ_WORK_HARD_IRQ	8UL /* Run hard IRQ context, even on RT */
 
 struct irq_work {
 	unsigned long flags;
@@ -49,12 +48,6 @@ void irq_work_sync(struct irq_work *work);
 bool irq_work_needs_cpu(void);
 #else
 static inline bool irq_work_needs_cpu(void) { return false; }
-#endif
-
-#if defined(CONFIG_IRQ_WORK) && defined(CONFIG_PREEMPT_RT_FULL)
-void irq_work_tick_soft(void);
-#else
-static inline void irq_work_tick_soft(void) { }
 #endif
 
 #endif /* _LINUX_IRQ_WORK_H */

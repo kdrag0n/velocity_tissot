@@ -55,8 +55,7 @@ extern bool static_key_initialized;
 				    "%s used before call to jump_label_init", \
 				    __func__)
 
-#if defined(CC_HAVE_ASM_GOTO) && defined(CONFIG_JUMP_LABEL) && \
-	!defined(CONFIG_PREEMPT_BASE)
+#if defined(CC_HAVE_ASM_GOTO) && defined(CONFIG_JUMP_LABEL)
 
 struct static_key {
 	atomic_t enabled;
