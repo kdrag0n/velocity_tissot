@@ -16,6 +16,8 @@ on property:persist.spectrum.profile=0
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/target_load1 20
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/bit_shift1 9
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/bit_shift2 5
+	write /sys/module/cpu_boost/parameters/input_boost_freq 0:1401600
+	write /sys/module/cpu_boost/parameters/input_boost_ms 150
 	write /sys/module/autosmp/parameters/enabled 0
 	write /sys/module/lazyplug/parameters/lazyplug_active 0
 	write /sys/module/msm_hotplug/msm_enabled 0
@@ -38,6 +40,7 @@ on property:persist.spectrum.profile=1
 	write /sys/module/thunderplug/hotplug_enabled 0
 	write /sys/module/blu_plug/parameters/enabled 0
 	write /sys/kernel/intelli_plug/intelli_plug_active 0
+	write /sys/module/cpu_boost/parameters/input_boost_freq 0:0
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2361600
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1804800
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 855000000
@@ -54,6 +57,7 @@ on property:persist.spectrum.profile=2
 	write /sys/module/thunderplug/hotplug_enabled 0
 	write /sys/module/blu_plug/parameters/enabled 0
 	write /sys/kernel/intelli_plug/intelli_plug_active 0
+	write /sys/module/cpu_boost/parameters/input_boost_freq 0:0
 	write /sys/kernel/autosmp/conf/delay 500
 	write /sys/kernel/autosmp/conf/max_cpus 4
 	write /sys/kernel/autosmp/conf/min_cpus 1
@@ -77,6 +81,7 @@ on property:persist.spectrum.profile=3
 	write /sys/module/thunderplug/hotplug_enabled 0
 	write /sys/module/blu_plug/parameters/enabled 0
 	write /sys/kernel/intelli_plug/intelli_plug_active 0
+	write /sys/module/cpu_boost/parameters/input_boost_freq 0:0
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2361600
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1401600
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 855000000
