@@ -16,8 +16,7 @@ on property:persist.spectrum.profile=0
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/target_load1 20
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/bit_shift1 9
 	write /sys/devices/system/cpu/cpufreq/helix_schedutil/bit_shift2 5
-	write /sys/module/cpu_boost/parameters/input_boost_freq 1401600
-	write /sys/module/cpu_boost/parameters/input_boost_ms 150
+	write /sys/module/cpu_boost/parameters/input_boost_ms 0
 	write /sys/module/cpu_boost/parameters/wake_boost_enabled 1
 	write /sys/module/autosmp/parameters/enabled 0
 	write /sys/module/lazyplug/parameters/lazyplug_active 0
