@@ -18,6 +18,16 @@
 #include <linux/fb.h>
 #include <linux/input.h>
 #include <linux/slab.h>
+#include <linux/moduleparam.h>
+
+static __read_mostly int input_boost_duration_ms = CONFIG_INPUT_BOOST_DURATION_MS;
+module_param(input_boost_duration_ms, uint, 0644);
+
+static __read_mostly int input_boost_freq = CONFIG_INPUT_BOOST_FREQ;
+module_param(input_boost_freq, uint, 0644);
+
+static __read_mostly int input_boost_on;
+module_param(input_boost_on, uint, 0644);
 
 /* Available bits for boost_drv state */
 #define SCREEN_AWAKE		(1U << 0)
@@ -136,7 +146,7 @@ static void input_boost_worker(struct work_struct *work)
 	}
 
 	queue_delayed_work(b->wq, &b->input_unboost,
-		msecs_to_jiffies(CONFIG_INPUT_BOOST_DURATION_MS));
+		msecs_to_jiffies(input_boost_duration_ms));
 }
 
 static void input_unboost_worker(struct work_struct *work)
@@ -173,6 +183,9 @@ static void max_unboost_worker(struct work_struct *work)
 static int cpu_notifier_cb(struct notifier_block *nb,
 	unsigned long action, void *data)
 {
+	if (!input_boost_on)
+		return NOTIFY_OK;
+
 	struct boost_drv *b = container_of(nb, typeof(*b), cpu_notif);
 	struct cpufreq_policy *policy = data;
 	u32 state;
@@ -193,7 +206,7 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 	 * unboosting, set policy->min to the absolute min freq for the CPU.
 	 */
 	if (state & INPUT_BOOST) {
-		policy->min = min(policy->max, (unsigned int)CONFIG_INPUT_BOOST_FREQ);
+		policy->min = min(policy->max, (unsigned int)input_boost_freq);
 	} else {
 		policy->min = policy->cpuinfo.min_freq;
 	}
@@ -204,6 +217,9 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 static int fb_notifier_cb(struct notifier_block *nb,
 	unsigned long action, void *data)
 {
+	if (!input_boost_on)
+		return NOTIFY_OK;
+
 	struct boost_drv *b = container_of(nb, typeof(*b), fb_notif);
 	struct fb_event *evdata = data;
 	int *blank = evdata->data;
