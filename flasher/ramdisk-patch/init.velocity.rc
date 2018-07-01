@@ -26,10 +26,6 @@ on boot
 	# Misc
 	write /sys/module/msm_thermal/parameters/limit_temp_degC 60
 
-	# Gestures
-	write /sys/android_touch/sweep2wake 0
-	write /sys/android_touch/doubletap2wake 0
-
 	# ZRAM
 	write /sys/module/zswap/parameters/enabled 0
 	exec u:r:init:s0 root root -- swapoff /dev/block/zram0
