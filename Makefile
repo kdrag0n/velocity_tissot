@@ -437,7 +437,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   $(call cc-disable-warning,bool-compare,) \
 		   $(call cc-disable-warning,shift-overflow,) \
            -Werror-implicit-function-declaration \
-           -Wno-format-security \
+           -Wno-format-security -fno-PIE \
 		   -std=gnu11 $(CLANG_FLAGS)
 
 # TODO: remove me b/62057517

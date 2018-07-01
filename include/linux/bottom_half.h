@@ -3,6 +3,17 @@
 
 #include <linux/preempt.h>
 
+#ifdef CONFIG_PREEMPT_RT_FULL
+
+extern void local_bh_disable(void);
+extern void _local_bh_enable(void);
+extern void local_bh_enable(void);
+extern void local_bh_enable_ip(unsigned long ip);
+extern void __local_bh_disable_ip(unsigned long ip, unsigned int cnt);
+extern void __local_bh_enable_ip(unsigned long ip, unsigned int cnt);
+
+#else
+
 #ifdef CONFIG_TRACE_IRQFLAGS
 extern void __local_bh_disable_ip(unsigned long ip, unsigned int cnt);
 #else
@@ -30,5 +41,6 @@ static inline void local_bh_enable(void)
 {
 	__local_bh_enable_ip(_THIS_IP_, SOFTIRQ_DISABLE_OFFSET);
 }
+#endif
 
 #endif /* _LINUX_BH_H */

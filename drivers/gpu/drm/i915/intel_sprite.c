@@ -38,6 +38,7 @@
 #include "intel_drv.h"
 #include <drm/i915_drm.h>
 #include "i915_drv.h"
+#include <linux/locallock.h>
 
 static bool
 format_is_yuv(uint32_t format)
@@ -78,6 +79,9 @@ static int usecs_to_scanlines(const struct drm_display_mode *adjusted_mode,
  * avoid random delays. The value written to @start_vbl_count should be
  * supplied to intel_pipe_update_end() for error checking.
  */
+
+static DEFINE_LOCAL_IRQ_LOCK(pipe_update_lock);
+
 void intel_pipe_update_start(struct intel_crtc *crtc)
 {
 	struct drm_device *dev = crtc->base.dev;
@@ -96,7 +100,7 @@ void intel_pipe_update_start(struct intel_crtc *crtc)
 	min = vblank_start - usecs_to_scanlines(adjusted_mode, 100);
 	max = vblank_start - 1;
 
-	local_irq_disable();
+	local_lock_irq(pipe_update_lock);
 
 	if (min <= 0 || max <= 0)
 		return;
@@ -126,11 +130,11 @@ void intel_pipe_update_start(struct intel_crtc *crtc)
 			break;
 		}
 
-		local_irq_enable();
+		local_unlock_irq(pipe_update_lock);
 
 		timeout = schedule_timeout(timeout);
 
-		local_irq_disable();
+		local_lock_irq(pipe_update_lock);
 	}
 
 	finish_wait(wq, &wait);
@@ -164,7 +168,7 @@ void intel_pipe_update_end(struct intel_crtc *crtc)
 
 	trace_i915_pipe_update_end(crtc, end_vbl_count, scanline_end);
 
-	local_irq_enable();
+	local_unlock_irq(pipe_update_lock);
 
 	if (crtc->debug.start_vbl_count &&
 	    crtc->debug.start_vbl_count != end_vbl_count) {
