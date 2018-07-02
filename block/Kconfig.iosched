@@ -158,6 +158,9 @@ choice
 	config DEFAULT_SIO
 		bool "SIO" if IOSCHED_SIO=y
 
+	config DEFAULT_FIFO
+		bool "FIFO" if IOSCHED_FIFO=y
+
 	config DEFAULT_FIOPS
 		bool "FIOPS" if IOSCHED_FIOPS=y
 
@@ -174,6 +177,7 @@ config DEFAULT_IOSCHED
 	default "zen" if DEFAULT_ZEN
 	default "fiops" if DEFAULT_FIOPS
 	default "sio" if DEFAULT_SIO
+	default "fifo" if DEFAULT_FIFO
 	default "maple" if DEFAULT_MAPLE
 	default "row" if DEFAULT_ROW
 endmenu
