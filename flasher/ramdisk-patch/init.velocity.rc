@@ -24,7 +24,7 @@ on boot
 	write /sys/block/mmcblk1/queue/add_random 0
 
 	# Miscellaneous
-	write /proc/sys/vm/vfs_cache_pressure 75
+	write /proc/sys/vm/vfs_cache_pressure 50
 	setprop sys.use_fifo_ui 1
 
 	# ZRAM
