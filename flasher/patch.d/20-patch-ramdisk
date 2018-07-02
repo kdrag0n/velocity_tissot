@@ -34,4 +34,8 @@ insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.velocity.rc"
 # silently fails if there's none
 insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.magisk.rc"
 
+if [ -f /system/system/vendor/lib/modules/pronto/pronto_wlan.ko ]; then
+	cp -rd "$tmp/overlay/." "$overlay/"
+fi
+
 exit 0
