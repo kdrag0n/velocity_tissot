@@ -12,7 +12,7 @@ mkzip() {
     [ "x$1" != "x" ] && fn="$1"
     rm -f "../$fn"
     echo "  ZIP     $fn"
-    zip -r9 "../$fn" . > /dev/null
+    zip -r9 "../$fn" -x ".gitignore" . > /dev/null
     cd ..
 }
 
