@@ -34,6 +34,9 @@ on boot
 	exec u:r:init:s0 root root -- mkswap /dev/block/zram0
 	exec u:r:init:s0 root root -- swapon /dev/block/zram0
 
+	# Early shell init
+	exec u:r:init:s0 root root -- /system/bin/sh /init.early.sh
+
 on property:sys.boot_completed=1
 	# Disable printk later to aid debugging during boot
 	write /sys/kernel/printk_mode/printk_mode 0
