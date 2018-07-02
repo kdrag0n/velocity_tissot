@@ -2,6 +2,7 @@
 # VELOCITY KERNEL
 # Early initialization script
 
+echo START >> /dev/abcdef
 # Wi-Fi module
 if [ -f /system/vendor/lib/modules/pronto/pronto_wlan.ko ]; then # stock
     cp /pronto_wlan.ko /dev/.pronto_wlan.ko

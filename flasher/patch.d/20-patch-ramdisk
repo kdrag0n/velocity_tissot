@@ -35,4 +35,7 @@ insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.velocity.rc"
 # silently fails if there's none
 insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.magisk.rc"
 
+# fix selinux denying /init.*.sh
+"$bin/magiskpolicy" --load "$ramdisk/sepolicy" --save "$ramdisk/sepolicy" "allow init rootfs file execute_no_trans"
+
 exit 0
