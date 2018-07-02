@@ -26,6 +26,7 @@ on boot
 	# Miscellaneous
 	write /proc/sys/vm/vfs_cache_pressure 50
 	setprop sys.use_fifo_ui 1
+	setptop vm.oom_kill_allocating_task 1
 
 	# ZRAM
 	exec u:r:init:s0 root root -- swapoff /dev/block/zram0
