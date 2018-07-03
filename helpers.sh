@@ -98,3 +98,11 @@ test() {
 inc() {
     incbuild && test
 }
+
+dc() {
+    diff arch/arm64/configs/velocity_defconfig .config
+}
+
+cpc() {
+    cp .config arch/arm64/configs/velocity_defconfig
+}
