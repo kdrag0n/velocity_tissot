@@ -25,8 +25,9 @@ on boot
 
 	# Miscellaneous
 	write /proc/sys/vm/vfs_cache_pressure 50
+	write /proc/sys/vm/swappiness 25
 	setprop sys.use_fifo_ui 1
-	setptop vm.oom_kill_allocating_task 1
+	write /proc/sys/vm/oom_kill_allocating_task 1
 
 	# ZRAM
 	exec u:r:init:s0 root root -- swapoff /dev/block/zram0
@@ -36,5 +37,8 @@ on boot
 	exec u:r:init:s0 root root -- swapon /dev/block/zram0
 
 on property:sys.boot_completed=1
+	# Late shell init
+	exec u:r:init:s0 root root -- /init.late.sh
+
 	# Disable printk later to aid debugging during boot
 	write /sys/kernel/printk_mode/printk_mode 0

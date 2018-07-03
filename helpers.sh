@@ -6,13 +6,14 @@ mkzip() {
     [ $_RELEASE -eq 1 ] && touch flasher/.rel
     cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3.dtb flasher/base.dtb
     cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-treble.dtb flasher/treble.dtb
+    cp drivers/staging/prima/wlan.ko flasher/pronto_wlan.ko
     cd flasher
 
     fn="velocity_kernel.zip"
     [ "x$1" != "x" ] && fn="$1"
     rm -f "../$fn"
     echo "  ZIP     $fn"
-    zip -r9 "../$fn" . > /dev/null
+    zip -r9 "../$fn" . -x .gitignore > /dev/null
     cd ..
 }
 
