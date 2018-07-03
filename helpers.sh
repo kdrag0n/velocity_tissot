@@ -1,9 +1,9 @@
 _RELEASE=0
 
 mkzip() {
-    [ $_RELEASE -eq 0 ] && cp arch/arm64/boot/Image flasher/Image-custom
     [ $_RELEASE -eq 0 ] && rm -f flasher/.rel
     [ $_RELEASE -eq 1 ] && touch flasher/.rel
+    cp arch/arm64/boot/Image.gz flasher/
     cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3.dtb flasher/base.dtb
     cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-treble.dtb flasher/treble.dtb
     cp drivers/staging/prima/wlan.ko flasher/pronto_wlan.ko
@@ -25,38 +25,17 @@ rel() {
     mv .version .devversion && \
     mv .relversion .version
 
-    # Compile for custom
-    make oldconfig && \
-    make "${MAKEFLAGS[@]}" -j$jobs && \
-    cp arch/arm64/boot/Image flasher/Image-custom && \
+    # Compile kernel
+    make oldconfig # solve a weird "cached" config
+    make "${MAKEFLAGS[@]}" -j$jobs
 
-    # Reset version
-    echo $(($(cat .version) - 1)) >| .version && \
-
-    # Disable pronto for stock
-    cp .config .occonfig && \
-    sed -i 's/CONFIG_PRONTO_WLAN=y/# CONFIG_PRONTO_WLAN is not set/' .config && \
-    make oldconfig && \
-
-    # Compile for stock
-    make "${MAKEFLAGS[@]}" -j$jobs && \
-
-    # Create patch delta
-    echo '  BSDIFF  flasher/stock.delta' && \
-    # Custom bsdiff that matches revised format of flasher patcher
-    ./bsdiff flasher/Image-custom arch/arm64/boot/Image flasher/stock.delta
-
-    # Revert version and config files
-    mv .occonfig .config && \
+    # Revert version
     mv .version .relversion && \
     mv .devversion .version
 
     # Pack zip
-    mkdir -p releases && \
-    mkzip "releases/velocity_kernel-tissot-r$(cat .relversion)-$(date +%Y%m%d).zip" && \
-
-    # Fix config for next build
-    make oldconfig
+    mkdir -p releases
+    mkzip "releases/velocity_kernel-tissot-r$(cat .relversion)-$(date +%Y%m%d).zip"
 
     _RELEASE=0
 }
@@ -78,6 +57,7 @@ dbuild() {
 }
 
 dzip() {
+    mkdir -p betas
     mkzip "betas/velocity_kernel-tissot-b$(cat .version)-$(date +%Y%m%d).zip"
 }
 

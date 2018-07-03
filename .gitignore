@@ -110,7 +110,6 @@ firmware/synaptics/startup_fw_update.img
 # Flasher
 flasher/*.dtb
 flasher/Image*
-flasher/*.delta
 
 releases/
 betas/
