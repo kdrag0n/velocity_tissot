@@ -35,7 +35,19 @@ insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.velocity.rc"
 # silently fails if there's none
 insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.magisk.rc"
 
-# fix selinux denying /init.*.sh
-"$bin/magiskpolicy" --load "$ramdisk/sepolicy" --save "$ramdisk/sepolicy" "allow init rootfs file execute_no_trans"
+# fix selinux denials for /init.*.sh
+"$bin/magiskpolicy" --load "/system/sepolicy" --save "$overlay/sepolicy" \
+"allow init rootfs file execute_no_trans" \
+"allow toolbox device file { append ioctl write getattr create read open relabelfrom setattr }" \
+"allow toolbox vendor_file file { relabelto mounton }" \
+"allow toolbox rootfs file { getattr open read }" \
+"allow toolbox toolbox capability { sys_admin sys_module }" \
+"allow toolbox property_socket sock_file write" \
+"allow toolbox default_prop property_service set" \
+"allow toolbox init unix_stream_socket connectto" \
+"allow toolbox init fifo_file { getattr write }" \
+"allow toolbox device dir { write add_name }" \
+"allow toolbox proc file { getattr open read }" \
+"allow toolbox rootfs system module_load"
 
 exit 0
