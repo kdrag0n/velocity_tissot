@@ -7,6 +7,8 @@ mkzip() {
     cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3.dtb flasher/base.dtb
     cp arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-treble.dtb flasher/treble.dtb
     cp drivers/staging/prima/wlan.ko flasher/pronto_wlan.ko
+    echo -n $(date "+%a %b '%y at %H:%M") >| flasher/.build
+    cat .version|tr -d '\n' >| flasher/.ver
     cd flasher
 
     fn="velocity_kernel.zip"
@@ -29,13 +31,13 @@ rel() {
     make oldconfig # solve a weird "cached" config
     make "${MAKEFLAGS[@]}" -j$jobs
 
-    # Revert version
-    mv .version .relversion && \
-    mv .devversion .version
-
     # Pack zip
     mkdir -p releases
     mkzip "releases/velocity_kernel-tissot-r$(cat .relversion)-$(date +%Y%m%d).zip"
+
+    # Revert version
+    mv .version .relversion && \
+    mv .devversion .version
 
     _RELEASE=0
 }
