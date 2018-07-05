@@ -88,3 +88,7 @@ dc() {
 cpc() {
     cp .config arch/arm64/configs/velocity_defconfig
 }
+
+mc() {
+    make velocity_defconfig
+}
