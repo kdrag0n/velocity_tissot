@@ -1379,8 +1379,8 @@ static int ft5435_ts_suspend(struct device *dev)
 #if defined(FOCALTECH_TP_GESTURE)
 	{
 		if (gesture_func_on) {
-			enable_irq_wake(data->client->irq);
 			ft_tp_suspend(data);
+			enable_irq_wake(data->client->irq);
 			return 0;
 		}
 	}
@@ -1451,8 +1451,8 @@ static int ft5435_ts_resume(struct device *dev)
 
 
 	ft5x0x_write_reg(data->client, 0x8c, 0x01);
-	enable_irq(data->client->irq);
 	data->suspended = false;
+	enable_irq(data->client->irq);
 
 #if defined(USB_CHARGE_DETECT)
 	queue_work(ft5435_wq, &data->work);
