@@ -40,9 +40,6 @@
 /* Fingerprint sensor input key */
 #define FINGERPRINT_KEY 0x2ee
 
-/* The duration in milliseconds for the fingerprint boost */
-#define FP_BOOST_MS (2000)
-
 /*
  * "fp_config" = "fingerprint boost configuration". This contains the data and
  * workers used for a single input-boost event.
@@ -95,7 +92,7 @@ static void fp_boost_main(struct work_struct *work)
 	update_online_cpu_policy();
 
 	queue_delayed_work(b->wq, &fp->unboost_work,
-				msecs_to_jiffies(FP_BOOST_MS));
+				msecs_to_jiffies(CONFIG_FP_BOOST_MS));
 
 }
 
