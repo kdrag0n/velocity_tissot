@@ -17,7 +17,11 @@ find -type f \( \
 	-name "ueventd.*" -o -name "sepolicy" -o -name "sepolicy_version" \
 	\) -exec chmod 0644 {} \;
 
-overlay="$ramdisk/overlay"
+if [ -d $ramdisk/.backup ]; then
+  overlay=$ramdisk/overlay;
+elif [ -d $ramdisk/.subackup ]; then
+  overlay=$ramdisk/boot;
+fi;
 
 print "Copying new files..."
 cp -rd ./. "$ramdisk/"
