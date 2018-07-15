@@ -13,6 +13,19 @@ chmod -R 755 "$bin"
 rm -rf "$ramdisk" "$split_img"
 mkdir "$ramdisk"
 
+# patch_cmdline <cmdline entry name> <replacement string>
+patch_cmdline() {
+  cmdfile=`ls $split_img/*-cmdline`;
+  if [ -z "$(grep "$1" $cmdfile)" ]; then
+    cmdtmp=`cat $cmdfile`;
+    echo "$cmdtmp $2" > $cmdfile;
+    sed -i -e 's;  *; ;g' -e 's;[ \t]*$;;' $cmdfile;
+  else
+    match=$(grep -o "$1.*$" $cmdfile | cut -d\  -f1);
+    sed -i -e "s;${match};${2};" -e 's;  *; ;g' -e 's;[ \t]*$;;' $cmdfile;
+  fi;
+}
+
 print() {
 	if [ "$1" ]; then
 		echo "ui_print   • $1" > "$console"
