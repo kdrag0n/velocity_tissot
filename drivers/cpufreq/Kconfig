@@ -729,12 +729,12 @@ config FINGERPRINT_BOOST
 
 if FINGERPRINT_BOOST
 
-	config FP_BOOST_MS
-		int "Fingerprint Boost MS"
-		default 2000
-		help
-		  This value determines how many milliseconds to keep all CPUs
-		  boosted after the fingerprint sensor is activated.
+config FP_BOOST_MS
+	int "Fingerprint boost duration"
+	default 2000
+	help
+	  This value determines how many milliseconds to keep all CPUs
+	  boosted after the fingerprint sensor is activated.
 
 endif
 
