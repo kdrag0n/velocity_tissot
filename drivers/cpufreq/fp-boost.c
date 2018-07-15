@@ -92,7 +92,7 @@ static void fp_boost_main(struct work_struct *work)
 	update_online_cpu_policy();
 
 	queue_delayed_work(b->wq, &fp->unboost_work,
-				msecs_to_jiffies(CONFIG_FINGERPRINT_BOOST_MS));
+				msecs_to_jiffies(CONFIG_FP_BOOST_MS));
 
 }
 
