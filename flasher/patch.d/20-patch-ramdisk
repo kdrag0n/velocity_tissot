@@ -24,7 +24,6 @@ elif [ -d $ramdisk/.subackup ]; then
 fi;
 
 print "Copying new files..."
-cp -rd ./. "$ramdisk/"
 mkdir -p "$overlay"
 cp -rd ./. "$overlay/"
 cp "$tmp/pronto_wlan.ko" "$overlay/"
