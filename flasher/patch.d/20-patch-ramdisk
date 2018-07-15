@@ -50,6 +50,10 @@ insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.magisk.rc"
 "allow toolbox proc file { getattr open read }" \
 "allow toolbox rootfs system module_load"
 
-patch_cmdline "skip_override" "";
+if [ -d $ramdisk/.subackup -o -d $ramdisk/.backup ]; then
+  patch_cmdline "skip_override" "skip_override";
+else
+  patch_cmdline "skip_override" "";
+fi;
 
 exit 0
