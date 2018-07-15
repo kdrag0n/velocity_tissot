@@ -729,7 +729,7 @@ config FINGERPRINT_BOOST
 
 if FINGERPRINT_BOOST
 
-config FP_BOOST_MS
+config FINGERPRINT_BOOST_MS
 	int "Fingerprint boost duration"
 	default 2000
 	help
