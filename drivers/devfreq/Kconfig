@@ -34,8 +34,8 @@ config DEVFREQ_WAKE_BOOST_DURATION_MS
 	int "Wake boost duration"
 	default 5000
 	help
-	  This value determines how many milliseconds to delay GPU wake
-	  unboost.
+	  This value determines how many milliseconds to keep designated
+	  devices boosted.
 
 config DEVFREQ_GOV_SIMPLE_ONDEMAND
 	tristate "Simple Ondemand"
