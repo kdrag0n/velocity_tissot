@@ -39,4 +39,6 @@ insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.magisk.rc"
 "$bin/magiskpolicy" --load "/system/sepolicy" --save "$overlay/sepolicy" \
 "allow init rootfs file execute_no_trans";
 
+patch_cmdline "skip_override" "";
+
 exit 0
