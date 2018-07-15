@@ -30,6 +30,13 @@ if PM_DEVFREQ
 
 comment "DEVFREQ Governors"
 
+config DEVFREQ_WAKE_BOOST_DURATION_MS
+	int "Wake Boost Duration (MS)"
+	default 5000
+	help
+	  This value determines how many milliseconds to delay GPU wake
+	  unboost.
+
 config DEVFREQ_GOV_SIMPLE_ONDEMAND
 	tristate "Simple Ondemand"
 	help
