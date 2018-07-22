@@ -24,26 +24,17 @@ elif [ -d $ramdisk/.subackup ]; then
 fi;
 
 print "Copying new files..."
-# Raw ramdisk: recovery (speeds up TWRP GUI)
-cp -rd ./. "$ramdisk/"
-
 # Ramdisk overlay: system
+rm -fr "$overlay"
 mkdir -p "$overlay"
 cp -rd ./. "$overlay/"
 # System Wi-Fi module (all ROMs)
 cp "$tmp/pronto_wlan.ko" "$overlay/"
 
-# Recovery ramdisk
-import_rc "init.velocity.rc"
-import_rc "init.spectrum.rc"
-
 # Ramdisk overlay
 cp /system/init.rc "$overlay/"
 insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.spectrum.rc"
 insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.velocity.rc"
-
-# silently fails if there's none
-insert_after_last "$overlay/init.rc" "import .*\.rc" "import /init.magisk.rc"
 
 # fix selinux denials for /init.*.sh
 "$bin/magiskpolicy" --load "/system/sepolicy" --save "$overlay/sepolicy" \
