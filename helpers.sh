@@ -91,3 +91,7 @@ cpc() {
 mc() {
     make velocity_defconfig
 }
+
+cf() {
+    make nconfig
+}
