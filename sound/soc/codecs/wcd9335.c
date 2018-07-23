@@ -180,7 +180,7 @@ module_param(low_distort_amp, int,
 	S_IRUGO | S_IWUSR | S_IWGRP);
 MODULE_PARM_DESC(low_distort_amp, "enable/disable l Class AB Mode");
 
-static int dig_core_collapse_enable = 0;
+static int dig_core_collapse_enable = 1;
 module_param(dig_core_collapse_enable, int,
 		S_IRUGO | S_IWUSR | S_IWGRP);
 MODULE_PARM_DESC(dig_core_collapse_enable, "enable/disable power gating");
