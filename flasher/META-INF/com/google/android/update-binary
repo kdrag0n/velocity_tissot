@@ -54,10 +54,6 @@ mount() {
 	>> "$1/.rw" && return || abort "Unable to write to $1!"
 }
 
-mount_ro() {
-	mountpoint -q "$1" || /sbin/busybox mount -o ro "$1" || { print "Unable to mount /system"; print "Stock and Treble ROMs will not work"; }
-}
-
 umount() {
 	mountpoint -q "$1" || return 0
 	rm -f "$1/.rw"
@@ -65,14 +61,14 @@ umount() {
 }
 
 cat > "$console" <<EOF
-ui_print  
+ui_print
 ui_print __     __   _            _ _
 ui_print \ \   / /__| | ___   ___(_) |_ _   _
 ui_print  \ \ / / _ \ |/ _ \ / __| | __| | | |
 ui_print   \ V /  __/ | (_) | (__| | |_| |_| |
 ui_print    \_/ \___|_|\___/ \___|_|\__|\__, |
 ui_print                                |___/
-ui_print  
+ui_print
 ui_print         Xiaomi Mi A1 (tissot)
 ui_print     Kernel by kdragon & tytydraco
 ui_print -------------------------------------
@@ -113,7 +109,7 @@ else
 	print "Built on $(cat .build)"
 fi
 
-mount_ro /system
+mount /system
 if [ ! -f /dev/block/dm-0 ]; then # encryption fix
 mountpoint -q /data || /sbin/busybox mount -o rw /data
 fi
