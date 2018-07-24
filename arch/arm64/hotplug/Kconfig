@@ -14,27 +14,12 @@ config ASMP
 	  For MPU based protection-enabled targets please refer to
 	  MSM_KERNEL_PROTECT_MPU
 
-config LAZYPLUG
-	bool "Lazyplug Conservative hotplugging for generic devices"
-	default n
-	help
-	  This enables the conservative hotplugging, lazyplug by arter97
-	  based on intelli_plug. Refer to the comments for more info.
-
 config THUNDERPLUG_CONTROL
 	bool "Thunderplug plugging down/up of cores based on load per core"
 	depends on SMP && HOTPLUG_CPU
 	default n
 	help
 	  This driver hotplugs cpu cores based on per-core load
-
-config INTELLI_HOTPLUG
-	bool "Intelli hotplug driver"
-	depends on HOTPLUG_CPU
-	default n
-	help
-	  An intelligent cpu hotplug driver for
-	  Low Latency Frequency Transition capable processors.
 
 config BLU_PLUG
 	bool "Dynamic hotplug driver"
