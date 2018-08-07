@@ -7,7 +7,7 @@ export ARCH=arm64
 export KBUILD_BUILD_USER=velocity
 export KBUILD_BUILD_HOST=kernel
 
-jobs=10
+jobs=8
 
 export CFLAGS=""
 export CXXFLAGS=""
