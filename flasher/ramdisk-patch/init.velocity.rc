@@ -5,10 +5,10 @@ on boot
 	write /sys/module/simple_gpu_algorithm/parameters/simple_gpu_activate 0
 	write /sys/module/adreno_idler/parameters/adreno_idler_active Y
 
-	# Sound: eliminate background noise
+	# Sound
 	write /sys/kernel/sound_control/headphone_gain -10 -10
 
-	# Fast Charging
+	# Fast charging
 	write /sys/kernel/fast_charge/force_fast_charge 1
 
 	# Block
@@ -17,7 +17,9 @@ on boot
 	write /sys/block/mmcblk0/queue/add_random 0
 	write /sys/block/mmcblk1/queue/add_random 0
 
-	# Miscellaneous
+	# Memory
 	write /proc/sys/vm/vfs_cache_pressure 50
 	write /proc/sys/vm/swappiness 35
+
+	# System
 	setprop sys.use_fifo_ui 1
