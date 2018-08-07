@@ -515,7 +515,7 @@ static ssize_t store_timer_rate(struct kobject *kobj,
 	int ret;
 	unsigned long val;
 
-	ret = strict_strtoul(buf, 0, &val);
+	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
 
@@ -538,7 +538,7 @@ static ssize_t store_up_threshold(struct kobject *kobj,
 	int ret;
 	unsigned long val;
 
-	ret = strict_strtoul(buf, 0, &val);
+	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
 
@@ -567,7 +567,7 @@ static ssize_t store_down_differential(struct kobject *kobj,
 	int ret;
 	unsigned long val;
 
-	ret = strict_strtoul(buf, 0, &val);
+	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
 
@@ -597,7 +597,7 @@ static ssize_t store_inter_hifreq(struct kobject *kobj,
 		&per_cpu(cpuinfo, smp_processor_id());
 	unsigned int index;
 
-	ret = strict_strtoull(buf, 0, &val);
+	ret = kstrtoull(buf, 0, &val);
 	if (ret < 0)
 		return ret;
 
@@ -635,7 +635,7 @@ static ssize_t store_inter_lofreq(struct kobject *kobj,
 		&per_cpu(cpuinfo, smp_processor_id());
 	unsigned int index;
 
-	ret = strict_strtoull(buf, 0, &val);
+	ret = kstrtoull(buf, 0, &val);
 	if (ret < 0)
 		return ret;
 
@@ -669,7 +669,7 @@ static ssize_t store_inter_staycycles(struct kobject *kobj,
 	int ret;
 	unsigned long val;
 
-	ret = strict_strtoul(buf, 0, &val);
+	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
 
@@ -698,7 +698,7 @@ static ssize_t store_staycycles_resetfreq(struct kobject *kobj,
 	struct cpufreq_ondemandplus_cpuinfo *pcpu =
 		&per_cpu(cpuinfo, smp_processor_id());
 
-	ret = strict_strtoull(buf, 0, &val);
+	ret = kstrtoull(buf, 0, &val);
 	if (ret < 0)
 		return ret;
 
