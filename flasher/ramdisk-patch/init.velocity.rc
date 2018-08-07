@@ -1,12 +1,6 @@
 on boot
 	# Base settings
 
-	# Intellithermal
-	write /sys/module/msm_thermal/parameters/enabled Y
-	write /sys/module/msm_thermal/parameters/core_temp_hysteresis_degC 10
-	write /sys/module/msm_thermal/parameters/freq_step 2
-	write /sys/module/msm_thermal/parameters/poll_ms 2000
-
 	# GPU
 	write /sys/module/simple_gpu_algorithm/parameters/simple_gpu_activate 0
 	write /sys/module/adreno_idler/parameters/adreno_idler_active Y
