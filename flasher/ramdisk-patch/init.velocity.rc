@@ -25,5 +25,5 @@ on boot
 
 	# Miscellaneous
 	write /proc/sys/vm/vfs_cache_pressure 50
-	write /proc/sys/vm/swappiness 25
+	write /proc/sys/vm/swappiness 35
 	setprop sys.use_fifo_ui 1
