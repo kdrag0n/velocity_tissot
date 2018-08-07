@@ -23,6 +23,7 @@ on property:persist.spectrum.profile=0
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 133330000
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 0
 	write /sys/module/adreno_idler/parameters/adreno_idler_active 1
+	write /sys/module/adreno_idler/parameters/adreno_idler_workload 7000
 	write /sys/module/adreno_idler/parameters/adreno_idler_idlewait 30
 
 # Performance
@@ -42,6 +43,7 @@ on property:persist.spectrum.profile=1
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 133330000
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 1
 	write /sys/module/adreno_idler/parameters/adreno_idler_active 1
+	write /sys/module/adreno_idler/parameters/adreno_idler_workload 6500
 	write /sys/module/adreno_idler/parameters/adreno_idler_idlewait 35
 
 # Battery
@@ -61,6 +63,7 @@ on property:persist.spectrum.profile=2
 	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 0
 	write /sys/module/adreno_idler/parameters/adreno_idler_active 1
+	write /sys/module/adreno_idler/parameters/adreno_idler_workload 8500
 	write /sys/module/adreno_idler/parameters/adreno_idler_idlewait 15
 
 # Gaming
@@ -80,4 +83,5 @@ on property:persist.spectrum.profile=3
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 216000000
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 3
 	write /sys/module/adreno_idler/parameters/adreno_idler_active 1
+	write /sys/module/adreno_idler/parameters/adreno_idler_workload 5500
 	write /sys/module/adreno_idler/parameters/adreno_idler_idlewait 50
