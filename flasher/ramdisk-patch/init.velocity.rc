@@ -27,4 +27,3 @@ on boot
 	write /proc/sys/vm/vfs_cache_pressure 50
 	write /proc/sys/vm/swappiness 25
 	setprop sys.use_fifo_ui 1
-	write /proc/sys/vm/oom_kill_allocating_task 1
