@@ -493,15 +493,6 @@ int ipa_send(struct ipa_sys_context *sys, u32 num_desc, struct ipa_desc *desc,
 					tx_pkt->mem.base,
 					tx_pkt->mem.size,
 					DMA_TO_DEVICE);
-
-				if (dma_mapping_error(ipa_ctx->pdev,
-					tx_pkt->mem.phys_base)) {
-					IPAERR("dma_map_single ");
-					IPAERR("failed\n");
-					fail_dma_wrap = 1;
-					goto failure;
-				}
-
 			} else {
 				tx_pkt->mem.phys_base = desc[i].dma_address;
 				tx_pkt->no_unmap_dma = true;
