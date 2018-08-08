@@ -1097,7 +1097,7 @@ static ssize_t store_timer_rate(struct cpufreq_interactive_tunables *tunables,
 static ssize_t show_timer_slack(struct cpufreq_interactive_tunables *tunables,
 		char *buf)
 {
-	return sprintf(buf, "%u\n", jiffies_to_usecs(tunables->timer_slack_val));
+	return sprintf(buf, "%d\n", jiffies_to_usecs(tunables->timer_slack_val));
 }
 
 static ssize_t store_timer_slack(struct cpufreq_interactive_tunables *tunables,
