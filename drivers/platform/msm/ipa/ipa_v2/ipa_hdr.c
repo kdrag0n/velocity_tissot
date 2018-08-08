@@ -742,7 +742,20 @@ static int __ipa_add_hdr(struct ipa_hdr_add *hdr)
 				}
 			}
 		} else {
-			entry->is_hdr_proc_ctx = false;
+			entry->is_hdr_proc_ctx = true;
+			entry->phys_base = dma_map_single(ipa_ctx->pdev,
+				entry->hdr,
+				entry->hdr_len,
+				DMA_TO_DEVICE);
+			if (dma_mapping_error(ipa_ctx->pdev,
+				entry->phys_base)) {
+				IPAERR("dma_map_single failure for entry\n");
+				goto fail_dma_mapping;
+			}
+		}
+	} else {
+		entry->is_hdr_proc_ctx = false;
+		if (list_empty(&htbl->head_free_offset_list[bin])) {
 			offset = kmem_cache_zalloc(ipa_ctx->hdr_offset_cache,
 						   GFP_KERNEL);
 			if (!offset) {
@@ -825,7 +838,8 @@ ipa_insert_failed:
 	}
 	htbl->hdr_cnt--;
 	list_del(&entry->link);
-
+	dma_unmap_single(ipa_ctx->pdev, entry->phys_base,
+			entry->hdr_len, DMA_TO_DEVICE);
 fail_dma_mapping:
 	entry->is_hdr_proc_ctx = false;
 bad_hdr_len:
