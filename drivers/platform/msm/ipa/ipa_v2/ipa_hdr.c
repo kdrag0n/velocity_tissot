@@ -752,10 +752,8 @@ static int __ipa_add_hdr(struct ipa_hdr_add *hdr)
 				IPAERR("dma_map_single failure for entry\n");
 				goto fail_dma_mapping;
 			}
-		}
-	} else {
-		entry->is_hdr_proc_ctx = false;
-		if (list_empty(&htbl->head_free_offset_list[bin])) {
+		} else {
+			entry->is_hdr_proc_ctx = false;
 			offset = kmem_cache_zalloc(ipa_ctx->hdr_offset_cache,
 						   GFP_KERNEL);
 			if (!offset) {
