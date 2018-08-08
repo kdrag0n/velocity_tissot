@@ -19,7 +19,7 @@ on property:persist.spectrum.profile=0
 
 	# GPU
 	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
-	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 650000000
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 700000000
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 133330000
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 0
 	write /sys/module/adreno_idler/parameters/adreno_idler_active 1
@@ -39,7 +39,7 @@ on property:persist.spectrum.profile=1
 
 	# GPU
 	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
-	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 650000000
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 700000000
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 133330000
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 1
 	write /sys/module/adreno_idler/parameters/adreno_idler_active 1
@@ -79,7 +79,7 @@ on property:persist.spectrum.profile=3
 
 	# GPU
 	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
-	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 650000000
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 700000000
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 216000000
 	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 3
 	write /sys/module/adreno_idler/parameters/adreno_idler_active 1
