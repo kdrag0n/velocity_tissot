@@ -36,9 +36,9 @@
 #include <linux/platform_device.h>
 #include <linux/regulator/consumer.h>
 #include <linux/wakelock.h>
-#include <linux/notifier.h>
 #include <linux/fb.h>
 #include <linux/mdss_io_util.h>
+#include <linux/state_notifier.h>
 
 #define FPC_TTW_HOLD_TIME 2000
 #define FP_UNLOCK_REJECTION_TIMEOUT  (FPC_TTW_HOLD_TIME - 500)
@@ -87,8 +87,6 @@ struct fpc1020_data {
 	bool prepared;
 	bool compatible_enabled;
 	atomic_t wakeup_enabled; /* Used both in ISR and non-ISR */
-	struct notifier_block fb_notifier;
-	bool fb_black;
 	bool wait_finger_down;
 	struct work_struct work;
 };
@@ -588,7 +586,7 @@ static irqreturn_t fpc1020_irq_handler(int irq, void *handle)
 	}
 
 	sysfs_notify(&fpc1020->dev->kobj, NULL, dev_attr_irq.attr.name);
-	if (fpc1020->wait_finger_down && fpc1020->fb_black) {
+	if (fpc1020->wait_finger_down && state_suspended) {
 		printk("%s enter\n", __func__);
 		fpc1020->wait_finger_down = false;
 		schedule_work(&fpc1020->work);
@@ -619,43 +617,6 @@ static int fpc1020_request_named_gpio(struct fpc1020_data *fpc1020,
 
 	return 0;
 }
-
-static int fpc_fb_notif_callback(struct notifier_block *nb,
-		unsigned long val, void *data)
-{
-	struct fpc1020_data *fpc1020 = container_of(nb, struct fpc1020_data,
-			fb_notifier);
-	struct fb_event *evdata = data;
-	unsigned int blank;
-
-	if (!fpc1020)
-		return 0;
-
-	if (val != FB_EVENT_BLANK)
-		return 0;
-
-	printk("[info] %s value = %d\n", __func__, (int)val);
-
-	if (evdata && evdata->data && val == FB_EVENT_BLANK) {
-		blank = *(int *)(evdata->data);
-		switch (blank) {
-		case FB_BLANK_POWERDOWN:
-			fpc1020->fb_black = true;
-			break;
-		case FB_BLANK_UNBLANK:
-			fpc1020->fb_black = false;
-			break;
-		default:
-			printk("%s defalut\n", __func__);
-			break;
-		}
-	}
-	return NOTIFY_OK;
-}
-
-static struct notifier_block fpc_notif_block = {
-	.notifier_call = fpc_fb_notif_callback,
-};
 
 static int fpc1020_probe(struct platform_device *pdev)
 {
@@ -696,11 +657,8 @@ static int fpc1020_probe(struct platform_device *pdev)
 
 
 	dev_err(dev, "%s: ok\n", __func__);
-	fpc1020->fb_black = false;
 	fpc1020->wait_finger_down = false;
 	INIT_WORK(&fpc1020->work, notification_work);
-	fpc1020->fb_notifier = fpc_notif_block;
-	fb_register_client(&fpc1020->fb_notifier);
 
 exit:
 	return rc;
@@ -710,7 +668,6 @@ static int fpc1020_remove(struct platform_device *pdev)
 {
 	struct fpc1020_data *fpc1020 = platform_get_drvdata(pdev);
 
-	fb_unregister_client(&fpc1020->fb_notifier);
 	sysfs_remove_group(&pdev->dev.kobj, &attribute_group);
 	mutex_destroy(&fpc1020->lock);
 	wake_lock_destroy(&fpc1020->ttw_wl);
