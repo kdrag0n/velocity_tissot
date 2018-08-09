@@ -46,6 +46,7 @@
 #include <linux/cpufreq.h>
 #include <linux/wakelock.h>
 #include <linux/mdss_io_util.h>
+#include <linux/state_notifier.h>
 #include "gf_spi.h"
 
 #if defined(USE_SPI_BUS)
@@ -562,7 +563,7 @@ static irqreturn_t gf_irq(int irq, void *handle)
 	char temp = GF_NET_EVENT_IRQ;
 	wake_lock_timeout(&fp_wakelock, msecs_to_jiffies(WAKELOCK_HOLD_TIME));
 	sendnlmsg(&temp);
-	if ((gf_dev->wait_finger_down == true) && (gf_dev->device_available == 1) && (gf_dev->fb_black == 1)) {
+	if ((gf_dev->wait_finger_down == true) && (gf_dev->device_available == 1) && state_suspended) {
 		gf_dev->wait_finger_down = false;
 		schedule_work(&gf_dev->work);
 	}
@@ -673,7 +674,6 @@ static int goodix_fb_state_chg_callback(struct notifier_block *nb,
 		switch (blank) {
 		case FB_BLANK_POWERDOWN:
 			if (gf_dev->device_available == 1) {
-				gf_dev->fb_black = 1;
 				gf_dev->wait_finger_down = true;
 #if defined(GF_NETLINK_ENABLE)
 				temp = GF_NET_EVENT_FB_BLACK;
@@ -690,7 +690,6 @@ static int goodix_fb_state_chg_callback(struct notifier_block *nb,
 			break;
 		case FB_BLANK_UNBLANK:
 			if (gf_dev->device_available == 1) {
-				gf_dev->fb_black = 0;
 #if defined(GF_NETLINK_ENABLE)
 				temp = GF_NET_EVENT_FB_UNBLACK;
 				sendnlmsg(&temp);
@@ -802,7 +801,6 @@ static int gf_probe(struct platform_device *pdev)
 	gf_dev->reset_gpio = -EINVAL;
 	gf_dev->pwr_gpio = -EINVAL;
 	gf_dev->device_available = 0;
-	gf_dev->fb_black = 0;
 	gf_dev->irq_enabled = 0;
 	gf_dev->fingerprint_pinctrl = NULL;
 	gf_dev->wait_finger_down = false;
