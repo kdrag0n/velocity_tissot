@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 3.18.117 Kernel Configuration
+# Linux/arm64 3.18.118 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -3982,7 +3982,7 @@ CONFIG_MSM_CPU_PWR_CTL=y
 CONFIG_MSM_RPM_SMD=y
 # CONFIG_MSM_RPM_RBCPR_STATS_V2_LOG is not set
 # CONFIG_MSM_RPM_LOG is not set
-# CONFIG_MSM_RPM_STATS_LOG is not set
+CONFIG_MSM_RPM_STATS_LOG=y
 CONFIG_MSM_RUN_QUEUE_STATS=y
 CONFIG_MSM_SCM=y
 CONFIG_MSM_SCM_XPU=y
