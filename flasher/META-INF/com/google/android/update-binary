@@ -110,16 +110,19 @@ else
 fi
 
 export SYSTEM_RW=1
+export SYSTEM_RO=1
 
-mountpoint -q "$1" || /sbin/busybox mount -o rw "$1" || export SYSTEM_RW=0
->> "$1/.rw" && return || /sbin/busybox mount -o remount,rw "$1"
->> "$1/.rw" && return || export SYSTEM_RW=0
+mountpoint -q "/system" || /sbin/busybox mount -o rw "/system" || export SYSTEM_RW=0
+>> "/system/.rw" || /sbin/busybox mount -o remount,rw "/system"
+>> "/system/.rw" || export SYSTEM_RW=0
 
 if [ "$SYSTEM_RW" = 1 ]; then
 	rm -f /system/.rw
 else
 	print "Unable to write to system, try unchecking read-only in Mount tab"
-	print "Spectrum and default settings will NOT work!"
+	print "Spectrum and default settings might not work!"
+
+	mountpoint -q "/system" || /sbin/busybox mount -o ro "/system" || { print "Unable to mount system"; print "Treble ROMs will not work!"; export SYSTEM_RO=0; }
 fi
 
 if [ ! -f /dev/block/dm-0 ]; then # encryption fix
