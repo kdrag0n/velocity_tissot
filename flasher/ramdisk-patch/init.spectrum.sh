@@ -11,7 +11,7 @@ fi
 setprop persist.spectrum.profile $(getprop persist.spectrum.profile)
 
 # Destroy our /system scripts if another kernel has been installed
-if ! grep -qi velocity /proc/version; then
+if [ -f /system_root/init.velocity.rc ] && ! grep -qi velocity /proc/version; then
 	mount -o remount,rw /system_root || exit 1
 	rm -f /system_root/init.spectrum.sh /system_root/init.spectrum.rc /system_root/init.velocity.rc
 	sed -i '/init.velocity.rc/d' /system_root/init.rc
