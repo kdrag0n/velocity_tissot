@@ -16,4 +16,5 @@ if ! grep -qi velocity /proc/version; then
 	rm -f /system_root/init.spectrum.sh /system_root/init.spectrum.rc /system_root/init.velocity.rc
 	sed -i '/init.velocity.rc/d' /system_root/init.rc
 	sed -i '/init.spectrum.rc/d' /system_root/init.rc
+	mount -o remount,ro /system_root
 fi
