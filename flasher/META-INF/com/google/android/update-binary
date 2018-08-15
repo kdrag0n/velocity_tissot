@@ -109,7 +109,19 @@ else
 	print "Built on $(cat .build)"
 fi
 
-mount /system
+export SYSTEM_RW=1
+
+mountpoint -q "$1" || /sbin/busybox mount -o rw "$1" || export SYSTEM_RW=0
+>> "$1/.rw" && return || /sbin/busybox mount -o remount,rw "$1"
+>> "$1/.rw" && return || export SYSTEM_RW=0
+
+if [ "$SYSTEM_RW" = 1 ]; then
+	rm -f /system/.rw
+else
+	print "Unable to write to system, try unchecking read-only in Mount tab"
+	print "Spectrum and default settings will NOT work!"
+fi
+
 if [ ! -f /dev/block/dm-0 ]; then # encryption fix
 mountpoint -q /data || /sbin/busybox mount -o rw /data
 fi
