@@ -13,14 +13,8 @@ on boot
 	setprop sys.use_fifo_ui 1
 
 on property:sys.boot_completed=1
-	# GPU
-	write /sys/module/simple_gpu_algorithm/parameters/simple_gpu_activate 0
-
 	# Sound
 	write /sys/kernel/sound_control/headphone_gain -10 -10
-
-	# Fast charging
-	write /sys/kernel/fast_charge/force_fast_charge 1
 
 	# Block
 	write /sys/block/mmcblk0/queue/scheduler deadline
@@ -30,8 +24,3 @@ on property:sys.boot_completed=1
 	write /sys/block/mmcblk0/queue/nr_requests 256
 	write /sys/block/mmcblk1/queue/read_ahead_kb 512
 	write /sys/block/mmcblk1/queue/add_random 0
-
-	# Memory
-	write /proc/sys/vm/vfs_cache_pressure 50
-	write /proc/sys/vm/swappiness 35
-
