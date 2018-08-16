@@ -70,6 +70,7 @@ ui_print    \_/ \___|_|\___/ \___|_|\__|\__, |
 ui_print                                |___/
 ui_print
 ui_print         Xiaomi Mi A1 (tissot)
+ui_print         Xiaomi Mi 5X (tiffany)
 ui_print     Kernel by kdragon & tytydraco
 ui_print -------------------------------------
 EOF
@@ -97,6 +98,7 @@ cd "$tmp"
 		[ "$ro_product_model" = "$i" ] ||
 		[ "$ro_build_product" = "$i" ] &&
 			match=1
+			export DEVICE="$i"
 	done
 	[ $match != 1 ] && abort "Unsupported device"
 }
