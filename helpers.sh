@@ -32,7 +32,7 @@ rel() {
 
     # Pack zip
     mkdir -p releases
-    mkzip "releases/velocity_kernel-tissot-r$(cat .relversion)-$(date +%Y%m%d).zip"
+    mkzip "releases/velocity_kernel-tissot-r$(cat .version)-$(date +%Y%m%d).zip"
 
     # Revert version
     mv .version .relversion && \
