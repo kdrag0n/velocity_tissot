@@ -3,15 +3,15 @@
 . "$env"
 cd "$tmp"
 
-if [ "$DEVICE" = "tiffany" ]; then
-	cat tiffany.dtb >> Image.gz
-else
+#if [ "$DEVICE" = "tiffany" ]; then
+#	cat tiffany.dtb >> Image.gz
+#else
 	if [ -e /dev/block/bootdevice/by-name/vendor_a ] && [ ! -L /system/vendor ]; then
 		print "Treble ROM detected, enabling support..."
 		cat treble.dtb >> Image.gz
 	else
 		cat base.dtb >> Image.gz
 	fi
-fi
+#fi
 
 exit 0
