@@ -49,7 +49,7 @@ zerover() {
 real_make="$(command which make)"
 
 make() {
-    "$real_make" "${MAKEFLAGS[@]}"
+    "$real_make" "${MAKEFLAGS[@]}" "$@"
 }
 
 cleanbuild() {
