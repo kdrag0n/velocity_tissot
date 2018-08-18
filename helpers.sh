@@ -46,16 +46,22 @@ zerover() {
     echo 0 >| .version
 }
 
+real_make="$(command which make)"
+
+make() {
+    "$real_make" "${MAKEFLAGS[@]}"
+}
+
 cleanbuild() {
-    make "${MAKEFLAGS[@]}" clean && make -j$jobs && mkzip
+    make clean && make -j$jobs && mkzip
 }
 
 incbuild() {
-    make "${MAKEFLAGS[@]}" -j$jobs && mkzip
+    make -j$jobs && mkzip
 }
 
 dbuild() {
-    make "${MAKEFLAGS[@]}" -j$jobs $@ && dzip
+    make -j$jobs $@ && dzip
 }
 
 dzip() {
