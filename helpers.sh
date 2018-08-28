@@ -69,7 +69,7 @@ dzip() {
     mkzip "betas/velocity_kernel-tissot-b$(cat .version)-$(date +%Y%m%d).zip"
 }
 
-test() {
+ktest() {
     adb wait-for-any && \
     adb shell ls '/init.recovery*' > /dev/null 2>&1
     if [ $? -eq 1 ]; then
@@ -84,7 +84,7 @@ test() {
 }
 
 inc() {
-    incbuild && test
+    incbuild && ktest
 }
 
 dc() {
