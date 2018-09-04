@@ -1926,8 +1926,9 @@ struct task_struct {
 	unsigned int	sequential_io;
 	unsigned int	sequential_io_avg;
 #endif
-
-	/* CPU-bound kernel thread */
+#ifdef CONFIG_ANDROID_SIMPLE_LMK
+	bool lmk_sigkill_sent;
+#endif
 	bool kthread_per_cpu;
 };
 

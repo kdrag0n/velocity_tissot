@@ -61,6 +61,7 @@
 #include <linux/hugetlb.h>
 #include <linux/sched/rt.h>
 #include <linux/random.h>
+#include <linux/simple_lmk.h>
 
 #include <asm/sections.h>
 #include <asm/tlbflush.h>
@@ -2930,6 +2931,21 @@ rebalance:
 	if ((gfp_mask & GFP_TRANSHUGE) != GFP_TRANSHUGE ||
 						(current->flags & PF_KTHREAD))
 		migration_mode = MIGRATE_SYNC_LIGHT;
+
+#ifdef CONFIG_ANDROID_SIMPLE_LMK
+	if (gfp_mask & __GFP_NORETRY) {
+		simple_lmk_mem_reclaim();
+		goto noretry;
+	}
+
+	while (1) {
+		simple_lmk_mem_reclaim();
+		page = get_page_from_freelist(gfp_mask, order, alloc_flags, ac);
+		if (page)
+			goto got_pg;
+		cond_resched();
+	}
+#endif
 
 	/* Try direct reclaim and then allocating */
 	page = __alloc_pages_direct_reclaim(gfp_mask, order,
