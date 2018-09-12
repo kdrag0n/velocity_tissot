@@ -58,6 +58,14 @@ config IOSCHED_ZEN
 	  FCFS, dispatches are back-inserted, deadlines ensure fairness.
 	  Should work best with devices where there is no travel delay.
 
+config IOSCHED_ANXIETY
+	tristate "Anxiety I/O scheduler"
+	default y
+	---help---
+	  The Anxiety I/O scheduler prioritizes latency over everything
+		else. When a request comes in, it will use a lighweight
+		selection algorithm to swiftly process the current pending task.
+
 config IOSCHED_FIOPS
 	tristate "IOPS based I/O scheduler"
 	default y
@@ -134,6 +142,9 @@ choice
 	config DEFAULT_MAPLE
 		bool "Maple" if IOSCHED_MAPLE=y
 
+	config DEFAULT_ANXIETY
+		bool "Anxiety" if IOSCHED_ANXIETY=y
+
 	config DEFAULT_NOOP
 		bool "No-op"
 
@@ -156,6 +167,7 @@ config DEFAULT_IOSCHED
 	default "deadline" if DEFAULT_DEADLINE
 	default "cfq" if DEFAULT_CFQ
 	default "bfq" if DEFAULT_BFQ
+	default "anxiety" if DEFAULT_ANXIETY
 	default "noop" if DEFAULT_NOOP
 	default "zen" if DEFAULT_ZEN
 	default "fiops" if DEFAULT_FIOPS
