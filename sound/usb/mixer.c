@@ -1389,12 +1389,12 @@ static void build_feature_ctl(struct mixer_build *state, void *raw_desc,
 static int parse_audio_feature_unit(struct mixer_build *state, int unitid,
 				    void *_ftr)
 {
-	int channels = 0, i, j;
+	int channels, i, j;
 	struct usb_audio_term iterm;
 	unsigned int master_bits, first_ch_bits;
 	int err, csize;
 	struct uac_feature_unit_descriptor *hdr = _ftr;
-	__u8 *bmaControls = NULL;
+	__u8 *bmaControls;
 
 	if (state->mixer->protocol == UAC_VERSION_1) {
 		if (hdr->bLength < 7) {

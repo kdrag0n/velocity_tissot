@@ -357,10 +357,6 @@ mem_cgroup_bad_page_check(struct page *page)
 static inline void
 mem_cgroup_print_bad_page(struct page *page)
 {
-	*pfilepages = 0;
-	*pheadroom = 0;
-	*pdirty = 0;
-	*pwriteback = 0;
 }
 #endif
 
