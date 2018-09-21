@@ -45,8 +45,8 @@
 				39 01 00 00 78 00 02 10 00
 				];
 
-		qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
-		qcom,mdss-dsi-off-command-state = "dsi_lp_mode";
+		qcom,mdss-dsi-on-command-state = "dsi_hs_mode";
+		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
 		qcom,mdss-dsi-cold_gamma-command-state = "dsi_hs_mode";
 		qcom,mdss-dsi-warm_gamma-command-state = "dsi_hs_mode";
 		qcom,mdss-dsi-default_gamma-command-state = "dsi_hs_mode";
@@ -55,7 +55,7 @@
 		qcom,mdss-dsi-CE_on-command-state = "dsi_hs_mode";
 		qcom,mdss-dsi-CE_off-command-state = "dsi_hs_mode";
 		qcom,mdss-dsi-h-sync-pulse = <1>;
-		qcom,mdss-dsi-traffic-mode = "burst_mode";
+		qcom,mdss-dsi-traffic-mode = "non_burst_sync_pulse";
 		qcom,mdss-dsi-bllp-eof-power-mode;
 		qcom,mdss-dsi-bllp-power-mode;
 		qcom,mdss-dsi-lane-0-state;
@@ -73,12 +73,16 @@
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
 		qcom,mdss-dsi-reset-sequence = <1 10>, <0 10>, <1 10>;
 		qcom,mdss-dsi-panel-status-command = [06 01 00 01 05 00 01 0A];
-		qcom,mdss-dsi-panel-status-command-mode = "dsi_lp_mode";
+		qcom,mdss-dsi-panel-status-command-mode = "dsi_hs_mode";
 		qcom,mdss-dsi-panel-status-check-mode = "TE_check_NT35596";
 		qcom,mdss-dsi-panel-status-read-length = <1>;
 		qcom,mdss-dsi-panel-status-value = <0x9C>;
 		qcom,mdss-dsi-panel-max-error-count = <3>;
 		qcom,mdss-pan-physical-width-dimension = <69>;
 		qcom,mdss-pan-physical-height-dimension = <122>;
+
+		qcom,panel-allow-phy-poweroff;
+		qcom,ulps-enabled;
+		qcom,partial-update-enabled;
 	};
 };
