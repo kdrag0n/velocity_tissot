@@ -713,3 +713,21 @@ config PROCESS_RECLAIM
 	 (addr, addr + size-bytes) of the process.
 
 	 Any other vaule is ignored.
+
+config VM_DIRTY_RATIO
+	int "Default page dirty ratio for foreground sync"
+	default 20
+	help
+	  Controls the minimum percentage of memory that may contain
+	  dirty pages required to trigger a foreground sync that
+	  flushes pages, i.e. performing the flush on behalf of the
+	  system while a process is trying to write.
+
+config VM_DIRTY_BACKGROUND_RATIO
+	int "Default page dirty ratio for background sync"
+	default 10
+	help
+	  Controls the minimum percentage of memory that may contain
+	  dirty pages required to trigger a background sync that
+	  flushes pages, i.e. flushing dirty pages in the background
+	  via a kthread.
