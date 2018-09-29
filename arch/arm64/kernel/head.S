@@ -1,4 +1,3 @@
-
 /*
  * Low-level CPU initialisation
  * Based on arch/arm/kernel/head.S
