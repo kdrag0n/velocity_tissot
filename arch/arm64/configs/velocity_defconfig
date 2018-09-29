@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 3.18.122 Kernel Configuration
+# Linux/arm64 3.18.123 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -4253,8 +4253,8 @@ CONFIG_SDCARD_FS=y
 # CONFIG_QNX6FS_FS is not set
 # CONFIG_ROMFS_FS is not set
 CONFIG_PSTORE=y
-# CONFIG_PSTORE_CONSOLE is not set
-# CONFIG_PSTORE_PMSG is not set
+CONFIG_PSTORE_CONSOLE=y
+CONFIG_PSTORE_PMSG=y
 CONFIG_PSTORE_RAM=y
 # CONFIG_SYSV_FS is not set
 # CONFIG_UFS_FS is not set
