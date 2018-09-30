@@ -1,7 +1,6 @@
 on late-fs
 	# boot time fs tune
 	write /sys/block/mmcblk0/queue/scheduler bfq
-	write /sys/block/mmcblk0/queue/iosched/slice_idle 0
 	write /sys/block/mmcblk0/queue/read_ahead_kb 512
 	write /sys/block/mmcblk0/queue/nr_requests 128
 	write /sys/block/dm-0/queue/read_ahead_kb 512
