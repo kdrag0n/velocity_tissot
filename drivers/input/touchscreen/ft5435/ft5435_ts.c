@@ -196,8 +196,8 @@ static void ft5435_resume_func(struct work_struct *work)
 	mutex_lock(&data->report_mutex);
 
 	ft5x0x_write_reg(data->client, 0x8c, 0x01);
-	data->suspended = false;
 	enable_irq_wake(data->client->irq);
+	data->suspended = false;
 
 	mutex_unlock(&data->report_mutex);
 }
@@ -687,8 +687,8 @@ static int ft5435_ts_suspend(struct device *dev)
 #if defined(FOCALTECH_TP_GESTURE)
 	{
 		if(gesture_func_on) {
-			ft_tp_suspend(data);
 			enable_irq_wake(data->client->irq);
+			ft_tp_suspend(data);
 			return 0;
 		}
 	}
@@ -773,8 +773,8 @@ static int ft5435_ts_resume(struct device *dev)
 #else
   		msleep(data->pdata->soft_rst_dly);
 		ft5x0x_write_reg(data->client, 0x8c, 0x01);
-		data->suspended = false;
 		enable_irq_wake(data->client->irq);
+		data->suspended = false;
 #endif
 	return 0;
 }
