@@ -376,9 +376,11 @@ asmlinkage void __exception do_undefinstr(struct pt_regs *regs)
 	siginfo_t info;
 	void __user *pc = (void __user *)instruction_pointer(regs);
 
+#ifdef CONFIG_DEBUG_MONITORS
 	/* check for AArch32 breakpoint instructions */
 	if (!aarch32_break_handler(regs))
 		return;
+#endif
 
 	if (call_undef_hook(regs) == 0)
 		return;

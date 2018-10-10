@@ -643,6 +643,13 @@ config ARM64_SEV_IN_LOCK_UNLOCK
 	  and spin_unlock to ensure that the core waiting on the lock
 	  wakes up from WFE.
 
+config DEBUG_MONITORS
+	bool "Hardware debugging support"
+	help
+	  This option enables support for hardware-level CPU debugging
+	  including JTAG instruction stepping support and context switch
+	  debugging.
+
 config SCHED_MC
 	bool "Multi-core scheduler support"
 	help
