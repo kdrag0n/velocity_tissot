@@ -110,7 +110,8 @@ cd "$tmp"
 		[ "$ro_product_model" = "$i" ] ||
 		[ "$ro_build_product" = "$i" ] &&
 			match=1
-			export DEVICE="$i"
+
+		[ "$match" -eq 1 ] && export DEVICE="$i"
 	done
 	[ $match != 1 ] && abort "Unsupported device"
 }
