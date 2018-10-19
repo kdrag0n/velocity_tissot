@@ -54,6 +54,13 @@ mount() {
 	>> "$1/.rw" && return || abort "Unable to write to $1!"
 }
 
+<<<<<<< HEAD
+=======
+mount_ro() {
+	mountpoint -q "$1" || /sbin/busybox mount -o ro "$1" || { print "Unable to mount /system"; print "Stock and Treble ROM will not work"; }
+}
+
+>>>>>>> parent of 83435a7fa27d... flasher: add encryption fix for custom ROMs
 umount() {
 	mountpoint -q "$1" || return 0
 	rm -f "$1/.rw"
@@ -138,10 +145,6 @@ else
 	print "Spectrum and default settings might not work!"
 
 	mountpoint -q "/system" || /sbin/busybox mount -o ro "/system" || { print "Unable to mount system"; print "Treble ROMs will not work!"; export SYSTEM_RO=0; }
-fi
-
-if [ ! -f /dev/block/dm-0 ]; then # encryption fix
-mountpoint -q /data || /sbin/busybox mount -o rw /data
 fi
 
 setperm 0755 0755 "$bin"
