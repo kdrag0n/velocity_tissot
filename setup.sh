@@ -1,5 +1,6 @@
 export CROSS_COMPILE=aarch64-linux-gnu-
 export ARCH=arm64
+export CC=gcc
 
 export KBUILD_BUILD_USER=velocity
 export KBUILD_BUILD_HOST=kernel
