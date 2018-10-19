@@ -1,0 +1,151 @@
+#!/sbin/sh
+# Kernel Flasher installer backend
+
+tmp=/tmp/vflash
+
+if [ "$3" ]; then
+	zip=$3
+	console=/proc/$$/fd/$2
+	# write the location of the console buffer to /tmp/console for other scripts to use
+	echo "$console" > /tmp/console
+else
+	console=$(cat /tmp/console)
+	[ "$console" ] || console=/proc/$$/fd/1
+fi
+
+print() {
+	if [ "$1" ]; then
+		echo -e "ui_print   • $1\nui_print" > "$console"
+	else
+		echo -e "ui_print  \nui_print" > "$console"
+	fi
+	echo
+}
+
+abort() {
+	[ "$1" ] && {
+		print "Error: $1"
+		print "Aborting..."
+	}
+	cleanup
+	print "Failed to patch boot image!"
+	exit 1
+}
+
+cleanup() {
+	[ "$zip" ] && rm /tmp/console
+	umount /system
+}
+
+extract() {
+	rm -rf "$2"
+	mkdir -p "$2"
+	unzip -o "$1" -d "$2" || abort "Failed to extract zip to $2!"
+}
+
+setperm() {
+	find "$3" -type d -exec chmod "$1" {} \;
+	find "$3" -type f -exec chmod "$2" {} \;
+}
+
+mount() {
+	mountpoint -q "$1" || /sbin/busybox mount -o rw "$1" || abort "Unable to mount $1 as rw!"
+	>> "$1/.rw" && return || /sbin/busybox mount -o remount,rw "$1"
+	>> "$1/.rw" && return || abort "Unable to write to $1!"
+}
+
+umount() {
+	mountpoint -q "$1" || return 0
+	rm -f "$1/.rw"
+	/sbin/busybox umount "$1"
+}
+
+cat > "$console" <<EOF
+ui_print ​
+ui_print
+ui_print __     __   _            _ _
+ui_print
+ui_print \ \   / /__| | ___   ___(_) |_ _   _
+ui_print
+ui_print  \ \ / / _ \ |/ _ \ / __| | __| | | |
+ui_print
+ui_print   \ V /  __/ | (_) | (__| | |_| |_| |
+ui_print
+ui_print    \_/ \___|_|\___/ \___|_|\__|\__, |
+ui_print
+ui_print                                |___/
+ui_print
+ui_print ​
+ui_print
+ui_print         Xiaomi Mi A1 (tissot)
+ui_print
+ui_print         Xiaomi Mi 5X (tiffany)
+ui_print
+ui_print     Kernel by kdragon & tytydraco
+ui_print
+ui_print -------------------------------------
+ui_print
+EOF
+
+# Unpack the installer
+[ "$zip" ] && {
+	print "Unpacking installer..."
+	extract "$zip" "$tmp"
+}
+cd "$tmp"
+
+. config.sh
+
+[ "$device_names" ] && {
+	if ! command -v getprop; then
+		print "Warning: getprop not found! Skipping device check!"
+		return
+	fi
+	match=0
+	ro_product_device=$(getprop ro.product.device)
+	ro_product_model=$(getprop ro.product.model)
+	ro_build_product=$(getprop ro.build.product)
+	for i in $device_names; do
+		[ "$ro_product_device" = "$i" ] ||
+		[ "$ro_product_model" = "$i" ] ||
+		[ "$ro_build_product" = "$i" ] &&
+			match=1
+			export DEVICE="$i"
+	done
+	[ $match != 1 ] && abort "Unsupported device"
+}
+
+if [ -f .rel ]; then
+	print "Installing version r$(cat .ver)"
+	print "Built on $(cat .build)"
+else
+	print "Installing prerelease $(cat .ver)"
+	print "Built on $(cat .build)"
+fi
+
+export SYSTEM_RW=1
+export SYSTEM_RO=1
+
+mountpoint -q "/system" || /sbin/busybox mount -o rw "/system" || export SYSTEM_RW=0
+>> "/system/.rw" || /sbin/busybox mount -o remount,rw "/system"
+>> "/system/.rw" || export SYSTEM_RW=0
+
+if [ "$SYSTEM_RW" = 1 ]; then
+	rm -f /system/.rw
+else
+	print "Unable to write to system, try unchecking read-only in Mount tab"
+	print "Spectrum and default settings might not work!"
+
+	mountpoint -q "/system" || /sbin/busybox mount -o ro "/system" || { print "Unable to mount system"; print "Treble ROMs will not work!"; export SYSTEM_RO=0; }
+fi
+
+if [ ! -f /dev/block/dm-0 ]; then # encryption fix
+mountpoint -q /data || /sbin/busybox mount -o rw /data
+fi
+
+setperm 0755 0755 "$bin"
+
+sh boot-patcher.sh || abort
+
+cleanup
+print "Finished!"

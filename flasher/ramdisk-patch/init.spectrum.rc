@@ -1,0 +1,87 @@
+on property:sys.boot_completed=1
+	# First boot default
+	exec u:r:init:s0 root root -- /init.spectrum.sh
+
+	# Enable spectrum
+	setprop spectrum.support 1
+	setprop persist.spectrum.kernel Velocity
+
+# Balanced (default)
+on property:persist.spectrum.profile=0
+	# CPU
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactive
+	write /sys/module/cpu_boost/parameters/input_boost_ms 0
+	write /sys/module/cpu_boost/parameters/wake_boost_enabled 1
+
+	# CPUFreq
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2208000
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 652800
+
+	# GPU
+	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 700000000
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 133330000
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 0
+	write /sys/module/adreno_idler/parameters/adreno_idler_active 1
+	write /sys/module/adreno_idler/parameters/adreno_idler_workload 7000
+	write /sys/module/adreno_idler/parameters/adreno_idler_idlewait 30
+
+# Performance
+on property:persist.spectrum.profile=1
+	# CPU
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor intelliactive
+	write /sys/module/cpu_boost/parameters/input_boost_ms 0
+	write /sys/module/cpu_boost/parameters/wake_boost_enabled 1
+
+	# CPUFreq
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2208000
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1401600
+
+	# GPU
+	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 700000000
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 133330000
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 1
+	write /sys/module/adreno_idler/parameters/adreno_idler_active 1
+	write /sys/module/adreno_idler/parameters/adreno_idler_workload 6500
+	write /sys/module/adreno_idler/parameters/adreno_idler_idlewait 35
+
+# Battery
+on property:persist.spectrum.profile=2
+	# CPU
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor darkness
+	write /sys/module/cpu_boost/parameters/input_boost_ms 0
+	write /sys/module/cpu_boost/parameters/wake_boost_enabled 0
+
+	# CPUFreq
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1804800
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 652800
+
+	# GPU
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 510000000
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 133330000
+	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 0
+	write /sys/module/adreno_idler/parameters/adreno_idler_active 1
+	write /sys/module/adreno_idler/parameters/adreno_idler_workload 8500
+	write /sys/module/adreno_idler/parameters/adreno_idler_idlewait 15
+
+# Gaming
+on property:persist.spectrum.profile=3
+	# CPU
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor intelliactive
+	write /sys/module/cpu_boost/parameters/input_boost_ms 0
+	write /sys/module/cpu_boost/parameters/wake_boost_enabled 1
+
+	# CPUFreq
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 2208000
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 1401600
+
+	# GPU
+	write /sys/kernel/gpu/gpu_governor msm-adreno-tz
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/max_freq 700000000
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/min_freq 216000000
+	write /sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/1c00000.qcom,kgsl-3d0/adrenoboost 3
+	write /sys/module/adreno_idler/parameters/adreno_idler_active 1
+	write /sys/module/adreno_idler/parameters/adreno_idler_workload 5500
+	write /sys/module/adreno_idler/parameters/adreno_idler_idlewait 50

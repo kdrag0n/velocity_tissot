@@ -1,0 +1,10 @@
+#!/sbin/sh
+
+. "$env"
+
+print "Disabling system verification..."
+
+setprop ro.config.dmverity false
+rm -f verity_key sbin/firmware_key.cer
+
+exit 0
