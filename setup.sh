@@ -15,7 +15,7 @@ unalias cat > /dev/null 2>&1
 unalias zip > /dev/null 2>&1
 
 cc_ver="$(${CROSS_COMPILE}gcc --version|head -n1|cut -d'(' -f2|tr -d ')'|awk '{$5=""; print $0}'|sed -e 's/[[:space:]]*$//')"
-MAKEFLAGS=("KBUILD_COMPILER_STRING=${cc_ver}")
+MAKEFLAGS=("KBUILD_COMPILER_STRING=${cc_ver}" "O=out")
 
 # helpers
 source helpers.sh
