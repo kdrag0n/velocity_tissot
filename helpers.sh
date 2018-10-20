@@ -66,7 +66,7 @@ dbuild() {
 
 dzip() {
     mkdir -p betas
-    mkzip "betas/velocity_kernel-tissot-b$(cat .version)-$(date +%Y%m%d).zip"
+    mkzip "betas/velocity_kernel-tissot-b$(cat out/.version)-$(date +%Y%m%d).zip"
 }
 
 ktest() {
