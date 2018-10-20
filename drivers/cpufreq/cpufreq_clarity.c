@@ -32,7 +32,7 @@
 #include <linux/workqueue.h>
 #include <linux/kthread.h>
 #include <linux/slab.h>
-#include <linux/display_state.h>
+#include <linux/state_notifier.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/cpufreq_clarity.h>
@@ -461,7 +461,6 @@ static void cpufreq_clarity_timer(unsigned long data)
 	bool skip_hispeed_logic, skip_min_sample_time;
 	bool jump_to_max_no_ts = false;
 	bool jump_to_max = false;
-	bool display_on = is_display_on();
 
 	if (!down_read_trylock(&ppol->enable_sem))
 		return;
@@ -583,7 +582,7 @@ static void cpufreq_clarity_timer(unsigned long data)
 	    tunables->max_freq_hysteresis)
 		new_freq = max(tunables->hispeed_freq, new_freq);
 
-	if (!display_on)
+	if (state_suspended)
 		new_freq = min(new_freq, suspend_freq);
 
 	if (!skip_hispeed_logic &&
