@@ -104,6 +104,7 @@ struct gf_ioc_chip_info {
 #define  USE_PLATFORM_BUS     1
 
 
+#define GF_NETLINK_ENABLE 1
 #define GF_NET_EVENT_IRQ 1
 #define GF_NET_EVENT_FB_BLACK 2
 #define GF_NET_EVENT_FB_UNBLACK 3
