@@ -122,10 +122,22 @@ struct hw_info{
 #define HUAQIN_VERSION_FILE		"hw_info_ver"
 
 
-
+#ifdef CONFIG_HQ_SYSFS_SUPPORT
 int hq_regiser_hw_info(enum hardware_id id,char *device_name);
 int hq_deregister_hw_info(enum hardware_id id,char *device_name);
 int register_kboj_under_hqsysfs(struct kobject *kobj, struct kobj_type *ktype, const char *fmt, ...);
+#else
+static inline int hq_regiser_hw_info(enum hardware_id id, char *device_name)
+{
+}
 
+static inline int hq_deregister_hw_info(enum hardware_id id, char *device_name)
+{
+}
+
+static inline int register_kboj_under_hqsysfs(struct kobject *kobj,struct kobj_type *ktype, const char *fmt, ...)
+{
+}
+#endif
 
 #endif
