@@ -102,3 +102,7 @@ mc() {
 cf() {
     make nconfig
 }
+
+ec() {
+    ${EDITOR:-nano} out/.config
+}
