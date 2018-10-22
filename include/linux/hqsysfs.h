@@ -129,14 +129,17 @@ int register_kboj_under_hqsysfs(struct kobject *kobj, struct kobj_type *ktype, c
 #else
 static inline int hq_regiser_hw_info(enum hardware_id id, char *device_name)
 {
+	return 0;
 }
 
 static inline int hq_deregister_hw_info(enum hardware_id id, char *device_name)
 {
+	return 0;
 }
 
 static inline int register_kboj_under_hqsysfs(struct kobject *kobj,struct kobj_type *ktype, const char *fmt, ...)
 {
+	return 0;
 }
 #endif
 
